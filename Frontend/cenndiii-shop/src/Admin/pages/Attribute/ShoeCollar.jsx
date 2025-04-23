@@ -32,7 +32,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 export default function ShoeCollar() {
   const navigate = useNavigate();
 
@@ -174,7 +173,6 @@ export default function ShoeCollar() {
         existingNames={rows}
         type={"cổ giày"}
       />
-      <ToastContainer />
     </Box>
   );
 }

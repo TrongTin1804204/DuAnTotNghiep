@@ -153,7 +153,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 export default function Size() {
   const navigate = useNavigate();
 
@@ -296,7 +295,6 @@ export default function Size() {
         data={editingRow}
         existingNames={rows}
       />
-      <ToastContainer />
     </Box>
 
   );

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Search, Eye, Plus } from "lucide-react";
-import { NavLink, useNavigate} from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import api from "../../../security/Axios";
 import moment from "moment";
-import { ToastContainer } from "react-toastify";
 import Loading from "../../../components/Loading";
 import Notification from "../../../components/Notification";
 import { formatDateFromArray } from "../../../untils/FormatDate";
@@ -139,7 +138,6 @@ export default function Discounts() {
   return (
     <div className="p-6 space-y-4">
       {loading && <Loading />}
-      <ToastContainer />
       <h1 className="text-lg font-semibold mb-4">Đợt Giảm Giá</h1>
       <div className="bg-white p-4 rounded-lg shadow-md">
         <div className="grid grid-cols-3 gap-4">

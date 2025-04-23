@@ -4,8 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import moment from "moment";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Dialog } from "@headlessui/react";
-import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
 import Notification from "../../../components/Notification";
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
@@ -33,7 +31,7 @@ function AddCoupon() {
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     useEffect(() => {
-        if(localStorage.getItem("token")){
+        if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
                 navigate("/admin/login");
             }
@@ -330,7 +328,6 @@ function AddCoupon() {
 
     return (
         <div className="p-6 space-y-4">
-            <ToastContainer />
             <Dialog open={isConfirmOpen} onClose={closeModal}
                 className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                 <div className="flex items-center justify-center min-h-screen px-4">

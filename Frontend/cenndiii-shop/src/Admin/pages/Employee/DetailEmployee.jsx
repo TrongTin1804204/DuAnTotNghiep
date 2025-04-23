@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
+import Notification from "../../../components/Notification";
 export default function DetailEmployee() {
   const { id } = useParams(); // Lấy ID từ URL
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export default function DetailEmployee() {
           <div><strong>Ngày sinh:</strong> {employee.ngaySinh ? employee.ngaySinh.split("T")[0] : ""}</div>
           <div><strong>Số điện thoại:</strong> {employee.soDienThoai}</div>
           <div><strong>Email:</strong> {employee.email}</div>
-          <div><strong>Vai trò:</strong> {employee.vaiTro ? "Quản lý" : "Nhân viên"}</div>
+          <div><strong>Vai trò:</strong> {employee.vaiTro === "ADMIN" ? "Quản lý" : "Nhân viên"}</div>
           <div><strong>Trạng thái:</strong> {employee.trangThai ? "Kích hoạt" : "Tạm ngưng"}</div>
           <div><strong>Căn cước công dân:</strong> {employee.cccd}</div>
           <div><strong>Địa chỉ:</strong> {employee.diachi}</div>

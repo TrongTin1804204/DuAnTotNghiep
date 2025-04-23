@@ -35,17 +35,17 @@ public class DiaChiController {
     }
 
     @GetMapping("/get-address/{idKhachHang}")
-    public ResponseEntity<?> getAddress(@PathVariable int idKhachHang) {
+    public ResponseEntity<?> getAddress(@PathVariable Integer idKhachHang) {
         return ResponseEntity.ok(diaChiService.getAddressCustomer(idKhachHang));
     }
 
-    @PostMapping("/update-address/{id}/{idHoaDon}")
-    public ResponseEntity<?> updateAddress(@PathVariable Integer id, @RequestBody DiaChi diaChi,@PathVariable Integer idHoaDon) {
+    @PostMapping("/update-address/{idHoaDon}")
+    public ResponseEntity<?> updateAddress( @RequestBody DiaChi diaChi,@PathVariable Integer idHoaDon) {
         try {
-            diaChiService.updateCustomerAddress(diaChi,id,idHoaDon);
+            diaChiService.updateCustomerAddress(diaChi,idHoaDon);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -66,6 +66,26 @@ public class DiaChiController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/set-default-address/{idDiaChi}")
+    public ResponseEntity<?> setDefaultAddress(@PathVariable Integer idDiaChi) {
+        try {
+            diaChiService.setAddressIsDefault(idDiaChi);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/delete/{idDiachi}")
+    public ResponseEntity<?> delete(@PathVariable Integer idDiachi) {
+        try {
+            diaChiService.deleteAddress(idDiachi);
+            return ResponseEntity.ok("Xóa thành công");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 import api from '../../../security/Axios';
 import { useNavigate } from 'react-router-dom';
-export default function AddressDialog({ hoaDon, reload, open, onClose }) {
+export default function AddressDialog({ open, onClose, selectedAddress }) {
     const [selectedProvince, setSelectedProvince] = useState(null);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [selectedWard, setSelectedWard] = useState(null);
@@ -52,6 +52,15 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
         return Object.keys(newErrors).length === 0;
     };
 
+    const fillData = () => {
+        setDiaChiChiTiet(selectedAddress?.diaChiChiTiet.split(",")[0]);
+        setTenNguoiNhan(selectedAddress?.tenNguoiNhan);
+        setSoDienThoai(selectedAddress?.soDienThoai);
+        setGhiChu(selectedAddress?.ghiChu);
+        setSelectedProvince(selectedAddress?.thanhPho);
+        setSelectedDistrict(selectedAddress?.quanHuyen);
+        setSelectedWard(selectedAddress?.xaPhuong);
+    }
     useEffect(() => {
         const fetchProvinces = async () => {
             try {
@@ -63,47 +72,51 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                 console.error("Lỗi khi lấy danh sách tỉnh:", error);
             }
         };
+
         fetchProvinces();
-    }, []);
+        handleProvinceChange(selectedAddress?.thanhPho);
+        handleDistrictChange(selectedAddress?.quanHuyen);
+        handleWardChange(selectedAddress?.xaPhuong);
+        fillData();
+    }, [open]);
 
-    const handleProvinceChange = async (e) => {
-        const province = provinces.find(p => p.ProvinceID == e.target.value);
-        setSelectedProvince(province);
-        setDistricts([]);
-        setWards([]);
-        setSelectedDistrict(null);
-        setSelectedWard(null);
-
+    const handleProvinceChange = async (provinceId) => {
         try {
-            const response = await api.get(
-                "/admin/dia-chi/get-districts",
-                { params: { provinceID: province.ProvinceID } }
-            );
-            setDistricts(response.data.data || []);
+            if (provinceId) {
+                setSelectedProvince(provinceId);
+                setDistricts([]);
+                setWards([]);
+                setSelectedDistrict(null);
+                setSelectedWard(null);
+                const response = await api.get(
+                    "/admin/dia-chi/get-districts",
+                    { params: { provinceID: provinceId } }
+                );
+                setDistricts(response.data.data || []);
+            }
         } catch (error) {
             console.error("Lỗi khi lấy danh sách district:", error);
         }
     };
 
-    const handleDistrictChange = async (e) => {
-        const district = districts.find(d => d.DistrictID == e.target.value);
-        setSelectedDistrict(district);
-        setWards([]);
-        setSelectedWard(null);
-
-        try {
-            const response = await api.get(
-                "/admin/dia-chi/get-wards",
-                { params: { districtID: district.DistrictID } }
-            );
-            setWards(response.data.data || []);
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách ward:", error);
+    const handleDistrictChange = async (districtId) => {
+        if (districtId) {
+            setSelectedDistrict(districtId);
+            setWards([]);
+            setSelectedWard(null);
+            try {
+                const response = await api.get(
+                    "/admin/dia-chi/get-wards",
+                    { params: { districtID: districtId } }
+                );
+                setWards(response.data.data || []);
+            } catch (error) {
+                console.error("Lỗi khi lấy danh sách ward:", error);
+            }
         }
     };
 
-    const handleWardChange = (e) => {
-        const ward = wards.find(w => w.WardCode == e.target.value);
+    const handleWardChange = (ward) => {
         setSelectedWard(ward);
     };
 
@@ -111,20 +124,22 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
         if (!validateForm()) return;
 
         const data = {
-            khachHang: hoaDon.khachHang,
+            id: selectedAddress?.id,
+            khachHang: selectedAddress?.khachHang,
             tenNguoiNhan,
             soDienThoai,
             ghiChu,
             diaChiChiTiet,
-            thanhPho: selectedProvince?.ProvinceID,
-            quanHuyen: selectedDistrict?.DistrictID,
-            xaPhuong: selectedWard?.WardCode,
+            thanhPho: selectedProvince,
+            quanHuyen: selectedDistrict,
+            xaPhuong: selectedWard,
         };
-        api.post(`/admin/dia-chi/add/${hoaDon.idHoaDon}`, data)
+        console.log(data);
+
+        api.post(`/admin/dia-chi/update-address/-1`, data)
             .then(response => {
                 if (response.status === 200) {
                     onClose(true);
-                    reload();
                 }
             })
             .catch(error => {
@@ -137,16 +152,16 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
 
     return (
         <Dialog open={open} onClose={() => onClose(false)}>
-            <DialogTitle>Thêm Địa Chỉ</DialogTitle>
+            <DialogTitle>Sửa Địa Chỉ</DialogTitle>
             <DialogContent>
                 <FormControl fullWidth error={Boolean(errors.province)}>
                     <InputLabel id="thanh-pho">Tỉnh/Thành phố</InputLabel>
                     <Select
-                        value={selectedProvince?.ProvinceID || ""}
+                        value={selectedProvince || ""}
                         labelId="thanh-pho"
                         label="Tỉnh/Thành phố"
                         onChange={(e) => {
-                            handleProvinceChange(e)
+                            handleProvinceChange(e.target.value)
                             setErrors(prev => ({ ...prev, province: '' }));
                         }}
                     >
@@ -169,9 +184,9 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                     <Select
                         labelId="huyen"
                         label="Quận/Huyện"
-                        value={selectedDistrict?.DistrictID || ""}
+                        value={selectedDistrict || ""}
                         onChange={(e) => {
-                            handleDistrictChange(e)
+                            handleDistrictChange(e.target.value)
                             setErrors(prev => ({ ...prev, district: '' }));
                         }}
                     >
@@ -196,9 +211,9 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                 >
                     <InputLabel id="xa">Xã/Phường</InputLabel>
                     <Select
-                        value={selectedWard?.WardCode || ""}
+                        value={selectedWard || ""}
                         onChange={(e) => {
-                            handleWardChange(e)
+                            handleWardChange(e.target.value)
                             setErrors(prev => ({ ...prev, ward: '' }));
                         }}
                         labelId="xa"
@@ -233,7 +248,7 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                 <TextField
                     label="Tên người nhận"
                     fullWidth
-                    value={tenNguoiNhan}
+                    value={tenNguoiNhan || ""}
                     margin="normal"
                     error={Boolean(errors.tenNguoiNhan)}
                     helperText={errors.tenNguoiNhan}
@@ -248,7 +263,7 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                 <TextField
                     label="Số điện thoại"
                     fullWidth
-                    value={soDienThoai}
+                    value={soDienThoai || ""}
                     onChange={(e) => {
                         setSoDienThoai(e.target.value);
                         setErrors(prev => ({ ...prev, soDienThoai: '' }));
@@ -261,7 +276,7 @@ export default function AddressDialog({ hoaDon, reload, open, onClose }) {
                 <TextField
                     label="Ghi chú"
                     fullWidth
-                    value={ghiChu}
+                    value={ghiChu || ""}
                     onChange={(e) => setGhiChu(e.target.value)}
                     margin="normal"
                 />

@@ -6,13 +6,14 @@ import axios from "axios";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { Dialog, Switch } from "@headlessui/react";
-import { ToastContainer } from "react-toastify";
 import Notification from '../../../../components/Notification';
 import "react-toastify/dist/ReactToastify.css";
 import Alert from "../../../../components/Alert";
 import { ImageList, ImageListItem } from "@mui/material";
 import api from "../../../../security/Axios";
 import { hasPermission } from "../../../../security/DecodeJWT";
+import DeleteIcon from '@mui/icons-material/Delete';
+import IconButton from '@mui/material/IconButton';
 
 export default function ProductDetails() {
   const { id } = useParams(); // Id lấy từ trang khác
@@ -42,7 +43,9 @@ export default function ProductDetails() {
 
   const [openAlert, setOpenAlert] = useState(false); // trạng thái cho alert
   const [alertMessage, setAlertMessage] = useState(""); // thông báo cho alert
+  const [alertAction, setAlertAction] = useState(null); // hành động cho alert
 
+  const [images, setImages] = useState([]); // danh sách ảnh
 
   useEffect(() => {
     if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
@@ -51,14 +54,17 @@ export default function ProductDetails() {
   }, [navigate]);
   const handleAlertClose = (confirm) => {
     setOpenAlert(false);
-    if (confirm) {
-      handleSave();
+    if (confirm && alertAction) {
+      alertAction();
     }
+    setAlertAction(null);
   }
 
   const showAlert = () => {
     setAlertMessage("Bạn có chắc chắn muốn lưu thay đổi không?");
     setOpenAlert(true);
+    const confirmSave = () => handleSave();
+    setAlertAction(() => confirmSave);
   };
 
   const handleImageChange = (event) => {
@@ -70,6 +76,29 @@ export default function ProductDetails() {
     setSelectedImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
+  const fetchImage = async (idChitietSanPham) => {
+    const response = await api.get(`/hinh-anh/show/${idChitietSanPham}`)
+    setImages(response.data);
+  }
+
+  const handleDeleteImage = async (imageUrl) => {
+
+    try {
+      const response = await api.get(`/hinh-anh/delete`, {
+        params: {
+          publicUrl: imageUrl,
+        }
+      });
+      if (response.status === 200) {
+        Notification("Xóa ảnh thành công", "success");
+        fetchImage(selectedProductDetail.idChiTietSanPham);
+        fetchChiTietSanPham()
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      Notification("Xóa ảnh thất bại", "error");
+    }
+  };
 
   useEffect(() => {
     fetchData("/admin/san-pham/hien-thi/true", setProducts);
@@ -176,6 +205,7 @@ export default function ProductDetails() {
 
   const openModal = (productDetail) => {
     setSelectedProductDetail(productDetail);
+    fetchImage(productDetail.idChiTietSanPham);
     setIsModalOpen(true);
     fetchProductDetail(productDetail.idChiTietSanPham);
   };
@@ -358,7 +388,7 @@ export default function ProductDetails() {
         const response = await axios.post(
           `http://localhost:8080/admin/chi-tiet-san-pham/them-anh/${idSanPham}`,
           formData,
-          { headers: { "Content-Type": "multipart/form-data" ,Authorization:`Bearer ${token}`} }
+          { headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` } }
         );
         if (response.status === 200) {
           Notification("Tải ảnh thành công", "success");
@@ -436,16 +466,16 @@ export default function ProductDetails() {
         </div>
         <div className="grid grid-cols-5 gap-4">
           {[
-            { id:0,field: "product", options: products, label: "Sản phẩm" },
-            { id:1,field: "shoeCollar", options: shoeCollars, label: "Cổ giày" },
-            { id:2,field: "shoeToe", options: shoeToes, label: "Mũi giày" },
-            { id:3,field: "shoeSole", options: shoeSoles, label: "Đế giày" },
-            { id:4,field: "material", options: materials, label: "Chất liệu" },
-            { id:5,field: "brand", options: brands, label: "Thương hiệu" },
-            { id:6,field: "supplier", options: suppliers, label: "Nhà cung cấp" },
-            { id:7,field: "category", options: categories, label: "Danh mục" },
-            { id:8,field: "color", options: colors, label: "Màu sắc" },
-            { id:9,field: "size", options: sizes, label: "Kích cỡ" },
+            { id: 0, field: "product", options: products, label: "Sản phẩm" },
+            { id: 1, field: "shoeCollar", options: shoeCollars, label: "Cổ giày" },
+            { id: 2, field: "shoeToe", options: shoeToes, label: "Mũi giày" },
+            { id: 3, field: "shoeSole", options: shoeSoles, label: "Đế giày" },
+            { id: 4, field: "material", options: materials, label: "Chất liệu" },
+            { id: 5, field: "brand", options: brands, label: "Thương hiệu" },
+            { id: 6, field: "supplier", options: suppliers, label: "Nhà cung cấp" },
+            { id: 7, field: "category", options: categories, label: "Danh mục" },
+            { id: 8, field: "color", options: colors, label: "Màu sắc" },
+            { id: 9, field: "size", options: sizes, label: "Kích cỡ" },
           ].map(({ field, options, label, index }) => (
             <div key={index} className="relative text-sm">
               <select
@@ -786,20 +816,36 @@ export default function ProductDetails() {
                   <h2>Ảnh Sản phẩm</h2>
                   <div className="">
                     <ImageList sx={{ width: 415, height: 199 }} cols={4} >
-                      {chiTietSanPham.map((c) => (
-                        c.idChiTietSanPham === imageById && (
-                          c.listAnh.map((anh, index) => (
-                            <ImageListItem key={index}>
-                              <div key={index} className="w-24 h-24">
-                                <img
-                                  src={anh}
-                                  alt="err"
-                                  className="w-full h-full object-cover rounded-md"
-                                />
-                              </div>
-                            </ImageListItem>
-                          ))
-                        )
+                      {images.map((anh, index) => (
+                        <ImageListItem key={index}>
+                          <div className="w-24 h-24 relative group">
+                            <img
+                              src={anh}
+                              alt="err"
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                  },
+                                }}
+                                onClick={() => {
+                                  setAlertMessage("Bạn có chắc chắn muốn xóa ảnh này không?");
+                                  setOpenAlert(true);
+                                  const confirmDelete = () => handleDeleteImage(anh);
+                                  setAlertAction(() => confirmDelete);
+                                }}
+                              >
+                                <DeleteIcon fontSize="small" color="error" />
+                              </IconButton>
+                            </div>
+                          </div>
+                        </ImageListItem>
+
                       ))}
                     </ImageList>
                   </div>
@@ -834,30 +880,21 @@ export default function ProductDetails() {
                         </ImageListItem>
                       ))}
                     </ImageList>
-                    {/* {selectedImages.map((file, index) => (
-                      <div key={index} className="relative w-32 h-32 p-2">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-full h-full object-cover rounded-md border"
-                        />
-                        <button
-                          className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-                          onClick={() => handleRemoveImage(index)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))} */}
                   </div>
                 </div>
               </div>
             </div>
             <div className="mt-4 flex justify-end">
-              <button onClick={closeModal} className="px-3 py-1 border border-gray-400 text-gray-600 rounded-md mr-2">
+              <button
+                onClick={closeModal}
+                className="px-3 py-1 border border-gray-400 text-gray-600 rounded-md mr-2"
+              >
                 Đóng
               </button>
-              <button className="px-3 py-1 bg-black text-white rounded-md" onClick={showAlert}>
+              <button
+                className="px-3 py-1 bg-black text-white rounded-md"
+                onClick={showAlert}
+              >
                 Lưu
               </button>
             </div>
@@ -905,7 +942,6 @@ export default function ProductDetails() {
         open={openAlert}
         onClose={handleAlertClose}
       />
-      <ToastContainer />
     </div>
   );
 }

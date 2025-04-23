@@ -4,10 +4,10 @@ import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 // import "../index.css";
 import { Dialog } from "@headlessui/react";
-import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
+import Notification from "../../../components/Notification";
 export default function Coupons() {
     const [filters, setFilters] = useState({ keyword: "", trangThai: "all", startDate: "", endDate: "" });
     const [phieuGiamGias, setPhieuGiamGias] = useState([]);
@@ -18,23 +18,23 @@ export default function Coupons() {
     const [selectedId, setSelectedId] = useState(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null); // 'toggleStatus' hoặc 'exportExcel'
-    
+
 
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        if(localStorage.getItem("token")){
+        if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
                 navigate("/admin/login");
             }
         }
     }, [navigate]);
-    useEffect(() => {
-        if (location.state && location.state.message) {
-            toast.success(location.state.message);
-        }
-    }, [location.state]);
+    // useEffect(() => {
+    //     if (location.state && location.state.message) {
+    //         Notification.success(location.state.message);
+    //     }
+    // }, [location.state]);
     const fetchPhieuGiamGias = async () => {
         try {
             const response = await api.get("/admin/phieu-giam-gia/hien-thi");
@@ -43,10 +43,10 @@ export default function Coupons() {
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);
-            toast.error("Lỗi khi lấy dữ liệu ban đầu");
+            Notification("Lỗi khi lấy dữ liệu ban đầu", "error");
         }
     };
-    
+
     const searchPhieuGiamGias = useCallback(async () => {
         setIsLoading(true);
         setError("");
@@ -74,12 +74,13 @@ export default function Coupons() {
             }
         } catch (error) {
             console.error("Error searching data:", error);
-            toast.error("Lỗi khi tìm dữ liệu");
+            Notification("Lỗi khi tìm dữ liệu", "error");
+
         } finally {
             setIsLoading(false);
         }
     }, [filters, currentPage]);
-    
+
     // Xử lý chuyển trạng thái
     const handleStatusToggle = async () => {
         if (!selectedId) return;
@@ -91,18 +92,19 @@ export default function Coupons() {
                 ngayBatDau: response.data.ngayBatDau,
                 ngayKetThuc: response.data.ngayKetThuc
             } : phieu));
-            toast.success("Chuyển đổi trạng thái thành công");
+            Notification("Chuyển đổi trạng thái thành công", "success");
         } catch (error) {
             console.error("Error toggling status:", error);
-            toast.error("Lỗi khi chuyển đổi trạng thái");
+            Notification("Lỗi khi chuyển đổi trạng thái", "error");
         } finally {
             setIsConfirmOpen(false);
         }
     };
-    
+
+    // Xử lý xuất Excel
     // Xử lý xuất Excel
     const handleExportExcel = async () => {
-        toast.loading('Đang xuất Excel...');
+        Notification("Đang xuất Excel...", "success"); // Hiển thị thông báo trước khi export
         try {
             const response = await api.get("/admin/phieu-giam-gia/xuat-excel", {
                 responseType: 'blob'
@@ -113,15 +115,15 @@ export default function Coupons() {
             link.setAttribute('download', 'phieu_giam_gia.xlsx');
             document.body.appendChild(link);
             link.click();
-            toast.dismiss();
-            toast.success("Xuất file Excel thành công");
+            Notification("Xuất file Excel thành công", "success");
         } catch (error) {
             console.error("Error exporting Excel file:", error);
-            toast.error("Lỗi khi xuất file Excel");
+            Notification("Lỗi khi xuất file Excel", "error");
         } finally {
             setIsConfirmOpen(false);
         }
     };
+
     useEffect(() => {
         searchPhieuGiamGias();
     }, [filters, currentPage, searchPhieuGiamGias]);
@@ -181,7 +183,7 @@ export default function Coupons() {
     };
 
 
-    
+
 
     const openConfirmDialog = (id, action) => {
         setSelectedId(id);
@@ -219,7 +221,6 @@ export default function Coupons() {
 
     return (
         <div className="p-6 space-y-4">
-            <ToastContainer />
             <h1 className="text-lg font-semibold mb-4">Phiếu Giảm Giá</h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
@@ -292,7 +293,7 @@ export default function Coupons() {
                                 className=" w-28 flex items-center justify-center border border-black rounded-full px-4 py-2 space-x-2 hover:border-green-800 hover:bg-green-800 hover:text-white transition duration-300"
                                 onClick={() => openConfirmDialog(null, 'exportExcel')}
                             >
-                                <FileUp size={20}/>
+                                <FileUp size={20} />
                             </button>
                             <span className="tooltip-text">Xuất Excel</span>
                         </div>
@@ -311,72 +312,72 @@ export default function Coupons() {
                     {isLoading ? (<div className="text-center">Đang tải...</div>) : (
                         <table className="w-full border-collapse text-sm">
                             <thead>
-                            <tr className="bg-gray-100 text-left">
-                                <th className="p-2">STT</th>
-                                <th className="p-2">Mã</th>
-                                <th className="p-2">Tên</th>
-                                <th className="p-2">Loại</th>
-                                <th className="p-2">Giá Trị Giảm</th>
-                                <th className="p-2">Số Lượng</th>
-                                <th className="p-2">Ngày Bắt Đầu</th>
-                                <th className="p-2">Ngày Kết Thúc</th>
-                                <th className="p-2">Trạng Thái</th>
-                                <th className="p-2">Hành Động</th>
-                            </tr>
+                                <tr className="bg-gray-100 text-left">
+                                    <th className="p-2">STT</th>
+                                    <th className="p-2">Mã</th>
+                                    <th className="p-2">Tên</th>
+                                    <th className="p-2">Loại</th>
+                                    <th className="p-2">Giá Trị Giảm</th>
+                                    <th className="p-2">Số Lượng</th>
+                                    <th className="p-2">Ngày Bắt Đầu</th>
+                                    <th className="p-2">Ngày Kết Thúc</th>
+                                    <th className="p-2">Trạng Thái</th>
+                                    <th className="p-2">Hành Động</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {Array.isArray(phieuGiamGias) && phieuGiamGias.length > 0 ? (phieuGiamGias.map((phieuGiamGia, index) => (
-                                <tr key={phieuGiamGia.id} className="border-t">
-                                    <td className="p-2">{index + 1}</td>
-                                    <td className="p-2">{phieuGiamGia.maKhuyenMai}</td>
-                                    <td className="p-2">{phieuGiamGia.tenKhuyenMai}</td>
-                                    <td className="p-2">{phieuGiamGia.loai}</td>
-                                    <td className="p-2">{formatCurrency(phieuGiamGia.giaTri)} {phieuGiamGia.hinhThuc}</td>
-                                    <td className="p-2">{phieuGiamGia.soLuong}</td>
-                                    <td className="p-2">
-                                        {formatDateTime(phieuGiamGia.ngayBatDau)}
-                                    </td>
-                                    <td className="p-2">
-                                        {formatDateTime(phieuGiamGia.ngayKetThuc)}
-                                    </td>
-                                    <td className="p-2">
+                                {Array.isArray(phieuGiamGias) && phieuGiamGias.length > 0 ? (phieuGiamGias.map((phieuGiamGia, index) => (
+                                    <tr key={phieuGiamGia.id} className="border-t">
+                                        <td className="p-2">{index + 1}</td>
+                                        <td className="p-2">{phieuGiamGia.maKhuyenMai}</td>
+                                        <td className="p-2">{phieuGiamGia.tenKhuyenMai}</td>
+                                        <td className="p-2">{phieuGiamGia.loai}</td>
+                                        <td className="p-2">{formatCurrency(phieuGiamGia.giaTri)} {phieuGiamGia.hinhThuc}</td>
+                                        <td className="p-2">{phieuGiamGia.soLuong}</td>
+                                        <td className="p-2">
+                                            {formatDateTime(phieuGiamGia.ngayBatDau)}
+                                        </td>
+                                        <td className="p-2">
+                                            {formatDateTime(phieuGiamGia.ngayKetThuc)}
+                                        </td>
+                                        <td className="p-2">
                                             <span
                                                 className={`px-2 py-1 rounded text-white w-28 inline-block text-center ${phieuGiamGia.trangThai === 1 ? "bg-green-500" : phieuGiamGia.trangThai === 2 ? "bg-gray-500" : "bg-red-500"}`}
                                             >
                                                 {phieuGiamGia.trangThai === 1 ? "Đang Diễn Ra" : phieuGiamGia.trangThai === 2 ? "Chưa Bắt Đầu" : "Đã Kết Thúc"}
                                             </span>
-                                    </td>
-                                    <td className="p-2 flex space-x-2">
-                                        <div className="flex space-x-4">
-                                            <div className="mb-0.5">
-                                                {phieuGiamGia.trangThai !== 0 && (
-                                                    <div className="custom-tooltip">
-                                                        <button className="text-black p-1 rounded custom-tooltip"
+                                        </td>
+                                        <td className="p-2 flex space-x-2">
+                                            <div className="flex space-x-4">
+                                                <div className="mb-0.5">
+                                                    {phieuGiamGia.trangThai !== 0 && (
+                                                        <div className="custom-tooltip">
+                                                            <button className="text-black p-1 rounded custom-tooltip"
                                                                 onClick={() => openConfirmDialog(phieuGiamGia.id, 'toggleStatus')}>
-                                                            <Repeat size={18} stroke="black" />
-                                                        </button>
-                                                        <span className="tooltip-text">Chuyển đổi trạng thái</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="mb-0.5">
-                                                <div className="custom-tooltip">
-                                                    <button className="text-black p-1 rounded"
+                                                                <Repeat size={18} stroke="black" />
+                                                            </button>
+                                                            <span className="tooltip-text">Chuyển đổi trạng thái</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="mb-0.5">
+                                                    <div className="custom-tooltip">
+                                                        <button className="text-black p-1 rounded"
                                                             onClick={() => handleViewDetails(phieuGiamGia.id)}>
-                                                        {phieuGiamGia.trangThai === 0 ? (
-                                                            <Eye size={18} stroke="black" />
-                                                        ) : (
-                                                            <SquarePen size={18} stroke="black" />
-                                                        )}
-                                                    </button>
-                                                    <span className="tooltip-text">Xem chi tiết</span>
+                                                            {phieuGiamGia.trangThai === 0 ? (
+                                                                <Eye size={18} stroke="black" />
+                                                            ) : (
+                                                                <SquarePen size={18} stroke="black" />
+                                                            )}
+                                                        </button>
+                                                        <span className="tooltip-text">Xem chi tiết</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>))) : (<tr>
-                                <td className="p-2" colSpan="10">Không có dữ liệu</td>
-                            </tr>)}
+                                        </td>
+                                    </tr>))) : (<tr>
+                                        <td className="p-2" colSpan="10">Không có dữ liệu</td>
+                                    </tr>)}
                             </tbody>
                         </table>)}
                 </div>
@@ -428,4 +429,3 @@ export default function Coupons() {
         </div>
     );
 }
-  

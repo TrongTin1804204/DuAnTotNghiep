@@ -32,7 +32,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 
 export default function ShoeToe() {
   const navigate = useNavigate();
@@ -177,7 +176,6 @@ export default function ShoeToe() {
         existingNames={rows}
         type={"mũi giày"}
       />
-      <ToastContainer />
     </Box>
   );
 }

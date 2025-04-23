@@ -4,12 +4,11 @@ import axios from "axios";
 import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../security/Axios";
 export const formatDateFromArray = (dateArray) => {
   if (!dateArray) return '';
-  
+
   const year = dateArray[0];
   const month = String(dateArray[1]).padStart(2, '0');
   const day = String(dateArray[2]).padStart(2, '0');
@@ -185,7 +184,7 @@ export default function EditDiscounts() {
   useEffect(() => {
     fetchdotGiamGia();
     fetchSanPham(skip, limit);
-  }, [skip, limit]); 
+  }, [skip, limit]);
 
   useEffect(() => {
     if (!filters.search.trim()) {
@@ -195,7 +194,7 @@ export default function EditDiscounts() {
     const timeoutId = setTimeout(() => {
       fetchSanPham(0, 4);
     }, 500); // Đợi 0.5 giây trước khi gọi hàm
-  
+
     return () => clearTimeout(timeoutId);
   }, [filters.search]);
 
@@ -346,7 +345,6 @@ export default function EditDiscounts() {
 
   return (
     <div className="p-6 space-y-4">
-      <ToastContainer />
       <div className="text-lg font-semibold mb-4 inline-flex items-center">
         <h1>Đợt Giảm Giá /</h1>
         <h2 className="ml-1 font-normal text-gray-700">
@@ -633,8 +631,8 @@ export default function EditDiscounts() {
                 onClick={prevPage}
                 disabled={currentPage === 1}
                 className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-200"
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-200"
                   }`}
               >
                 &lt;
@@ -650,8 +648,8 @@ export default function EditDiscounts() {
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
                 className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-200"
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-200"
                   }`}
               >
                 &gt;
@@ -744,8 +742,8 @@ export default function EditDiscounts() {
               onClick={prevPageCt}
               disabled={currentPageCt === 1}
               className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPageCt === 1
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-200"
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200"
                 }`}
             >
               &lt;
@@ -759,8 +757,8 @@ export default function EditDiscounts() {
               onClick={nextPageCt}
               disabled={currentPageCt === totalPagesCt}
               className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPageCt === totalPagesCt
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-200"
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200"
                 }`}
             >
               &gt;

@@ -6,7 +6,6 @@ import axios from "axios";
 import VoucherModal from "./VoucherModal";
 import { getUserId } from "../../../security/DecodeJWT"; // Import hàm lấy userId
 import Notification from "../../../components/Notification";
-import { ToastContainer } from "react-toastify";
 import Button from "@mui/material/Button";
 const Cart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -222,7 +221,6 @@ const Cart = () => {
 
     return (
         <div className="mt-[64px] mx-24 flex justify-content-center">
-            <ToastContainer />
             <div className="container mx-auto p-4">
                 <h2 className="text-3xl font-bold text-center mb-16">Giỏ Hàng</h2>
 
@@ -239,9 +237,9 @@ const Cart = () => {
 
                         {cartItems.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                            <ShoppingBag className="text-4xl text-gray-300 opacity-70" size={150} />
-                            <span className="mt-2 text-sm text-gray-600">Giỏ hàng trống</span>
-                          </div>
+                                <ShoppingBag className="text-4xl text-gray-300 opacity-70" size={150} />
+                                <span className="mt-2 text-sm text-gray-600">Giỏ hàng trống</span>
+                            </div>
                         ) : (
                             cartItems.map(item => (
                                 <div key={item.productId} className="flex border rounded-lg p-4 items-center justify-between">

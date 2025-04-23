@@ -206,15 +206,22 @@ public class DiaChiService {
         }
     }
 
-    public void updateCustomerAddress(DiaChi diaChi, Integer idDiaChi, Integer idHoaDon) {
+    public void updateCustomerAddress(DiaChi diaChi, Integer idHoaDon) {
         List<DiaChi> listDiaChi = diaChiRepo.findByKhachHang_IdKhachHang(diaChi.getKhachHang().getIdKhachHang());
+        String provinceName,districtName,wardName = "";
         for (DiaChi d : listDiaChi) {
-            if (d.getId().equals(idDiaChi)) {
-                d.setId(idDiaChi);
+            if (d.getId().equals(diaChi.getId())) {
+                provinceName = getProvince(diaChi.getThanhPho());
+                districtName = getDistricts(diaChi.getThanhPho(), diaChi.getQuanHuyen());
+                wardName = getWards(diaChi.getQuanHuyen(), diaChi.getXaPhuong());
+                d.setDiaChiChiTiet(diaChi.getDiaChiChiTiet() + ", " + provinceName + ", " + districtName + ", " + wardName);
+                d.setMacDinh(true);
                 d.setTenNguoiNhan(diaChi.getTenNguoiNhan());
                 d.setSoDienThoai(diaChi.getSoDienThoai());
+                d.setXaPhuong(diaChi.getXaPhuong());
+                d.setQuanHuyen(diaChi.getQuanHuyen());
+                d.setThanhPho(diaChi.getThanhPho());
                 d.setGhiChu(diaChi.getGhiChu());
-                d.setMacDinh(true);
             } else {
                 d.setMacDinh(false);
             }
@@ -308,5 +315,21 @@ public class DiaChiService {
             }
         }
         diaChiRepo.saveAll(listDiaChi);
+    }
+
+    public void setAddressIsDefault(Integer idDiaChi){
+        DiaChi d =  diaChiRepo.findById(idDiaChi).orElseThrow();
+        List<DiaChi> address = diaChiRepo.findByKhachHang_IdKhachHang(d.getKhachHang().getIdKhachHang());
+        for (DiaChi diaChi : address) {
+            diaChi.setMacDinh(diaChi.getId().equals(idDiaChi));
+        }
+        diaChiRepo.saveAll(address);
+    }
+
+    public void deleteAddress(Integer idDiaChi){
+        DiaChi dc = diaChiRepo.findById(idDiaChi).orElseThrow();
+        if(!dc.isMacDinh()){
+            diaChiRepo.deleteById(idDiaChi);
+        }
     }
 }

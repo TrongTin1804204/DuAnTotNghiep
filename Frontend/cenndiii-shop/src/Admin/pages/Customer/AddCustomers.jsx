@@ -1,10 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../../utils/ToastContext';
 import { useLoading } from "../../components/ui/spinner/LoadingContext";
 import Spinner from "../../components/ui/spinner/Spinner";
 import api from "../../../security/Axios";
+import { hasPermission } from "../../../security/DecodeJWT";
+import Notification from '../../../components/Notification';
+// MUI Components
+import {
+    Avatar,
+    TextField,
+    Button,
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    FormControlLabel,
+    Radio,
+    MenuItem,
+    Select,
+    InputLabel,
+    Grid,
+    Typography,
+    Box,
+    Divider,
+    Paper,
+    Container
+} from '@mui/material';
+
 function AddCustomers() {
+    const { loading, setLoadingState } = useLoading();
     const [formData, setFormData] = useState({
         maKhachHang: '',
         hoTen: '',
@@ -13,33 +36,34 @@ function AddCustomers() {
         email: '',
         matKhau: '',
         trangThai: true,
-        provinceId: 0,
-        districtId: 0,
-        wardId: 0,
+        provinceId: '',
+        districtId: '',
+        wardId: '',
         addressDetails: "",
         provinceName: "",
         districtName: "",
         wardName: ""
     });
-    const [successMessage, setSuccessMessage] = useState(null); // For confirmation message
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
-    const [provinces, setProvince] = useState([]);
-    const [districts, setDistrict] = useState([]);
+    const [provinces, setProvinces] = useState([]);
+    const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+
+    // Check permissions on component mount
     useEffect(() => {
-        if(localStorage.getItem("token")){
+        if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
                 navigate("/admin/login");
             }
         }
     }, [navigate]);
 
+    // Handle file upload for avatar
     const handleFileChange = (e) => {
-
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             const filePreviewUrl = URL.createObjectURL(selectedFile);
@@ -48,366 +72,414 @@ function AddCustomers() {
         }
     };
 
-    const { showToast } = useToast();
-    const fetchProvinces = async () => {
-        try {
-            const response = await api.get(
-                "/admin/custom-address/get-province"
-            );
-            setProvince(Array.isArray(response.data) ? response.data : []);
-        } catch (error) {
-            showToast(error, "error");
-        }
-    };
-
-    const fetchDistrict = useCallback(async () => {
-        try {
-            const response = await api.get(
-                "/admin/custom-address/get-district",
-                {
-                    params: {
-                        provinceId: formData.provinceId
-                    },
-                }
-            );
-            setDistrict(
-                Array.isArray(response.data) ? response.data : []
-            );
-        } catch (error) {
-            showToast(error, "error");
-        }
-    }, [formData]);
-
-    const fetchWards = useCallback(async () => {
-        try {
-            const response = await api.get(
-                "/admin/custom-address/get-ward",
-                {
-                    params: {
-                        districtId: formData.districtId
-                    },
-                }
-            );
-            setWards(
-                Array.isArray(response.data) ? response.data : []
-            );
-        } catch (error) {
-            showToast(error, "error");
-        }
-    }, [formData]);
-
-    const { setLoadingState, loading } = useLoading();
-    const handleSelectedProvince = (event) => {
-        var provicneName = provinces.find((e) => e.id == event.target.value).name ?? "";
-        setFormData({ ...formData, provinceId: event.target.value, districtId: 0, wardId: 0, provinceName: provicneName, districtName: "", wardName: "" });
-    };
-
-    useEffect(() => { fetchDistrict(); }, [formData, fetchDistrict]);
-
-    const handleSelectedDistrict = (event) => {
-        var name = districts.find((e) => e.id == event.target.value).name ?? "";
-        setFormData({ ...formData, districtId: event.target.value, wardId: 0, districtName: name, wardName: "" });
-    };
-
-    useEffect(() => { fetchWards(); }, [formData, fetchWards]);
-    const handleSelectedWard = (event) => {
-        var name = wards.find((e) => e.id == event.target.value).name ?? "";
-        setFormData({ ...formData, wardId: event.target.value, wardName: name});
-    }
-
+    // Fetch provinces on component mount
     useEffect(() => {
         fetchProvinces();
     }, []);
 
+    // Fetch provinces data from API
+    const fetchProvinces = async () => {
+        try {
+            const response = await api.get("/admin/dia-chi/get-province");
+            setProvinces(Array.isArray(response.data.data) ? response.data.data : []);
+        } catch (error) {
+            Notification(error, "error");
+        }
+    };
+
+    // Fetch districts when province changes
+
+    // Fetch districts data from API
+    const fetchDistricts = async (provinceId) => {
+        try {
+            const response = await api.get("/admin/dia-chi/get-districts", {
+                params: { provinceID: provinceId }
+            });
+            setDistricts(Array.isArray(response.data.data) ? response.data.data : []);
+        } catch (error) {
+            Notification(error, "error");
+        }
+    };
+
+
+    // Fetch wards data from API
+    const fetchWards = async (districtId) => {
+        try {
+            const response = await api.get("/admin/dia-chi/get-wards", {
+                params: { districtID: districtId }
+            });
+            setWards(Array.isArray(response.data.data) ? response.data.data : []);
+        } catch (error) {
+            Notification(error, "error");
+        }
+    };
+
+    // Handle province selection
+    const handleProvinceChange = (provinceId) => {
+        const selectedProvince = provinces.find(p => p.ProvinceID === provinceId);
+        const provinceName = selectedProvince ? selectedProvince.ProvinceName : '';
+        fetchDistricts(provinceId);
+
+        setFormData(prev => ({
+            ...prev,
+            provinceId: provinceId,
+            provinceName: provinceName,
+            districtId: '',
+            wardId: '',
+            districtName: '',
+            wardName: ''
+        }));
+
+    };
+
+    // Handle district selection
+    const handleDistrictChange = (districtId) => {
+        const selectedDistrict = districts.find(d => d.DistrictID === districtId);
+        const districtName = selectedDistrict ? selectedDistrict.DistrictName : '';
+        fetchWards(districtId);
+        setFormData(prev => ({
+            ...prev,
+            districtId: districtId,
+            districtName: districtName,
+            // Reset ward when district changes
+            wardId: '',
+            wardName: ''
+        }));
+    };
+
+    // Handle ward selection
+    const handleWardChange = (wardId) => {
+        const selectedWard = wards.find(w => w.WardCode === wardId);
+        const wardName = selectedWard ? selectedWard.WardName : '';
+
+        setFormData(prev => ({
+            ...prev,
+            wardId: wardId,
+            wardName: wardName
+        }));
+    };
+
+    // Handle form field changes
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
+        setFormData(prev => ({
+            ...prev,
             [name]: value
         }));
     };
 
-    const handleChangeGender = (event) => {
-        setFormData({ ...formData, gioiTinh: event.target.value === 'male' });
+    // Handle gender selection
+    const handleGenderChange = (event) => {
+        setFormData(prev => ({
+            ...prev,
+            gioiTinh: event.target.value === 'true'
+        }));
     };
 
+    // Modify the handleSubmit function
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoadingState(true);
         setErrors({});
 
+        // Validate form fields
         const newErrors = {};
-        if (!formData.maKhachHang) newErrors.maKhachHang = "Mã khách hàng không được để trống";
-        if (!formData.hoTen) newErrors.hoTen = "Họ tên không được để trống";
-        if (!formData.soDienThoai.match(/^0[0-9]{9}$/)) newErrors.soDienThoai = "Số điện thoại không hợp lệ";
-        if (!formData.email.match(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)) newErrors.email = "Email không hợp lệ";
-        if (!formData.provinceId || formData.provinceId === 0) newErrors.provinceId = "Vui lòng chọn tỉnh/thành phố";
-        if (!formData.districtId || formData.districtId === 0) newErrors.districtId = "Vui lòng chọn tỉnh/thành phố";
-        if (!formData.wardId || formData.wardId === 0) newErrors.wardId = "Vui lòng chọn tỉnh/thành phố";
+        // ...existing validation code...
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setLoadingState(false);
             return;
         }
+
         try {
-            var userJson = JSON.stringify(formData);
-            const forms = new FormData();
-            if(file === null){
+            if (!file) {
                 setLoadingState(false);
-                showToast("Require avatar image", "error");
+                Notification("Yêu cầu tải lên ảnh đại diện", "error");
                 return;
             }
-            forms.append('user', userJson);
-            forms.append('fileImage', file);
 
-            for (let entry of forms.entries()) {
-                console.log(entry);  // Log the name and value of each entry
+            // Create FormData object
+            const formDataToSend = new FormData();
+
+            // Append file with specific name expected by backend
+            formDataToSend.append('fileImage', file);
+
+            // Convert form data to JSON string and append
+
+            formDataToSend.append('user', new Blob([JSON.stringify(formData)], {
+                type: 'application/json'
+            }));
+
+            const response = await api.post("/admin/khach-hang/them", formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            if (response.data.code === 200) {
+                Notification("Thêm khách hàng thành công", "success");
+                navigate('/admin/customers');
+            } else {
+                Notification(`${response.data.message}`, "error");
             }
 
-            const response = await fetch('/admin/khach-hang/them',
-                {
-                    method: "POST",
-                    body: forms
-                }
-            ).then((response) => response.json())
-                .then((data) => {
-                    if (data) {
-                        if(data.code > 0){
-                            showToast("Insert customer successfully", "success");
-                            navigate('/admin/customers');
-                        }else{
-                            showToast(data.message, "error");
-                        }
-                    } else {
-                        showToast("Insert customer fail", "error");
-                    }
-                    setLoadingState(false);
-                })
-                .catch((error) => {
-                    showToast(error, "error");
-                    setLoadingState(false);
-                });
         } catch (error) {
-            showToast(error, "error");
+            console.error("Error:", error);
+            Notification("Đã xảy ra lỗi khi thêm", "error");
+        } finally {
             setLoadingState(false);
         }
     };
 
     return (
-        <div className="p-6 space-y-4">
-            {loading && <Spinner />} {/* Show the spinner while loading */}
-            <div className="flex items-center font-semibold mb-4">
-                <h1>Thêm mới khách hàng</h1>
-            </div>
+        <Container maxWidth="lg">
+            {loading && <Spinner />}
 
-            <div className="bg-white p-4 rounded-lg shadow-md">
+            <Box sx={{ py: 3 }}>
+                <Typography variant="h5" fontWeight="bold">
+                    Thêm mới khách hàng
+                </Typography>
+            </Box>
+
+            <Paper elevation={2} sx={{ p: 4, borderRadius: 2 }}>
                 <form onSubmit={handleSubmit}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        Thông tin cá nhân
+                    </Typography>
+                    <Divider sx={{ my: 2 }} />
 
-                    <h2 className="ml-1 font-bold">Thông tin cá nhân</h2>
-                    <hr className="border-t-2 border-gray-300 my-4" />
-                    <div className='grid grid-cols-12 gap-4'>
-                        <div className='col-span-4'>
-                            <div className="flex justify-center mb-2">
-                                <label htmlFor="avatar" className="relative">
-
-                                    {
-                                        !previewUrl && (<img
-                                            src={formData.avatar || avatar}
-                                            alt="Avatar"
-                                            className="w-32 h-32 rounded-full object-cover border-gray-300"
-
-                                        />)
-                                    }
-
-                                    {
-                                        previewUrl && (<img
-                                            src={previewUrl}
-                                            alt="Avatar"
-                                            className="w-32 h-32 rounded-full object-cover border-gray-300"
-
-                                        />)
-                                    }
-
+                    <Grid container spacing={3}>
+                        {/* Avatar section */}
+                        <Grid item xs={12} md={4} display="flex" justifyContent="center">
+                            <Box sx={{ textAlign: 'center' }}>
+                                <label htmlFor="avatar-upload">
                                     <input
+                                        accept="image/*"
+                                        id="avatar-upload"
                                         type="file"
-                                        id="avatar"
-                                        name="avatar"
                                         onChange={handleFileChange}
-                                        className="absolute bottom-0 right-0 w-8 h-8 opacity-0 cursor-pointer"
+                                        style={{ display: 'none' }}
                                     />
+                                    <Box
+                                        component="div"
+                                        sx={{
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                opacity: 0.8
+                                            }
+                                        }}
+                                    >
+                                        <Avatar
+                                            src={previewUrl}
+                                            sx={{ width: 120, height: 120, margin: '0 auto' }}
+                                        />
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                right: 0,
+                                                bgcolor: 'background.paper',
+                                                borderRadius: '50%',
+                                                p: 0.5
+                                            }}
+                                        >
+                                            {/* You can add an upload icon here if needed */}
+                                        </Box>
+                                    </Box>
                                 </label>
-                            </div>
-                        </div>
+                            </Box>
+                        </Grid>
 
-                        <div className='col-span-8'>
-                            <div className='mb-10'>
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Mã Khách hàng</label>
-                                        <input
-                                            type="text"
-                                            name="maKhachHang"
-                                            value={formData.maKhachHang}
-                                            onChange={handleChange}
-                                            className={`w-full p-2 border text-sm font-normal rounded-md ${errors.maKhachHang ? 'border-red-500' : ''}`}
-                                            required
-                                        />
-                                        {errors.maKhachHang && <p className="text-red-500 text-xs mt-1">{errors.maKhachHang}</p>}
-                                    </div>
+                        {/* Main info section */}
+                        <Grid item xs={12} md={8}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        label="Mã Khách hàng"
+                                        name="maKhachHang"
+                                        value={formData.maKhachHang}
+                                        onChange={handleChange}
+                                        error={Boolean(errors.maKhachHang)}
+                                        helperText={errors.maKhachHang}
+                                        size="small"
+                                        margin="normal"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        label="Họ và tên"
+                                        name="hoTen"
+                                        value={formData.hoTen}
+                                        onChange={handleChange}
+                                        error={Boolean(errors.hoTen)}
+                                        helperText={errors.hoTen}
+                                        size="small"
+                                        margin="normal"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        label="Số Điện Thoại"
+                                        name="soDienThoai"
+                                        value={formData.soDienThoai}
+                                        onChange={handleChange}
+                                        error={Boolean(errors.soDienThoai)}
+                                        helperText={errors.soDienThoai}
+                                        size="small"
+                                        margin="normal"
+                                        inputProps={{
+                                            pattern: "0[0-9]{9}",
+                                            title: "Số điện thoại không hợp lệ"
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <FormControl component="fieldset" margin="normal">
+                                        <FormLabel component="legend">Giới Tính *</FormLabel>
+                                        <RadioGroup
+                                            row
+                                            name="gioiTinh"
+                                            value={formData.gioiTinh.toString()}
+                                            onChange={handleGenderChange}
+                                        >
+                                            <FormControlLabel value="true" control={<Radio size="small" />} label="Nam" />
+                                            <FormControlLabel value="false" control={<Radio size="small" />} label="Nữ" />
+                                        </RadioGroup>
+                                    </FormControl>
+                                </Grid>
+                            </Grid>
+                        </Grid>
 
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Họ và tên</label>
-                                        <input
-                                            type="text"
-                                            name="hoTen"
-                                            value={formData.hoTen}
-                                            onChange={handleChange}
-                                            className={`w-full p-2 border text-sm font-normal rounded-md ${errors.hoTen ? 'border-red-500' : ''}`}
-                                            required
-                                        />
-                                        {errors.hoTen && <p className="text-red-500 text-xs mt-1">{errors.hoTen}</p>}
-                                    </div>
-                                </div>
-
-                                <div className='grid grid-cols-2 gap-4'>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Số Điện Thoại</label>
-                                        <input
-                                            type="text"
-                                            name="soDienThoai"
-                                            value={formData.soDienThoai}
-                                            onChange={handleChange}
-                                            className={`w-full p-2 border text-sm font-normal rounded-md ${errors.soDienThoai ? 'border-red-500' : ''}`}
-                                            required
-                                            pattern="0[0-9]{9}"
-                                            title="Số điện thoại không hợp lệ"
-                                        />
-                                        {errors.soDienThoai && <p className="text-red-500 text-xs mt-1">{errors.soDienThoai}</p>}
-                                    </div>
-
-                                    <div className="flex space-x-4 mb-4">
-                                        <div className="flex-1">
-                                            <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Giới Tính</label>
-                                            <div>
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="gioiTinh"
-                                                        value="male"
-                                                        checked={formData.gioiTinh === true}
-                                                        onChange={handleChangeGender}
-                                                        className="form-radio"
-                                                    />
-                                                    <span className="ml-2 text-sm font-normal">Nam</span>
-                                                </label>
-                                                <label className="inline-flex items-center ml-4">
-                                                    <input
-                                                        type="radio"
-                                                        name="gioiTinh"
-                                                        value="female"
-                                                        checked={formData.gioiTinh === false}
-                                                        onChange={handleChangeGender}
-                                                        className="form-radio"
-                                                    />
-                                                    <span className="ml-2 text-sm font-normal">Nữ</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className='grid grid-cols-1 gap-4'>
-                        <div className="mb-4">
-                            <label className="block text-sm font-normal mb-2">Email</label>
-                            <input
-                                type="email"
+                        {/* Email section */}
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                required
+                                label="Email"
                                 name="email"
+                                type="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={`w-full p-2 border text-sm font-normal rounded-md ${errors.email ? 'border-red-500' : ''}`}
-                                required
+                                error={Boolean(errors.email)}
+                                helperText={errors.email}
+                                size="small"
+                                margin="normal"
                             />
-                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                        </div>
-                    </div>
+                        </Grid>
 
-                    <div className='grid grid-cols-3 gap-4'>
-                        <div className="mb-4">
-                            <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Tỉnh/Thành phố</label>
-                            <select
-                                value={formData.provinceId}
-                                onChange={handleSelectedProvince}
-                                className="border p-2 text-sm font-normal rounded-md w-full"
-                            >
-                                <option value="0" className='text-sm font-normal'>Chọn Tỉnh/Thành phố</option>
-                                {provinces.map((item) => (
-                                    <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.provinceId && <p className="text-red-500 text-xs mt-1">{errors.provinceId}</p>}
-                        </div>
+                        {/* Address section */}
+                        <Grid item xs={12} md={4}>
+                            <FormControl fullWidth margin="normal" error={Boolean(errors.provinceId)} size="small">
+                                <InputLabel id="province-label">Tỉnh/Thành phố *</InputLabel>
+                                <Select
+                                    labelId="province-label"
+                                    value={formData.provinceId}
+                                    onChange={e => handleProvinceChange(e.target.value)}
+                                    label="Tỉnh/Thành phố *"
+                                >
+                                    <MenuItem value="">Chọn Tỉnh/Thành phố</MenuItem>
+                                    {provinces.map((province) => (
+                                        <MenuItem key={province.ProvinceID} value={province.ProvinceID}>
+                                            {province.ProvinceName}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {errors.provinceId && (
+                                    <Typography variant="caption" color="error">
+                                        {errors.provinceId}
+                                    </Typography>
+                                )}
+                            </FormControl>
+                        </Grid>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Quận/Huyện</label>
-                            <select
-                                value={formData.districtId}
-                                onChange={handleSelectedDistrict}
-                                className="border p-2 text-sm font-normal rounded-md w-full"
-                                disabled={formData.provinceId === 0}
-                            >
-                                <option value="0" className='text-sm font-normal'>Chọn Quận/Huyện</option>
-                                {districts.map((item) => (
-                                    <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.districtId && <p className="text-red-500 text-xs mt-1">{errors.districtId}</p>}
-                        </div>
+                        <Grid item xs={12} md={4}>
+                            <FormControl fullWidth margin="normal" error={Boolean(errors.districtId)} size="small" disabled={!formData.provinceId}>
+                                <InputLabel id="district-label">Quận/Huyện *</InputLabel>
+                                <Select
+                                    labelId="district-label"
+                                    value={formData.districtId}
+                                    onChange={e => handleDistrictChange(e.target.value)}
+                                    label="Quận/Huyện *"
+                                >
+                                    <MenuItem value="">Chọn Quận/Huyện</MenuItem>
+                                    {districts.map((district) => (
+                                        <MenuItem key={district.DistrictID} value={district.DistrictID}>
+                                            {district.DistrictName}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {errors.districtId && (
+                                    <Typography variant="caption" color="error">
+                                        {errors.districtId}
+                                    </Typography>
+                                )}
+                            </FormControl>
+                        </Grid>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Xã/Phường</label>
-                            <select
-                                value={formData.wardId}
-                                onChange={handleSelectedWard}
-                                className="border text-sm font-normal p-2 rounded-md w-full"
-                                disabled={formData.districtId === 0}
-                            >
-                                <option value="0" className='text-sm font-normal'>Chọn Xã/Phường</option>
-                                {wards.map((item) => (
-                                    <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.wardId && <p className="text-red-500 text-xs mt-1">{errors.wardId}</p>}
-                        </div>
+                        <Grid item xs={12} md={4}>
+                            <FormControl fullWidth margin="normal" error={Boolean(errors.wardId)} size="small" disabled={!formData.districtId}>
+                                <InputLabel id="ward-label">Xã/Phường *</InputLabel>
+                                <Select
+                                    labelId="ward-label"
+                                    value={formData.wardId}
+                                    onChange={e => handleWardChange(e.target.value)}
+                                    label="Xã/Phường *"
+                                >
+                                    <MenuItem value="">Chọn Xã/Phường</MenuItem>
+                                    {wards.map((ward) => (
+                                        <MenuItem key={ward.WardCode} value={ward.WardCode}>
+                                            {ward.WardName}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {errors.wardId && (
+                                    <Typography variant="caption" color="error">
+                                        {errors.wardId}
+                                    </Typography>
+                                )}
+                            </FormControl>
+                        </Grid>
 
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Địa chỉ chi tiết</label>
-                        <input
-                            type="text"
-                            name="addressDetails"
-                            value={formData.addressDetails}
-                            onChange={handleChange}
-                            className={`w-full p-2 border text-sm font-normal rounded-md ${errors.addressDetails ? 'border-red-500' : ''}`}
-                            required
-                        />
-                        {errors.addressDetails && <p className="text-red-500 text-xs mt-1">{errors.addressDetails}</p>}
-                    </div>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                required
+                                label="Địa chỉ chi tiết"
+                                name="addressDetails"
+                                value={formData.addressDetails}
+                                onChange={handleChange}
+                                error={Boolean(errors.addressDetails)}
+                                helperText={errors.addressDetails}
+                                size="small"
+                                margin="normal"
+                            />
+                        </Grid>
+                    </Grid>
 
-                    <button type="submit" className="p-2 border-2 text-yellow-500 text-sm font-bold border-yellow-500 rounded-lg">Thêm Khách Hàng</button>
+                    <Box mt={3}>
+                        <Button
+                            type="submit"
+                            variant="outlined"
+                            color="warning"
+                            sx={{
+                                fontWeight: 'bold',
+                                textTransform: 'none'
+                            }}
+                        >
+                            Thêm Khách Hàng
+                        </Button>
+                    </Box>
                 </form>
-            </div>
-        </div>
+            </Paper>
+        </Container>
     );
 }
 

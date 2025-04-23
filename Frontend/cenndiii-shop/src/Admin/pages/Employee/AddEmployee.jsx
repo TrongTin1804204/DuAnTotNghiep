@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../static/AddEmployee/style.css";
 import cryptoRandomString from 'crypto-random-string';
 import { hasPermission } from "../../../security/DecodeJWT";
 import api from "../../../security/Axios";
+import Notification from "../../../components/Notification"
 export default function AddEmployee() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -31,17 +31,11 @@ export default function AddEmployee() {
     }
   }, [navigate]);
   const handleSuccess = () => {
-    toast.success("Thêm nhân viên thành công!", {
-      position: "top-right",
-      autoClose: 3000,
-    })
+    Notification("Thêm nhân viên thành công!", "success");
   };
 
   const handleError = () => {
-    toast.error("Lỗi khi thêm nhân viên!", {
-      position: "top-right",
-      autoClose: 3000,
-    });
+    Notification("Lỗi khi thêm nhân viên!", "error");
   };
 
   // Xử lý thay đổi input
@@ -133,10 +127,8 @@ export default function AddEmployee() {
       const response = await api.post("/admin/nhan-vien/them", newFormData);
 
       if (response.status === 200) {
-        toast.success("Thêm nhân viên thành công!", {
-          position: "top-right",
-          autoClose: 3000,
-        })
+
+        Notification("Thêm nhân viên thành công!", "success");
         navigate("/admin/employees");
       }
     } catch (error) {
@@ -144,7 +136,7 @@ export default function AddEmployee() {
         setErrors(error.response.data); // Lưu lỗi vào state
       } else {
         console.error("Lỗi khi thêm nhân viên:", error);
-        toast.error("Có lỗi xảy ra, vui lòng thử lại!", { position: "top-right", autoClose: 3000, });
+        Notification("Lỗi khi thêm nhân viên!", "error");
       }
     } finally {
       setLoading(false);
@@ -328,7 +320,6 @@ export default function AddEmployee() {
         </div>
       )}
 
-      <ToastContainer />
     </div>
 
   );

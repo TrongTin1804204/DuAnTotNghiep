@@ -27,7 +27,6 @@ public class VNPayController {
 
     @GetMapping("/create")
     public ResponseEntity<?> createPayment(@RequestParam long amount, @RequestParam(required = false) String bankCode, @RequestParam(required = false) String language) {
-
         String vnp_TxnRef = vnpayService.getRandomNumber(8);
         String vnp_IpAddr = IP_ADDRESS;
         String vnp_PaymentUrl = vnpayService.createPaymentUrl(amount, bankCode, language, vnp_TxnRef, vnp_IpAddr);

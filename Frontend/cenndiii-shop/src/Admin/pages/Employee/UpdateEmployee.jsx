@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import "../../static/AddEmployee/style.css";
 import cryptoRandomString from 'crypto-random-string';
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
-
+import { toast } from "react-toastify";
 export default function EditEmployee() {
     const { id } = useParams(); // Lấy ID từ URL
     const navigate = useNavigate();
@@ -17,7 +15,7 @@ export default function EditEmployee() {
         ngaySinh: "",
         soDienThoai: "",
         email: "",
-        vaiTro: false,
+        vaiTro: "",
         trangThai: true,
         hinh_anh: null,
         cccd: "",
@@ -25,7 +23,7 @@ export default function EditEmployee() {
     });
     const [errors, setErrors] = useState({});
     useEffect(() => {
-        if(localStorage.getItem("token")){
+        if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
                 navigate("/admin/login");
             }
@@ -66,7 +64,9 @@ export default function EditEmployee() {
         const { name, value, type, checked } = e.target;
         setFormData({
             ...formData,
-            [name]: name === "vaiTro" || name === "trangThai" ? value === "true" : type === "checkbox" ? checked : value,
+            [name]: name === "trangThai" ? value === "true"
+                : type === "checkbox" ? checked
+                    : value
         });
     };
 
@@ -325,10 +325,16 @@ export default function EditEmployee() {
                         </div>
                         <div>
                             <label className="block">Vai trò</label>
-                            <select name="vaiTro" value={formData.vaiTro} onChange={handleChange} className="border p-2 w-full">
-                                <option value="false">Nhân viên</option>
-                                <option value="true">Quản lý</option>
+                            <select
+                                name="vaiTro"
+                                value={formData.vaiTro || "STAFF"}
+                                onChange={handleChange}
+                                className="border p-2 w-full"
+                            >
+                                <option value="STAFF">Nhân viên</option>
+                                <option value="ADMIN">Quản lý</option>
                             </select>
+                            {errors.vaiTro && <p className="text-red-500 text-sm">{errors.vaiTro}</p>}
                         </div>
 
                         <div>
@@ -404,7 +410,6 @@ export default function EditEmployee() {
                 </div>
             )}
 
-            <ToastContainer />
         </div>
     );
 }

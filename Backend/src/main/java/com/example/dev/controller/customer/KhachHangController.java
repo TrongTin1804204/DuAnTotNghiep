@@ -1,5 +1,6 @@
 package com.example.dev.controller.customer;
 
+import com.example.dev.DTO.response.customer.KhachHangResponse;
 import com.example.dev.entity.customer.DiaChi;
 import com.example.dev.entity.customer.KhachHang;
 import com.example.dev.mapper.AddressMapper;
@@ -24,7 +25,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/khach-hang")
-@CrossOrigin(origins = "http://localhost:3000")
 public class KhachHangController {
     @Autowired
     private KhachHangService khachHangService;
@@ -36,28 +36,33 @@ public class KhachHangController {
         return ResponseEntity.ok(khachHangService.getAllCustomerIsStatusTrue());
     }
 
+    @GetMapping("/hien-thi-kh")
+    public ResponseEntity<?> hienThikh() {
+        return ResponseEntity.ok(khachHangService.getAllKh());
+    }
+
     @GetMapping("/export-excel")
     public ResponseEntity<List<KhachHang>> hienThi() {
         return ResponseEntity.ok(khachHangService.getAll());
     }
 
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<?> detail(@PathVariable Integer id) {
-        CustomerMapper khachHang = khachHangService.detailKhachHang(id);
-        return ResponseEntity.ok(khachHang);
-    }
+//    @GetMapping("/detail/{id}")
+//    public ResponseEntity<?> detail(@PathVariable Integer id) {
+//        CustomerMapper khachHang = khachHangService.detailKhachHang(id);
+//        return ResponseEntity.ok(khachHang);
+//    }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
-    @PostMapping("/them")
-    public ResponseEntity<BaseResponse<Integer>> them(@RequestPart("user") String model, @RequestPart("fileImage") MultipartFile file) {
-        return ResponseEntity.ok(khachHangService.themKhachHang(model, file));
-    }
+//    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+//    @PostMapping("/them-kh")
+//    public ResponseEntity<BaseResponse<Integer>> themaa(@RequestPart("user") String model, @RequestPart("fileImage") MultipartFile file) {
+//        return ResponseEntity.ok(khachHangService.themKhachHang(model, file));
+//    }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
-    @PostMapping("/sua")
-    public ResponseEntity<BaseResponse<KhachHang>> sua(@Valid @RequestBody CustomerMapper model) {
-        return ResponseEntity.ok(khachHangService.suaKhachHang(model));
-    }
+//    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+//    @PostMapping("/sua")
+//    public ResponseEntity<BaseResponse<KhachHang>> sua(@Valid @RequestBody CustomerMapper model) {
+//        return ResponseEntity.ok(khachHangService.suaKhachHang(model));
+//    }
 
 
     @PostMapping("/update-address")
@@ -133,5 +138,25 @@ public class KhachHangController {
     public ResponseEntity<DiaChi> themDiaChi(@Valid @RequestBody AddressMapper addressMapper) {
         DiaChi newDiaChi = khachHangService.themDiaChi(addressMapper);
         return ResponseEntity.status(HttpStatus.CREATED).body(newDiaChi);
+    }
+
+    // kien
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+    @PostMapping("/them")
+    public BaseResponse<?> them(@Valid @RequestPart("user") KhachHangResponse khachHangResponse, @RequestPart("fileImage") MultipartFile file) {
+       return khachHangService.addNewCustomer(khachHangResponse,file);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+    @GetMapping("/chi-tiet/{idKhachHang}")
+    public ResponseEntity<?> chiTiet(@PathVariable Integer idKhachHang) {
+        return ResponseEntity.ok(khachHangService.getDetail(idKhachHang));
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+    @PostMapping("/sua")
+    public ResponseEntity<?> sua(@Valid @RequestPart("user") KhachHang khachHang, @RequestPart(value = "fileImage", required = false) MultipartFile file) {
+        return ResponseEntity.ok(khachHangService.suaKhachHang(khachHang,file));
     }
 }

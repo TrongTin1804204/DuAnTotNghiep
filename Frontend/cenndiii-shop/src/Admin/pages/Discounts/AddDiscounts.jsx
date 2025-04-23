@@ -4,7 +4,6 @@ import axios from "axios";
 import api from "../../../security/Axios";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AddDiscounts() {
@@ -322,7 +321,6 @@ export default function AddDiscounts() {
 
   return (
     <div className="p-6 space-y-4">
-      <ToastContainer />
       <div className="text-lg font-semibold mb-4 inline-flex items-center">
         <h1>Đợt Giảm Giá /</h1>
         <h2 className="ml-1 font-normal text-gray-700">Thêm Đợt Giảm Giá</h2>
@@ -605,8 +603,8 @@ export default function AddDiscounts() {
                 onClick={prevPage}
                 disabled={currentPage === 1}
                 className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-200"
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-200"
                   }`}
               >
                 &lt;
@@ -622,8 +620,8 @@ export default function AddDiscounts() {
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
                 className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-gray-200"
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-gray-200"
                   }`}
               >
                 &gt;
@@ -715,8 +713,8 @@ export default function AddDiscounts() {
               onClick={prevPageCt}
               disabled={currentPageCt === 1}
               className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPageCt === 1
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-200"
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200"
                 }`}
             >
               &lt;
@@ -730,8 +728,8 @@ export default function AddDiscounts() {
               onClick={nextPageCt}
               disabled={currentPageCt === totalPagesCt}
               className={`w-10 h-10 flex items-center justify-center border rounded-full ${currentPageCt === totalPagesCt
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-gray-200"
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-200"
                 }`}
             >
               &gt;

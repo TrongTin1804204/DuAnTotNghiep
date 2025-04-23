@@ -124,7 +124,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 
 export default function ChatLieu() {
   const navigate = useNavigate();
@@ -269,7 +268,6 @@ export default function ChatLieu() {
         existingNames={rows}
         type={"chất liệu"}
       />
-      <ToastContainer />
     </Box>
   );
 }

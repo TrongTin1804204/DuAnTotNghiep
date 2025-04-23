@@ -53,7 +53,7 @@ public class AuthImpl implements AuthService{
                             .id(nhanVien.getIdNhanVien())
                             .userName(nhanVien.getTen())
                             .phoneNum(nhanVien.getSoDienThoai())
-                            .permissions(List.of(nhanVien.getVaiTro() ))
+                            .permissions(List.of(nhanVien.getVaiTro()))
                             .build();
                     return LoginResponse.builder()
                             .token(jwtService.generateToken(userLogin))

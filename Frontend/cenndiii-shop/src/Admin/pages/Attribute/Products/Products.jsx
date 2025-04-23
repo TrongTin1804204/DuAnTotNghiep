@@ -1,248 +1,405 @@
 import { useState, useEffect } from "react";
 import { Search, Eye, Edit, Plus } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom"; // Import useNavigate
-import { Dialog } from "@headlessui/react";
+import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer } from "react-toastify";
 import Notification from '../../../../components/Notification';
 import "react-toastify/dist/ReactToastify.css";
-// import Alert from "../../components/Alert";
 import api from "../../../../security/Axios";
 import { formatDateFromArray } from "../../../../untils/FormatDate";
 import { hasPermission } from "../../../../security/DecodeJWT";
+import {
+  Box,
+  Typography,
+  Breadcrumbs,
+  Link,
+  Paper,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Switch,
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+
 export default function ProductManagement() {
   const navigate = useNavigate();
-  // const [filters, setFilters] = useState({ search: "", trangThai: "all", soLuong: "all" });
   const [sanPhams, setSanPhams] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
   const [newProductName, setNewProductName] = useState("");
   const [newProductStatus, setNewProductStatus] = useState(false);
+  const [newProductId, setNewProductId] = useState(null);
+  const [nameError, setNameError] = useState("");
+  // filter,sort,page
+  const [filterModel, setFilterModel] = useState('');
+  const [totalItem, setTotalItem] = useState(0);
+  //
 
-  // const [alertOpen, setAlertOpen] = useState(false); // mở alert
-  // const [alertMessage, setAlertMessage] = useState(''); // thông báo alert
+  const vietnameseLocaleText = {
+    noRowsLabel: 'Không có dữ liệu',
+    columnMenuLabel: 'Menu',
+    columnMenuShowColumns: 'Hiển thị cột',
+    columnMenuFilter: 'Bộ lọc',
+    columnMenuHideColumn: 'Ẩn cột',
+    columnMenuUnsort: 'Bỏ sắp xếp',
+    columnMenuSortAsc: 'Sắp xếp tăng dần',
+    columnMenuSortDesc: 'Sắp xếp giảm dần',
+    footerRowsPerPage: 'Số hàng mỗi trang:',
+    MuiTablePagination: {
+      labelRowsPerPage: 'Số hàng mỗi trang:',
+      labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
+    }
+  };
   useEffect(() => {
-      if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
-          navigate("/admin/login");
-      }
+    if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
+      navigate("/admin/login");
+    }
   }, [navigate]);
+
   useEffect(() => {
     fetchSanPhams();
-  }, []);
+  }, [filterModel]);
 
   const fetchSanPhams = async () => {
     try {
-        const response = await api.get("/admin/san-pham/hien-thi");
-        setSanPhams(response.data);
+      const response = await api.get("/admin/san-pham/hien-thi"
+        ,
+        {
+          params: {
+            keyword: filterModel,
+          },
+        }
+      );
+      setSanPhams(response.data);
+      setTotalItem(response.data.length);
     } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm:", error);
+      console.error("Lỗi khi lấy sản phẩm:", error);
     }
-};
+  };
 
-const handleSaveChanges = async (id) => {
+  const handleSaveChanges = async (id) => {
     try {
-        const response = await api.post(`/admin/san-pham/sua/${id}`, {
-            ten: newProductName,
-            trangThai: newProductStatus,
-        });
+      // Reset error
+      setNameError("");
 
-        setSanPhams(response.data);
-        Notification("Sửa sản phẩm thành công", "success");
+      // Validate empty name
+      if (!newProductName.trim()) {
+        setNameError("Tên sản phẩm không được để trống");
+        return;
+      }
+
+      // Check for duplicate names
+      const isDuplicate = sanPhams.some(product =>
+        product.idSanPham !== id &&
+        product.ten.toLowerCase() === newProductName.trim().toLowerCase()
+      );
+
+      if (isDuplicate) {
+        setNameError("Tên sản phẩm đã tồn tại");
+        return;
+      }
+
+      // If validation passes, proceed with update
+      await api.post(`/admin/san-pham/sua`, {
+        idSanPham: id,
+        maSanPham: newProductId,
+        ten: newProductName.trim(),
+        trangThai: newProductStatus,
+      });
+
+      fetchSanPhams();
+      Notification("Sửa sản phẩm thành công", "success");
+      setIsEditModalOpen(false);
     } catch (error) {
-        Notification("Sửa sản phẩm thất bại", "error");
+      Notification("Sửa sản phẩm thất bại", "error");
     }
-    setIsEditModalOpen(false);
-};
-
-
-  const formatDate = (date) => {
-    if (!date) return "Chưa có"; // Handle cases where the date is missing
-
-    const d = new Date(date);
-    const hours = String(d.getHours()).padStart(2, '0'); // Add leading zero for single digit
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const seconds = String(d.getSeconds()).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
-    const year = d.getFullYear();
-
-    return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
   };
 
   const openEditModal = (product) => {
     setProductToEdit(product);
     setNewProductName(product.ten);
-    setNewProductStatus(Number(product.trangThai) === 1);
+    setNewProductStatus(product.trangThai);
+    setNewProductId(product.maSanPham);
+    console.log(product);
+
     setIsEditModalOpen(true);
   };
 
+  const getStatusColor = (status) => {
+    switch (Number(status)) {
+      case 1:
+        return "success";
+      case 0:
+        return "error";
+      default:
+        return "default";
+    }
+  };
+  const columns = [
+    { field: 'stt', headerName: 'STT', flex: 0.3 },
+    { field: 'maSanPham', headerName: 'Mã', flex: 1 },
+    { field: 'ten', headerName: 'Tên', flex: 1 },
+    { field: 'soLuong', headerName: 'Số lượng', flex: 0.7 },
+    {
+      field: 'ngayTao',
+      headerName: 'Ngày tạo',
+      flex: 1,
+      type: 'dateTime',
+      valueGetter: (params) => {
+        try {
+          if (!params?.row?.ngayTao) return null;
+          // Take first 3 elements for year, month, day
+          const [year, month, day] = params.row.ngayTao.slice(0, 3);
+          const date = new Date(year, month - 1, day);
+          return date;
+        } catch (error) {
+          return null;
+        }
+      },
+      renderCell: (params) => {
+        try {
+          if (!params?.row?.ngayTao) return 'Không';
+          return formatDateFromArray(params.row.ngayTao);
+        } catch (error) {
+          return '';
+        }
+      },
+    },
+    {
+      field: 'ngaySua',
+      headerName: 'Ngày sửa',
+      flex: 1,
+      type: 'dateTime',
+      valueGetter: (params) => {
+        try {
+          if (!params?.row?.ngaySua) return null;
+          // Take first 3 elements for year, month, day
+          const [year, month, day] = params.row.ngaySua.slice(0, 3);
+          const date = new Date(year, month - 1, day);
+          return date;
+        } catch (error) {
+          return null;
+        }
+      },
+      renderCell: (params) => {
+        try {
+          if (!params?.row?.ngaySua) return 'Không';
+          return formatDateFromArray(params.row.ngaySua);
+        } catch (error) {
+          return '';
+        }
+      },
+    },
+    {
+      field: 'trangThai',
+      headerName: 'Trạng thái',
+      flex: 1,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? "Đang bán" : "Ngừng bán"}
+          color={getStatusColor(params.value)}
+          size="small"
+          variant="outlined"
+        />
+      )
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 1,
+      renderCell: (params) => (
+        <Box >
+          <IconButton>
+            <NavLink to={`/admin/product-details-manager/phan-trang/${params.row.idSanPham}`} className="text-black p-1 rounded">
+              <Eye size={18} stroke="black" />
+            </NavLink>
+          </IconButton>
+          <IconButton onClick={() => openEditModal(params.row)} size="small" className="gap-2">
+            <Edit size={18} />
+          </IconButton>
+        </Box>
+
+      ),
+    },
+  ];
+
+  const rows = sanPhams?.map((item, index) => ({
+    ...item,
+    stt: index + 1,
+  }));
 
   return (
-    <div className="p-2 space-y-4 text-sm">
-      {/* Breadcrumb */}
-      <nav className="text-gray-500 mb-4">
-        <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/dashboard")}>
-          Trang chủ
-        </span>{" "}
-        &gt;{" "}
-        <span className="font-semibold text-black">Sản phẩm</span>
-      </nav>
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-sm font-semibold mb-4">Bộ Lọc</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="relative text-sm">
-            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
-            <input
-              type="text"
-              name="search"
-              // value={filters.search}
-              // onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Tìm theo tên..."
-              className="w-full pl-10 p-2 border rounded-md"
-            />
-          </div>
+    <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
+      <Box sx={{ mb: 4 }}>
+        <Breadcrumbs
+          separator={<NavigateNextIcon fontSize="small" />}
+          aria-label="breadcrumb"
+          sx={{ mb: 1 }}
+        >
+          <Link
+            underline="hover"
+            color="inherit"
+            onClick={() => navigate("/admin/dashboard")}
+            sx={{ cursor: "pointer" }}
+          >
+            Trang chủ
+          </Link>
+          <Typography color="text.primary">Sản phẩm</Typography>
+        </Breadcrumbs>
 
-          <div className="relative text-sm">
-            <select
-              name="trangThai"
-              // value={filters.trangThai}
-              // onChange={(e) => setFilters({ ...filters, trangThai: e.target.value })}
-              className="border p-2 rounded-md w-full"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="1">Đang Bán</option>
-              <option value="0">Ngừng Bán</option>
-            </select>
-          </div>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            Quản lý sản phẩm
+          </Typography>
 
-          <div className="relative text-sm">
-            <select
-              name="soLuong"
-              // value={filters.soLuong}
-              // onChange={(e) => setFilters({ ...filters, soLuong: e.target.value })}
-              className="border p-2 rounded-md w-full"
-            >
-              <option value="all">Tất cả số lượng</option>
-              <option value="<50">&lt; 50</option>
-              <option value="50-100">50 - 100</option>
-              <option value=">100">&gt; 100</option>
-            </select>
-          </div>
-        </div>
-      </div>
+          <Button
+            component={NavLink}
+            to="/admin/product-details"
+            variant="contained"
+            color="primary"
+            startIcon={<Plus size={16} />}
+            sx={{
+              borderRadius: '9999px',
+              bgcolor: 'black',
+              '&:hover': {
+                bgcolor: 'rgb(31, 41, 55)'
+              }
+            }}
+          >
+            Thêm Chi Tiết Sản Phẩm
+          </Button>
+        </Box>
+      </Box>
+      <Box sx={{ mb: 3 }}>
+        <Paper
+          sx={{
+            p: '2px 4px',
+            display: 'flex',
+            alignItems: 'center',
+            width: 400,
+            borderRadius: '24px',
+            border: '1px solid #e0e0e0',
+            boxShadow: 'none',
+            '&:hover': {
+              border: '1px solid #bdbdbd',
+            }
+          }}
+        >
+          <IconButton sx={{ p: '10px' }} aria-label="search">
+            <Search size={20} />
+          </IconButton>
+          <TextField
+            sx={{
+              ml: 1,
+              flex: 1,
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none'
+              },
+              '& .MuiInputBase-input': {
+                padding: '8px 0'
+              }
+            }}
+            placeholder="Tìm kiếm ..."
+            value={filterModel}
+            onChange={(e) => {
+              setFilterModel(e.target.value);
+            }}
+            variant="outlined"
+          />
+        </Paper>
+      </Box>
+      <Paper sx={{ height: '55vh', width: '100%' }}>
+        <DataGrid
+          getRowId={(row) => row.idSanPham}
+          rows={rows}
+          columns={columns}
+          rowCount={totalItem}
+          pageSizeOptions={[5, 10, 15]}
+          disableColumnResize
+          initialState={{
+            pagination: {
+              paginationModel: { page: 0, pageSize: 5 },
+            },
+          }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#f5f5f5',
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: '#f9f9f9',
+            },
+            '& .MuiDataGrid-footerContainer': {
+              borderTop: 'none',
+            }
+          }}
+          disableRowSelectionOnClick
+          disableColumnFilter
+          disableColumnMenu
+          localeText={vietnameseLocaleText}
+        />
+      </Paper>
 
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold">Danh Sách Sản Phẩm</h2>
-          <div className="flex text-sm space-x-2">
-            <NavLink
-              to={"/admin/product-details"}
-              className="flex items-center justify-center border border-black rounded-full px-4 py-2 space-x-2"
-            >
-              <Plus size={16} stroke="black" />
-              <span>Thêm Sản Phẩm Chi Tiết</span>
-            </NavLink>
-          </div>
-        </div>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-2">STT</th>
-              <th className="p-2">Mã Sản Phẩm</th>
-              <th className="p-2">Sản Phẩm</th>
-              <th className="p-2">Số Lượng</th>
-              <th className="p-2">Ngày tạo</th>
-              <th className="p-2">Ngày sửa</th>
-              <th className="p-2">Trạng Thái</th>
-              <th className="p-2">Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sanPhams.map((sanPham, index) => (
-              <tr key={index} className="border-t">
-                <td className="p-2">{index + 1}</td>
-                <td className="p-2">{sanPham.maSanPham}</td>
-                <td className="p-2">{sanPham.ten}</td>
-                <td className="p-2">{sanPham.soLuong ?? 0}</td>
-                <td className="p-2">{formatDateFromArray(sanPham.ngayTao)}</td>
-                <td className="p-2">{formatDateFromArray(sanPham.ngaySua)}</td>
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded text-white w-28 inline-block text-center ${Number(sanPham.trangThai) === 1 ? "bg-green-500" : "bg-red-500"}`}>
-                    {Number(sanPham.trangThai) === 1 ? "Đang Bán" : "Ngừng Bán"}
-                  </span>
-                </td>
-                <td className="p-2 flex space-x-2">
-                  <NavLink to={`/admin/product-details-manager/phan-trang/${sanPham.idSanPham}`} className="text-black p-1 rounded">
-                    <Eye size={18} stroke="black" />
-                  </NavLink>
-                  <button
-                    className="text-black p-1 rounded"
-                    onClick={() => openEditModal(sanPham)}
-                  >
-                    <Edit size={18} stroke="black" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Edit Product Modal */}
       <Dialog
         open={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        className="fixed inset-0 flex items-start justify-center pt-10 z-50 bg-black bg-opacity-50"
+        maxWidth="sm"
+        fullWidth
       >
-        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold mb-1 text-left">Cập nhật thông tin sản phẩm</h2>
-          </div>
-          {/* Input Field for New Product Name */}
-          <div className="mb-4">
-            <label htmlFor="product-name" className="block text-sm font-semibold">
-              Tên sản phẩm mới
-            </label>
-            <input
-              id="product-name"
-              type="text"
-              value={newProductName}
-              onChange={(e) => setNewProductName(e.target.value)}
-              placeholder="Nhập tên sản phẩm mới..."
-              className="w-full p-2 border rounded-md"
-            />
-          </div>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          Cập nhật thông tin sản phẩm
+        </DialogTitle>
 
-          {/* Checkbox for Product Status */}
-          <div className="mb-4">
-            <label className="flex items-center text-sm">
-              <span>Trạng thái</span>
-              <input
-                type="checkbox"
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              label="Tên sản phẩm mới"
+              variant="outlined"
+              fullWidth
+              value={newProductName}
+              onChange={(e) => {
+                setNewProductName(e.target.value);
+                setNameError(""); // Clear error when user types
+              }}
+              error={!!nameError}
+              helperText={nameError}
+              sx={{ mb: 3 }}
+            />
+
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography>Trạng thái</Typography>
+              <Switch
                 checked={newProductStatus}
                 onChange={(e) => setNewProductStatus(e.target.checked)}
-                className="ml-2"
+                color="primary"
+                sx={{ ml: 1 }}
               />
-            </label>
-          </div>
+            </Box>
+          </Box>
+        </DialogContent>
 
-          {/* Modal Footer with Buttons */}
-          <div className="flex justify-end space-x-2">
-            <button
-              className="px-3 py-1 border border-gray-400 text-gray-600 rounded-md"
-              onClick={() => setIsEditModalOpen(false)}
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-black text-white rounded-md"
-              onClick={() => handleSaveChanges(productToEdit.idSanPham)}
-            >
-              Xác nhận
-            </button>
-          </div>
-        </div>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setIsEditModalOpen(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => handleSaveChanges(productToEdit.idSanPham)}
+          >
+            Xác nhận
+          </Button>
+        </DialogActions>
       </Dialog>
-      <ToastContainer/>
-    </div>
+
+    </Box>
   );
 }

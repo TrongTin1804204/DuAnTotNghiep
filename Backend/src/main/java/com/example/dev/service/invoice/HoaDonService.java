@@ -462,7 +462,7 @@ public class HoaDonService {
         }
     }
 
-    public String taoHoaDonVaThanhToan(HoaDonResponse hoaDonResponse, Authentication auth, String vnp_IpAddr, HttpServletRequest req) {
+    public String taoHoaDonVaThanhToan(HoaDonResponse hoaDonResponse, Authentication auth) {
         // Kiểm tra dữ liệu hợp lệ
         if (hoaDonResponse == null || hoaDonResponse.getTongTien() == null) {
             throw new RuntimeException("Dữ liệu đơn hàng không hợp lệ");

@@ -1,5 +1,6 @@
 package com.example.dev.repository.customer;
 
+import com.example.dev.DTO.request.Customer.KhachHangRequest;
 import com.example.dev.entity.customer.KhachHang;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,4 +31,29 @@ public interface KhachHangRepo extends JpaRepository<KhachHang, Integer> {
     Optional<KhachHang> findByEmail(String email);
     List<KhachHang> findByTrangThaiIsTrue();
 
+    @Query(value = """
+    SELECT\s
+        kh.id_khach_hang,
+        kh.ma_khach_hang,
+        kh.ho_ten,
+        CASE\s
+            WHEN kh.gioi_tinh = 1 THEN N'Nam'
+            ELSE N'Nữ'
+        END AS gioi_tinh,
+        kh.so_dien_thoai,
+        kh.email,
+        CASE\s
+            WHEN kh.trang_thai = 1 THEN N'Còn hoạt động'
+            ELSE N'Không hoạt động'
+        END AS trang_thai,
+        kh.hinh_anh,
+        dc.dia_chi_chi_tiet
+    FROM\s
+        khach_hang kh
+    LEFT JOIN\s
+        dia_chi dc\s
+        ON kh.id_khach_hang = dc.id_khach_hang AND dc.mac_dinh = 1;
+    
+""",nativeQuery = true)
+    List<KhachHangRequest> getAllKh();
 }

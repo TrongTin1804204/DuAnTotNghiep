@@ -1,541 +1,678 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import avatar from '../../assets/images-upload.png';
-import { useParams } from "react-router-dom";
-import { EyeClosed, Trash2, Star, Eye } from "lucide-react";
-import { useLoading } from "../../components/ui/spinner/LoadingContext";
-import Spinner from "../../components/ui/spinner/Spinner";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    Box,
+    Typography,
+    TextField,
+    Button,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    FormControlLabel,
+    Radio,
+    RadioGroup,
+    Grid,
+    Paper,
+    CircularProgress,
+    Avatar,
+    FormLabel,
+    Container,
+    Divider,
+    IconButton
+} from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import api from "../../../security/Axios";
-import { hasPermission } from '../../../security/DecodeJWT';
-function EditCustomer() {
-    const { setLoadingState, loading } = useLoading();
+import AddressDialog from "../Order/AddCusstomerAddress";
+import Notification from '../../../components/Notification';
+
+const EditCustomer = () => {
     const { id } = useParams();
-    const [formData, setFormData] = useState({
-        id: 0,
-        maKhachHang: '',
-        hoTen: '',
-        gioiTinh: true,
-        soDienThoai: '',
-        email: '',
-        matKhau: '',
-        trangThai: true,
-        provinceId: 0,
-        districtId: 0,
-        wardId: 0,
-        addressDetails: "",
-        addressMappers: [],
-        image: "",
-        imageBase64: ""
-    });
     const navigate = useNavigate();
-    const [previewUrl, setPreviewUrl] = useState(null);
+    const [formData, setFormData] = useState({
+        hoTen: '',
+        soDienThoai: '',
+        gioiTinh: '',
+        email: '',
+        hinhAnh: '',
+        matKhau: '',
+    });
+
+    const [addressData, setAddressData] = useState({
+        id: '',
+        thanhPho: '',
+        quanHuyen: '',
+        xaPhuong: '',
+        diaChiChiTiet: '',
+        tenNguoiNhan: '',
+        soDienThoai: '',
+        ghiChu: '',
+        khachHang: ''
+    });
+
+    const [address, setAddress] = useState([]);
+    const [loadingState, setLoadingState] = useState(false);
+    const [selectedAddress, setSelectedAddress] = useState(-1);
+
+    // States cho địa chỉ hành chính
+    const [selectedProvince, setSelectedProvince] = useState(null);
+    const [selectedDistrict, setSelectedDistrict] = useState(null);
+    const [selectedWard, setSelectedWard] = useState(null);
+    const [provinces, setProvinces] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [wards, setWards] = useState([]);
+
+    // States for file handling
     const [file, setFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
-    const handleFileChange = (e) => {
-
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            const filePreviewUrl = URL.createObjectURL(selectedFile);
-            setPreviewUrl(filePreviewUrl);
-            setFile(selectedFile);
-            convertToBase64(selectedFile);
-        }
-    };
     useEffect(() => {
-        if(localStorage.getItem("token")){
-            if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
-                navigate("/admin/login");
-            }
-        }
-    }, [navigate]);
+        fetchCustomerById();
+        fetchProvinces();
+        getCusAddress();
+    }, [id]);
 
     const fetchCustomerById = async () => {
         setLoadingState(true);
         try {
             const response = await api.get(
-                `/admin/khach-hang/detail/${id}`
+                `admin/khach-hang/chi-tiet/${id}`
             );
-            var model = response.data;
-
-            setFormData(model);
-            const updatedItems = (model.addressMappers ?? []).map(item => ({
-                ...item,  // Keep all other properties intact
-                visiable: true
-            }));
-            setAddress(updatedItems);
+            setFormData(response.data);
             setLoadingState(false);
         } catch (error) {
             setLoadingState(false);
             console.error("Error: ", error);
         }
     };
-    const [base64, setBase64] = useState(null);
-    const convertToBase64 = (file) => {
-        const reader = new FileReader();
 
-        reader.onloadend = () => {
-            setBase64(reader.result); // Set the Base64 string to state
-        };
+    const getCusAddress = async () => {
+        setLoadingState(true);
+        try {
+            const response = await api.get(`/admin/dia-chi/get-address/${id}`);
+            setAddress(response.data);
 
-        reader.onerror = (error) => {
-            console.error("Error converting file to Base64", error);
-        };
+            const defaultAddress = response.data.find((item) => item.macDinh === true);
+            if (defaultAddress) {
+                setSelectedAddress(defaultAddress.id);
+                const diaChiChiTiet = defaultAddress.diaChiChiTiet?.split(",")[0];
+                setAddressData({
+                    id: defaultAddress.id || '',
+                    thanhPho: defaultAddress.thanhPho || '',
+                    quanHuyen: defaultAddress.quanHuyen || '',
+                    xaPhuong: defaultAddress.xaPhuong || '',
+                    diaChiChiTiet: diaChiChiTiet || '',
+                    tenNguoiNhan: defaultAddress.tenNguoiNhan || '',
+                    soDienThoai: defaultAddress.soDienThoai || '',
+                    ghiChu: defaultAddress.ghiChu || '',
+                    khachHang: defaultAddress.khachHang || '',
+                });
 
-        reader.readAsDataURL(file); // Read file as Base64
-    };
+                // Load province data first
+                if (defaultAddress.thanhPho) {
+                    setSelectedProvince(defaultAddress.thanhPho);
+                    const districtResponse = await api.get("/admin/dia-chi/get-districts", {
+                        params: { provinceID: defaultAddress.thanhPho }
+                    });
+                    setDistricts(districtResponse.data.data || []);
 
-    const [address, setAddress] = useState([{ id: 0, customerId: 0, nameReceive: "", phoneNumber: "", provinceId: "", districtId: "", wardId: "", addressDetail: "", note: "", status: false, districts: [], wards: [], stage: 1, visiable: true, provinceName: "", districtName: "", wardName: "" }]);
-    const addNewForm = () => {
-        setAddress([...address, { id: 0, customerId: 0, nameReceive: "", phoneNumber: "", provinceId: "", districtId: "", wardId: "", addressDetail: "", note: "", status: false, districts: [], wards: [], stage: 1, visiable: true,  provinceName: "", districtName: "", wardName: ""  }]);
-    };
+                    // Then load district data
+                    if (defaultAddress.quanHuyen) {
+                        setSelectedDistrict(defaultAddress.quanHuyen);
+                        const wardResponse = await api.get("/admin/dia-chi/get-wards", {
+                            params: { districtID: defaultAddress.quanHuyen }
+                        });
+                        setWards(wardResponse.data.data || []);
 
-    const handleInputChange = (e, index) => {
-        const { name, value } = e.target;
-        // Update the form at the specific index
-        const updatedForms = [...address];
-        const addressModel = updatedForms.filter((e) => e.provinceId === updatedForms[index].provinceId && updatedForms[index].provinceId.length > 0
-            && e.districtId === updatedForms[index].districtId && updatedForms[index].districtId.length > 0
-            && e.wardId === updatedForms[index].wardId && updatedForms[index].wardId > 0
-            && e.addressDetail === value && e.addressDetail.length > 0);
-        if (addressModel && addressModel.length === 0) {
-            updatedForms[index] = { ...updatedForms[index], [name]: value };
-            setAddress(updatedForms);
-        } else {
-            showToast("Address already exist", "error");
+                        // Finally set ward
+                        if (defaultAddress.xaPhuong) {
+                            setSelectedWard(defaultAddress.xaPhuong);
+                        }
+                    }
+                }
+            } else {
+                setSelectedAddress(-1);
+            }
+        } catch (error) {
+            console.error("Error: ", error);
+        } finally {
+            setLoadingState(false);
         }
     };
-    const handleSelectedChange = (e, index, name) => {
-        if (name == "provinceId") {
-            fetchDistricts(e.target.value, index);
-        } else if (name == "districtId") {
-            fetchWards(e.target.value, index);
-        } else {
-
-            const updatedForms = [...address];
-            var wardName = updatedForms[index].wards.find((item) => item.id === parseInt(e.target.value)).name ?? "";
-            updatedForms[index] = { ...updatedForms[index], [name]: e.target.value, wardName: wardName };
-            setAddress(updatedForms);
-        }
-    };
-
-    const [successMessage, setSuccessMessage] = useState(null); // For confirmation message
-    const [errors, setErrors] = useState({});
-    const [provinces, setProvince] = useState([]);
 
     const fetchProvinces = async () => {
         try {
-            const response = await api.get(
-                "/admin/custom-address/get-province"
-            );
-            setProvince(Array.isArray(response.data) ? response.data : []);
+            const response = await api.get("/admin/dia-chi/get-province");
+            setProvinces(response.data.data || []);
         } catch (error) {
-            console.error("Error: ", error);
+            console.error("Lỗi khi lấy danh sách tỉnh:", error);
         }
     };
 
-    const fetchDistricts = useCallback(async (provinceId, index) => {
+    const handleProvinceChange = async (provinceId) => {
         try {
-            const response = await api.get(
-                "/admin/custom-address/get-district",
-                {
-                    params: {
-                        provinceId: provinceId
-                    },
-                }
-            );
+            if (provinceId) {
+                setSelectedProvince(provinceId);
+                setDistricts([]);
+                setWards([]);
+                setSelectedDistrict(null);
+                setSelectedWard(null);
 
-            const updatedForms = [...address];
-            var name = provinces.find((e) => e.id === parseInt(provinceId)).name ?? "";
-            updatedForms[index] = { ...updatedForms[index], districts: response.data, provinceId: provinceId, districtName: null, wardName: null, provinceName: name };
-            setAddress(updatedForms);
+                // Cập nhật addressData
+                setAddressData(prev => ({
+                    ...prev,
+                    thanhPho: provinceId,
+                    quanHuyen: '',
+                    xaPhuong: ''
+                }));
+
+                const response = await api.get(
+                    "/admin/dia-chi/get-districts",
+                    { params: { provinceID: provinceId } }
+                );
+                setDistricts(response.data.data || []);
+            }
         } catch (error) {
-            console.error("Error:  ", error);
+            console.error("Lỗi khi lấy danh sách district:", error);
         }
-    });
-
-    const toggleFormVisibility = (e, index) => {
-        e.preventDefault();
-        const updatedForms = [...address];
-        const showModel = updatedForms[index];
-        updatedForms[index] = { ...updatedForms[index], visiable: showModel.visiable === true ? false : true };
-        setAddress(updatedForms);
     };
 
-    const fetchWards = useCallback(async (districtId, index) => {
-        try {
-            const response = await api.get(
-                "/admin/custom-address/get-ward",
-                {
-                    params: {
-                        districtId: districtId
-                    },
-                }
-            );
+    const handleDistrictChange = async (districtId) => {
+        if (districtId) {
+            setSelectedDistrict(districtId);
+            setWards([]);
+            setSelectedWard(null);
 
-            const updatedForms = [...address];
-            var name = updatedForms[index].districts.find((e) => e.id === parseInt(districtId)).name ?? "";
-            updatedForms[index] = { ...updatedForms[index], wards: response.data, districtId: districtId, wardName: null, districtName: name, wardId: 0 };
-            setAddress(updatedForms);
+            // Cập nhật addressData
+            setAddressData(prev => ({
+                ...prev,
+                quanHuyen: districtId,
+                xaPhuong: ''
+            }));
 
-        } catch (error) {
-            console.error("Error:  ", error);
+            try {
+                const response = await api.get(
+                    "/admin/dia-chi/get-wards",
+                    { params: { districtID: districtId } }
+                );
+                setWards(response.data.data || []);
+            } catch (error) {
+                console.error("Lỗi khi lấy danh sách ward:", error);
+            }
         }
-    });
+    };
 
-    useEffect(() => {
-        fetchProvinces();
-        fetchCustomerById();
-    }, []);
+    const handleWardChange = (wardId) => {
+        setSelectedWard(wardId);
+        setAddressData(prev => ({
+            ...prev,
+            xaPhuong: wardId
+        }));
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
+        setFormData((prevData) => ({
+            ...prevData,
             [name]: value
         }));
     };
 
-    const handleChangeGender = (event) => {
-        setFormData({ ...formData, gioiTinh: event.target.value === 'male' });
+    const handleAddressDataChange = (e) => {
+        const { name, value } = e.target;
+        setAddressData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+    };
+
+    const handleAddressSelect = async (idDiaChi) => {
+        setSelectedAddress(idDiaChi);
+        const selectedAddr = address.find(addr => addr.id === idDiaChi);
+        if (selectedAddr) {
+            setSelectedAddress(selectedAddr.id);
+            const diaChiChiTiet = selectedAddr.diaChiChiTiet?.split(",")[0];
+            setAddressData({
+                id: selectedAddr.id || '',
+                thanhPho: selectedAddr.thanhPho || '',
+                quanHuyen: selectedAddr.quanHuyen || '',
+                xaPhuong: selectedAddr.xaPhuong || '',
+                diaChiChiTiet: diaChiChiTiet || '',
+                tenNguoiNhan: selectedAddr.tenNguoiNhan || '',
+                soDienThoai: selectedAddr.soDienThoai || '',
+                ghiChu: selectedAddr.ghiChu || '',
+                khachHang: selectedAddr.khachHang || '',
+            });
+
+            // Load province data first
+            if (selectedAddr.thanhPho) {
+                setSelectedProvince(selectedAddr.thanhPho);
+                const districtResponse = await api.get("/admin/dia-chi/get-districts", {
+                    params: { provinceID: selectedAddr.thanhPho }
+                });
+                setDistricts(districtResponse.data.data || []);
+
+                // Then load district data
+                if (selectedAddr.quanHuyen) {
+                    setSelectedDistrict(selectedAddr.quanHuyen);
+                    const wardResponse = await api.get("/admin/dia-chi/get-wards", {
+                        params: { districtID: selectedAddr.quanHuyen }
+                    });
+                    setWards(wardResponse.data.data || []);
+                    if (selectedAddr.xaPhuong) {
+                        setSelectedWard(selectedAddr.xaPhuong);
+                    }
+                }
+            }
+        }
+    };
+
+    const handleFileChange = (event) => {
+        const selectedFile = event.target.files[0];
+        if (selectedFile) {
+            // Check if file is an image
+            if (!selectedFile.type.startsWith('image/')) {
+                Notification("Vui lòng chọn file ảnh", "error");
+                return;
+            }
+
+            // Check file size (e.g., 5MB limit)
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                Notification("Kích thước file không được vượt quá 5MB", "error");
+                return;
+            }
+
+            setFile(selectedFile);
+            // Create preview URL
+            const objectUrl = URL.createObjectURL(selectedFile);
+            setPreviewUrl(objectUrl);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoadingState(true);
-        setErrors({});
-        const newErrors = {};
-        if (!formData.maKhachHang) newErrors.maKhachHang = "Mã khách hàng không được để trống";
-        if (!formData.hoTen) newErrors.hoTen = "Họ tên không được để trống";
-        if (!formData.soDienThoai.match(/^0[0-9]{9}$/)) newErrors.soDienThoai = "Số điện thoại không hợp lệ";
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            setLoadingState(false);
-            return;
-        }
+
         try {
-            formData.image = "";
-            formData.addressMappers = address;
-            formData.imageBase64 = base64;
-            await api.post('/admin/khach-hang/sua',
-                {
-                    body: JSON.stringify(formData)
-                }
-            ).then((response) => response.json())
-                .then((data) => {
+            const formDataToSend = new FormData();
 
-                    if (data) {
-                        if(data.code > 0){
-                            showToast("Update customer successfully", "success");
-                            navigate('/admin/customers');
-                        }else{
-                            showToast(data.message, "error");
-                        }
-                    } else {
-                        showToast("Update customer fail", "error");
+            if (file) {
+                formDataToSend.append('fileImage', file);
+            }
+
+            // Convert form data to JSON string and append
+            const customerData = {
+                idKhachHang: id,
+                hoTen: formData.hoTen,
+                soDienThoai: formData.soDienThoai,
+                gioiTinh: formData.gioiTinh,
+                email: formData.email,
+                trangThai: formData.trangThai,
+                matKhau: formData.matKhau,
+                hinhAnh: formData.hinhAnh,
+            };
+
+            formDataToSend.append('user', new Blob([JSON.stringify(customerData)], {
+                type: 'application/json'
+            }));
+            const response = await api.post(
+                `/admin/khach-hang/sua`,
+                formDataToSend,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
                     }
-                    setLoadingState(false);
-                })
-                .catch((error) => {
-                    showToast(error, "success");
-                    setLoadingState(false);
-                });
+                }
+            );
+
+            if (response.status === 200) {
+                Notification("Cập nhật thành công", "success");
+                navigate('/admin/customers');
+            }
         } catch (error) {
-            console.error('Lỗi khi cập nhật thông tin khách hàng:', error);
+            console.error("Error updating customer:", error);
+            Notification("Cập nhật thất bại", "error");
+        } finally {
             setLoadingState(false);
         }
     };
 
-    const removeAddress = (index) => {
-        const addressChange = [...address];
-        setAddress(addressChange.map((model, i) => {
-            if (i === index) {
-                return { ...model, stage: -1 };
-            }
-            return model;
-        }));
+    const handleUpdateAddress = async () => {
+        if (selectedAddress === -1) return;
+        setLoadingState(true);
+        try {
+            await api.post(`/admin/dia-chi/update-address/-1`, addressData);
+            getCusAddress();
+        } catch (error) {
+            console.error("Error updating address:", error);
+        } finally {
+            setLoadingState(false);
+        }
     };
 
-    const addressDefaultChange = (e, index) => {
-        e.preventDefault();
-        const addressModel = [...address];
-        const addressUpdate = addressModel.map(model => model.status === true ? { ...model, status: false } : model);
-        setAddress(addressUpdate.map((model, i) => {
-            if (i === index) {
-                return { ...model, status: true };
-            }
-            return model;
-        }));
+    const handleDeleteAddress = async () => {
+        if (selectedAddress === -1) return;
+        setLoadingState(true);
+        try {
+            await api.get(`/admin/dia-chi/delete/${selectedAddress}`);
+            getCusAddress()
+        } catch (error) {
+            console.error("Error deleting address:", error);
+        } finally {
+            setLoadingState(false);
+        }
     };
+
+    const [openAddAddressDialog, setOpenAddAddressDialog] = useState(false);
+    const handleCloseAddressDialog = (confirm) => {
+        setOpenAddAddressDialog(false);
+        if (confirm) {
+            Notification("Thêm địa chỉ thành công!", "success")
+            getCusAddress();
+        }
+    }
+
+    // First, add a check for default address
+    const isDefaultAddress = address.find(addr => addr.id === selectedAddress)?.macDinh;
 
     return (
-        <div className="p-6 space-y-4">
-            {loading && <Spinner />} {/* Show the spinner while loading */}
-            <div className="flex items-center font-semibold mb-4">
-                <h1>Thông tin khách hàng</h1>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-md">
-                <form onSubmit={handleSubmit}>
-                    <div className='grid grid-cols-12 gap-4'>
-                        <div className="col-span-5">
-
-                            <h2 className="ml-1 font-bold">Thông tin cá nhân</h2>
-                            <hr className="border-t-2 border-gray-300 my-4" />
-                            <div className="flex justify-center mb-2">
-                                <label htmlFor="avatar" className="relative">
-
-                                    {
-                                        !previewUrl && (<img
-                                            src={formData.image || avatar}
-                                            alt="Avatar"
-                                            className="w-32 h-32 rounded-full object-cover border-gray-300"
-
-                                        />)
-                                    }
-
-                                    {
-                                        previewUrl && (<img
-                                            src={previewUrl}
-                                            alt="Avatar"
-                                            className="w-32 h-32 rounded-full object-cover border-gray-300"
-
-                                        />)
-                                    }
-
+        <Container maxWidth="lg">
+            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+                <Typography variant="h4" gutterBottom align="center">
+                    Cập nhật thông tin khách hàng
+                </Typography>
+                <Box component="form" onSubmit={handleSubmit}>
+                    <Grid container spacing={4}>
+                        {/* Bên trái: Ảnh đại diện và thông tin cá nhân */}
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+                                <label htmlFor="avatar-upload">
                                     <input
+                                        accept="image/*"
+                                        id="avatar-upload"
                                         type="file"
-                                        id="avatar"
-                                        name="avatar"
                                         onChange={handleFileChange}
-                                        className="absolute bottom-0 right-0 w-8 h-8 opacity-0 cursor-pointer"
+                                        style={{ display: 'none' }}
                                     />
-                                </label>
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Mã Khách hàng</label>
-                                <input
-                                    type="text"
-                                    name="maKhachHang"
-                                    value={formData.maKhachHang}
-                                    onChange={handleChange}
-                                    className={`w-full p-2 border text-sm font-normal rounded-md ${errors.maKhachHang ? 'border-red-500' : ''}`}
-                                    required
-                                    disabled={true}
-                                />
-                                {errors.maKhachHang && <p className="text-red-500 text-xs mt-1">{errors.maKhachHang}</p>}
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Họ và tên</label>
-                                <input
-                                    type="text"
-                                    name="hoTen"
-                                    value={formData.hoTen}
-                                    onChange={handleChange}
-                                    className={`w-full p-2 border text-sm font-normal ${errors.hoTen ? 'border-red-500' : ''}`}
-                                    required
-                                />
-                                {errors.hoTen && <p className="text-red-500 text-xs mt-1">{errors.hoTen}</p>}
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Số Điện Thoại</label>
-                                <input
-                                    type="text"
-                                    name="soDienThoai"
-                                    value={formData.soDienThoai}
-                                    onChange={handleChange}
-                                    className={`w-full p-2 border text-sm font-normal ${errors.soDienThoai ? 'border-red-500' : ''}`}
-                                    required
-                                    pattern="0[0-9]{9}"
-                                    title="Số điện thoại không hợp lệ"
-                                />
-                                {errors.soDienThoai && <p className="text-red-500 text-xs mt-1">{errors.soDienThoai}</p>}
-                            </div>
-
-                            <div className="flex space-x-4 mb-4">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Giới Tính</label>
-                                    <div>
-                                        <label className="inline-flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="gioiTinh"
-                                                value="male"
-                                                checked={formData.gioiTinh === true}
-                                                onChange={handleChangeGender}
-                                                className="form-radio"
-                                            />
-                                            <span className="ml-2 text-sm font-normal">Nam</span>
-                                        </label>
-                                        <label className="inline-flex items-center ml-4">
-                                            <input
-                                                type="radio"
-                                                name="gioiTinh"
-                                                value="female"
-                                                checked={formData.gioiTinh === false}
-                                                onChange={handleChangeGender}
-                                                className="form-radio "
-                                            />
-                                            <span className="ml-2 text-sm font-normal">Nữ</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-span-7">
-                            <h2 className="ml-1 font-bold">Thông tin địa chỉ chi tiết</h2>
-                            <hr className="border-t-2 border-gray-300 my-4" />
-                            {Array.isArray(address) ? address.map((form, index) => (
-                                address[index].stage === 1 ? <div key={`address-${index}`}>
-
-                                    <div className="mb-4s">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <label className="block text-sm font-bold">Địa chỉ {index + 1}</label>
-
-                                            <button
-                                                onClick={(e) => toggleFormVisibility(e, index)}
+                                    <Box
+                                        sx={{
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.8 }
+                                        }}
+                                    >
+                                        <Avatar
+                                            src={previewUrl || formData.hinhAnh || '/default-avatar.jpg'}
+                                            sx={{
+                                                width: '100px',
+                                                height: '100px',
+                                                mb: 3,
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 24,
+                                                right: 0,
+                                                bgcolor: 'background.paper',
+                                                borderRadius: '50%',
+                                                p: 0.5
+                                            }}
+                                        >
+                                            <IconButton
+                                                component="span"
+                                                size="small"
                                             >
-                                                {
-                                                    address[index].visiable ? <EyeClosed /> : <Eye />
-                                                }
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {
-                                        address[index].visiable ? <div>
-
-
-                                            <div className='grid grid-cols-2 gap-4'>
-                                                <div className="mb-4">
-                                                    <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Tên người nhận</label>
-                                                    <input
-                                                        type="text"
-                                                        name="nameReceive"
-                                                        value={address[index].nameReceive}
-                                                        onChange={(e) => handleInputChange(e, index)}
-                                                        className={`w-full p-2 border text-sm font-normal`}
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div className="mb-4">
-                                                    <label className="block text-sm font-bold mb-2"><span style={{ color: 'red' }}> * </span>Số điện thoại</label>
-                                                    <input
-                                                        type="text"
-                                                        name="phoneNumber"
-                                                        value={address[index].phoneNumber}
-                                                        onChange={(e) => handleInputChange(e, index)}
-                                                        className={`w-full p-2 border text-sm font-normal`}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className='grid grid-cols-3 gap-4'>
-                                                <div className="mb-4">
-                                                    <label htmlFor={`province-${index}`} className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Tỉnh/Thành phố</label>
-                                                    <select
-                                                        value={address[index].provinceId}
-                                                        onChange={(e) => handleSelectedChange(e, index, "provinceId")}
-                                                        className="border p-2 text-sm font-normal rounded-md w-full"
-                                                        id={`province-${index}`}
-                                                    >
-                                                        <option value="0">Chọn Tỉnh/Thành phố</option>
-                                                        {Array.isArray(provinces) ? (provinces ?? []).map((item) => (
-                                                            <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                                                {item.name}
-                                                            </option>
-                                                        )) : <option value="0" className='text-sm font-normal'>Chọn Tỉnh/Thành phố</option>}
-                                                    </select>
-                                                </div>
-
-                                                <div className="mb-4">
-                                                    <label htmlFor={`district-${index}`} className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Quận/Huyện</label>
-                                                    <select
-                                                        value={address[index].districtId}
-                                                        id={`district-${index}`}
-                                                        onChange={(e) => handleSelectedChange(e, index, "districtId")}
-                                                        className="border p-2 text-sm font-normal rounded-md w-full"
-                                                    >
-                                                        {address[index].districtName ? <option value={address[index].districtId}>{address[index].districtName}</option> : <option value="0">Chọn Quận/Huyện</option>}
-                                                        {Array.isArray(form.districts) ? (form.districts ?? []).map((item) => (
-                                                            <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                                                {item.name}
-                                                            </option>
-                                                        )) : <option value="0" className='text-sm font-normal'>Chọn Quận/Huyện</option>}
-                                                    </select>
-                                                </div>
-
-                                                <div className="mb-4">
-                                                    <label htmlFor={`ward-${index}`} className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Xã/Phường</label>
-                                                    <select
-                                                        value={address[index].wardId}
-                                                        onChange={(e) => handleSelectedChange(e, index, "wardId")}
-                                                        className="border p-2 text-sm font-normal rounded-md w-full"
-                                                        id={`ward-${index}`}
-                                                    >
-                                                        {address[index].wardName ? <option value={address[index].wardId}>{address[index].wardName}</option> : <option value="0">Chọn Xã/phường</option>}
-                                                        {Array.isArray(form.wards) ? (form.wards ?? []).map((item) => (
-                                                            <option key={item.id} value={item.id} className='text-sm font-normal'>
-                                                                {item.name}
-                                                            </option>
-                                                        )) : <option value="0" className='text-sm font-normal'>Chọn Xã/Phường</option>}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-normal mb-2"><span style={{ color: 'red' }}> * </span>Địa chỉ chi tiết</label>
-                                                <input
-                                                    type="text"
-                                                    name="addressDetail"
-                                                    value={address[index].addressDetail}
-                                                    onChange={(e) => handleInputChange(e, index)}
-                                                    className={`w-full p-2 border text-sm font-normal text-sm font-normal `}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="mb-4s">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <button
-                                                        title="Chọn làm địa chỉ mặc định"
-                                                        className="flex items-center justify-center  w-8 h-8"
-                                                        onClick={(e) => addressDefaultChange(e, index)}
-                                                    >
-                                                        <Star size={22} stroke={address[index].status === true ? "yellow" : "black"} />
-                                                    </button>
-
-                                                    <button
-                                                        title="Xuất Excel"
-                                                        className="flex items-center justify-center  w-8 h-8"
-                                                        onClick={() => removeAddress(index)}
-                                                    >
-                                                        <Trash2 size={22} stroke="black" color="black" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div> : <div></div>
-                                    }
-
-                                </div> : <div></div>
-                            )) : <div></div>}
-                            <div className='flex justify-center'>
-                                <button type="button" onClick={addNewForm} className="p-2 border-2 text-yellow-500 text-sm font-bold border-yellow-500 rounded-lg">Thêm địa chỉ</button>
-                            </div>
-                        </div>
-                    </div>
-                    <br />
-                    <div className='flex item-center'>
-                        <button type="submit" className="p-2 border-2 text-yellow-500 text-sm font-bold border-yellow-500 rounded-lg">Cập nhật thông tin</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    </Box>
+                                </label>
+                            </Box>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Họ và tên"
+                                        name="hoTen"
+                                        value={formData.hoTen || ''}
+                                        onChange={handleChange}
+                                        size='small'
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Số điện thoại"
+                                        name="soDienThoai"
+                                        value={formData.soDienThoai || ''}
+                                        onChange={handleChange}
+                                        size='small'
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Email"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email || ''}
+                                        onChange={handleChange}
+                                        size='small'
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">Giới tính</FormLabel>
+                                        <RadioGroup
+                                            row
+                                            name="gioiTinh"
+                                            value={formData.gioiTinh}
+                                            onChange={handleChange}
+                                        >
+                                            <FormControlLabel value="true" control={<Radio />} label="Nam" />
+                                            <FormControlLabel value="false" control={<Radio />} label="Nữ" />
+                                        </RadioGroup>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        disabled={loadingState}
+                                    >
+                                        {loadingState ? <CircularProgress size={24} /> : 'Cập nhật thông tin'}
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginY: 1 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Thông tin địa chỉ
+                                </Typography>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={e => setOpenAddAddressDialog(true)}
+                                >
+                                    Thêm mới địa chỉ
+                                </Button>
+                            </Box>
+                            <Grid item xs={12} sx={{ mb: 3 }}>
+                                <FormControl fullWidth>
+                                    <InputLabel id="address-select-label">Chọn địa chỉ</InputLabel>
+                                    <Select
+                                        labelId="address-select-label"
+                                        id="address-select"
+                                        value={selectedAddress}
+                                        label="Chọn địa chỉ"
+                                        onChange={e => { handleAddressSelect(e.target.value) }}
+                                    >
+                                        {address.map((item) => (
+                                            <MenuItem
+                                                key={item.id}
+                                                value={item.id}
+                                            >
+                                                <span>{item.diaChiChiTiet} {item.macDinh ? " (Mặc định)" : ""}</span>
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Divider sx={{ mb: 3 }} />
+                            <Typography variant="subtitle1" gutterBottom>
+                                Chi tiết địa chỉ
+                            </Typography>
+                            <Grid container spacing={2} sx={{ mb: 2 }}>
+                                <Grid item xs={4}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel id="province-label">Tỉnh/Thành phố</InputLabel>
+                                        <Select
+                                            labelId="province-label"
+                                            id="province-select"
+                                            value={selectedProvince || ''}
+                                            label="Tỉnh/Thành phố"
+                                            onChange={(e) => handleProvinceChange(e.target.value)}
+                                        >
+                                            {provinces.map((province) => (
+                                                <MenuItem key={province.ProvinceID} value={province.ProvinceID}>
+                                                    {province.ProvinceName}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel id="district-label">Quận/Huyện</InputLabel>
+                                        <Select
+                                            labelId="district-label"
+                                            id="district-select"
+                                            value={selectedDistrict || ''}
+                                            label="Quận/Huyện"
+                                            onChange={(e) => handleDistrictChange(e.target.value)}
+                                            disabled={!selectedProvince}
+                                        >
+                                            {districts.map((district) => (
+                                                <MenuItem key={district.DistrictID} value={district.DistrictID}>
+                                                    {district.DistrictName}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel id="ward-label">Xã/Phường</InputLabel>
+                                        <Select
+                                            labelId="ward-label"
+                                            id="ward-select"
+                                            value={selectedWard || ''}
+                                            label="Xã/Phường"
+                                            onChange={(e) => handleWardChange(e.target.value)}
+                                            disabled={!selectedDistrict}
+                                        >
+                                            {wards.map((ward) => (
+                                                <MenuItem key={ward.WardCode} value={ward.WardCode}>
+                                                    {ward.WardName}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                            </Grid>
+                            <Grid item xs={12} sx={{ mb: 2 }}>
+                                <TextField
+                                    fullWidth
+                                    label="Địa chỉ chi tiết"
+                                    name="diaChiChiTiet"
+                                    value={addressData.diaChiChiTiet || ''}
+                                    onChange={handleAddressDataChange}
+                                    size="small"
+                                />
+                            </Grid>
+                            <Grid container spacing={2} sx={{ mb: 2 }}>
+                                <Grid item xs={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Tên người nhận"
+                                        name="tenNguoiNhan"
+                                        value={addressData.tenNguoiNhan || ''}
+                                        onChange={handleAddressDataChange}
+                                        size="small"
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Số điện thoại người nhận"
+                                        name="soDienThoai"
+                                        value={addressData.soDienThoai || ''}
+                                        onChange={handleAddressDataChange}
+                                        size="small"
+                                    />
+                                </Grid>
+                            </Grid>
+                            <Grid item xs={12} sx={{ mb: 3 }}>
+                                <TextField
+                                    fullWidth
+                                    label="Ghi chú"
+                                    name="ghiChu"
+                                    value={addressData.ghiChu || ''}
+                                    onChange={handleAddressDataChange}
+                                    multiline
+                                    rows={2}
+                                    size="small"
+                                />
+                            </Grid>
+                            <Grid container spacing={2} justifyContent="flex-end">
+                                <Grid item>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={handleUpdateAddress}
+                                        disabled={loadingState || selectedAddress === -1}
+                                    >
+                                        Cập nhật địa chỉ
+                                    </Button>
+                                </Grid>
+                                <Grid item>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<DeleteOutlineIcon />}
+                                        onClick={handleDeleteAddress}
+                                        disabled={
+                                            loadingState ||
+                                            selectedAddress === -1 ||
+                                            address.length < 2 ||
+                                            isDefaultAddress
+                                        }
+                                        sx={{
+                                            '&.Mui-disabled': {
+                                                borderColor: 'rgba(0, 0, 0, 0.12)',
+                                                color: 'rgba(0, 0, 0, 0.26)'
+                                            }
+                                        }}
+                                    >
+                                        Xóa địa chỉ
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Box>
+            </Paper>
+            <AddressDialog idKhachHang={id} open={openAddAddressDialog} onClose={handleCloseAddressDialog} />
+        </Container>
     );
-}
+};
 
 export default EditCustomer;

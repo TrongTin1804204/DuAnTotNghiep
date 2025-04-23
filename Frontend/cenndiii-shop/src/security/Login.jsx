@@ -17,6 +17,7 @@ export default function LoginForm() {
         password: password,
         isCustomer: true,
       }).then((res) => {
+
         if (res.status === 200) {
           const token = res.data.token;
           const refreshToken = res.data.refreshToken;
@@ -26,7 +27,7 @@ export default function LoginForm() {
 
           const decodedToken = Decode(token);
 
-          if (decodedToken!=null) {
+          if (decodedToken != null) {
             if (decodedToken.permissions[0] === "CUSTOMER") {
               navigate("/");
             } else {
@@ -35,7 +36,7 @@ export default function LoginForm() {
           }
         }
       });
-      
+
     } catch (error) {
 
     }

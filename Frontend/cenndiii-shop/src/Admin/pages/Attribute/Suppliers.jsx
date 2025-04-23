@@ -124,7 +124,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 
 export default function Supplier() {
   const navigate = useNavigate();
@@ -269,7 +268,6 @@ export default function Supplier() {
         existingNames={rows}
         type={"nhà cung cấp"}
       />
-      <ToastContainer />
     </Box>
   );
 }

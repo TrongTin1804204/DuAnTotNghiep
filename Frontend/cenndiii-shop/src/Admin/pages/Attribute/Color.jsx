@@ -32,7 +32,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 
 export default function Color() {
   const navigate = useNavigate();
@@ -174,7 +173,7 @@ export default function Color() {
         existingNames={rows}
         type={"màu sắc"}
       />
-      <ToastContainer />
+      <tainer />
     </Box>
   );
 }

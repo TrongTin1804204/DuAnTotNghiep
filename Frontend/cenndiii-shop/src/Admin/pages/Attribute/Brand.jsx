@@ -32,7 +32,6 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 export default function Brand() {
   const navigate = useNavigate();
 
@@ -174,7 +173,6 @@ export default function Brand() {
         existingNames={rows}
         type={"thương hiệu"}
       />
-      <ToastContainer />
     </Box>
   );
 }

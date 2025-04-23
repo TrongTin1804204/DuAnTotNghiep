@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import Notification from "../../../components/Notification";
 import { getUserId } from "../../../security/DecodeJWT";
 import { formatDateFromArray } from "../../../untils/FormatDate";
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
 const statuses = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Chờ vận chuyển', 'Đang vận chuyển', 'Đã hoàn thành', 'Hủy'];
@@ -129,7 +128,6 @@ const OrdersCustomer = () => {
           </div>
         )}
       </div>
-      <ToastContainer />
     </div>
   );
 };

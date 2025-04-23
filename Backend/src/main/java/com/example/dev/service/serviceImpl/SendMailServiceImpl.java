@@ -1,6 +1,7 @@
 package com.example.dev.service.serviceImpl;
 
 import com.example.dev.entity.MailLogsEntity;
+import com.example.dev.exception.BaseException;
 import com.example.dev.mapper.SendMailMapper;
 import com.example.dev.repository.ISendMailRepository;
 import com.example.dev.service.ISendMailService;
@@ -29,32 +30,31 @@ public class SendMailServiceImpl implements ISendMailService {
     private ISendMailRepository sendMailRepository;
 
     @Override
-    public int sendMail(SendMailMapper sendMailMapper) {
-        MailLogsEntity entity = new MailLogsEntity();
-        entity.setContent(sendMailMapper.getContent());
-        entity.setSubject(sendMailMapper.getSubject());
-        entity.setFromMail(fromMail);
-        entity.setToMail(sendMailMapper.getToMail());
-        entity.setCreatedBy(null);
-        entity.setCreatedDate(new Date(System.currentTimeMillis()));
-        int status = -1;
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromMail);
-            message.setSubject(sendMailMapper.getSubject());
-            message.setTo(sendMailMapper.getToMail());
-            message.setText(sendMailMapper.getContent());
-            mailSender.send(message);
-            entity.setStatus(1);
-            entity.setMessage("Send mail success");
-            status = 1;
-        } catch (Exception e) {
-            e.printStackTrace();
-            entity.setMessage(e.getMessage());
-            entity.setStatus(0);
-        }
-        sendMailRepository.save(entity);
-        return status;
+    public void sendMail(SendMailMapper sendMailMapper) {
+        new Thread(() -> {
+            MailLogsEntity entity = new MailLogsEntity();
+            entity.setContent(sendMailMapper.getContent());
+            entity.setSubject(sendMailMapper.getSubject());
+            entity.setFromMail(fromMail);
+            entity.setToMail(sendMailMapper.getToMail());
+            entity.setCreatedBy(null);
+            entity.setCreatedDate(new Date(System.currentTimeMillis()));
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromMail);
+                message.setSubject(sendMailMapper.getSubject());
+                message.setTo(sendMailMapper.getToMail());
+                message.setText(sendMailMapper.getContent());
+                mailSender.send(message);
+                entity.setStatus(1);
+                entity.setMessage("Send mail success");
+            } catch (Exception e) {
+                e.printStackTrace();
+                entity.setMessage(e.getMessage());
+                throw new RuntimeException();
+            }
+            sendMailRepository.save(entity);
+        }).start();
     }
 
     @Override

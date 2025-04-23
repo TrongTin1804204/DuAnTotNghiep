@@ -5,6 +5,6 @@ import org.springframework.stereotype.Service;
 
 
 public interface ISendMailService {
-    int sendMail(SendMailMapper sendMailMapper);
+    void sendMail(SendMailMapper sendMailMapper);
     int sendMailWithAttachment(SendMailMapper sendMailMapper);
 }

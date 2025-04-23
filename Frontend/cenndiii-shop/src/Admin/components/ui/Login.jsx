@@ -18,6 +18,8 @@ export default function LoginPage() {
         password: password,
         isCustomer: false,
       });
+      console.log(res.data);
+
       if (res.status === 200) {
         const token = res.data.token;
         const refreshToken = res.data.refreshToken;
@@ -57,7 +59,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            
+
             {/* Mật khẩu */}
             <div className="mb-4 relative">
               <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
@@ -77,7 +79,7 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            
+
             {/* Nút đăng nhập */}
             <button
               type="submit"

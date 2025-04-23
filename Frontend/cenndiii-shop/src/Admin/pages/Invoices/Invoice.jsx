@@ -4,7 +4,6 @@ import { FileText, ShoppingCart, Home, EyeIcon, } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FileSpreadsheet } from "lucide-react";
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 import api from '../../../security/Axios';
 import { formatDateFromArray } from "../../../untils/FormatDate";
 import { hasPermission } from "../../../security/DecodeJWT";
@@ -313,7 +312,6 @@ export default function Invoices() {
 
 
             </div>
-            <ToastContainer />
         </div>
     );
 }

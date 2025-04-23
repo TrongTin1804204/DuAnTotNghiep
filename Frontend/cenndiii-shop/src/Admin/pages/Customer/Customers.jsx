@@ -1,310 +1,255 @@
-import { useState, useEffect, useCallback } from "react";
-import { Eye, Plus, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
-import { useLoading } from "../../components/ui/spinner/LoadingContext";
-import Spinner from "../../components/ui/spinner/Spinner";
+import * as React from 'react';
+import {
+  Box,
+  Typography,
+  Breadcrumbs,
+  Link,
+  Paper,
+  Chip,
+  IconButton,
+  Grid
+} from '@mui/material';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { DataGrid } from '@mui/x-data-grid';
+import { Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
-export default function Customers() {
-  const { setLoadingState, loading } = useLoading();
-  const [filters, setFilters] = useState({
-    keyword: "",
-    gioiTinh: "all",
-    trangThai: "all",
-    soDienThoai: "all",
-    currentPage: 0
-  });
-  const [customers, setKhachHangs] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
+import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import Notification from '../../../components/Notification';
+import { Avatar } from '@mui/material';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+const vietnameseLocaleText = {
+  noRowsLabel: 'Không có dữ liệu',
+  columnMenuLabel: 'Menu',
+  columnMenuShowColumns: 'Hiển thị cột',
+  columnMenuFilter: 'Bộ lọc',
+  columnMenuHideColumn: 'Ẩn cột',
+  columnMenuUnsort: 'Bỏ sắp xếp',
+  columnMenuSortAsc: 'Sắp xếp tăng dần',
+  columnMenuSortDesc: 'Sắp xếp giảm dần',
+  footerRowsPerPage: 'Số hàng mỗi trang:',
+  MuiTablePagination: {
+    labelRowsPerPage: 'Số hàng mỗi trang:',
+    labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
+  }
+};
 
+
+export default function Customer() {
+  const navigate = useNavigate();
+
+  const [rows, setRows] = useState([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
+
+  const openEditModal = (row) => {
+    setEditingRow(row);
+    setEditModalOpen(true);
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await api.get("/admin/khach-hang/hien-thi-kh");
+      const rowsWithSequence = response.data.map((row, index) => ({
+        ...row,
+        stt: index + 1
+      }));
+      console.log(response.data);
+
+      setRows(rowsWithSequence);
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu khách hàng:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const getStatusColor = (status) => {
+    switch (status === 'Còn hoạt động' ? 1 : 0) {
+      case 1:
+        return "success";
+      case 0:
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const columns = [
+    { field: 'stt', headerName: 'STT', width: 30 },
+    {
+      field: 'hinhAnh',
+      headerName: 'Ảnh',
+      flex: 1,
+      renderCell: (params) => (
+        params.value ? (
+          <img
+            src={params.value}
+            alt="Avatar"
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+            }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = null; // This will trigger the Avatar fallback
+            }}
+          />
+        ) : (
+          <Avatar sx={{ width: 30, height: 30 }}>
+            {params.row.hoTen?.charAt(0).toUpperCase() || '?'}
+          </Avatar>
+        )
+      ),
+    },
+    { field: 'maKhachHang', headerName: 'Mã khách hàng', flex: 1 },
+    { field: 'hoTen', headerName: 'Tên khách hàng', flex: 1 },
+    // { field: 'diaChiChiTiet', headerName: 'Địa chỉ', flex: 1 },
+    { field: 'gioiTinh', headerName: 'Giới tính', flex: 1 },
+    { field: 'soDienThoai', headerName: 'Số điện thoại', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    {
+      field: 'trangThai',
+      headerName: 'Trạng thái',
+      flex: 1,
+      renderCell: (params) => (
+        <Chip
+          label={(params.value)}
+          color={getStatusColor(params.value)}
+          size="small"
+          variant="outlined"
+        />
+      )
+    },
+    {
+      field: 'hanhDong',
+      headerName: 'Hành động',
+      width: 100,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => navigate(`/admin/edit-customer/${params.row.idKhachHang}`)}
+          size="small"
+        >
+          <RemoveRedEyeOutlinedIcon size={18} />
+        </IconButton>
+      ),
+    },
+  ];
   const exportToExcel = async () => {
     try {
       setLoadingState(true);
       const response = await api.get("/admin/khach-hang/export-excel").then((response) => response.json())
-          .then((result) => {
-            setLoadingState(false);
-            const ws = XLSX.utils.json_to_sheet(result);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Khách Hàng");
-            XLSX.writeFile(wb, "danh_sach_khach_hang.xlsx");
-          })
-          .catch((error) => {
-            setLoadingState(false);
-            console.error("Something error when fetch API", error);
-          });
+        .then((result) => {
+          setLoadingState(false);
+          const ws = XLSX.utils.json_to_sheet(result);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Khách Hàng");
+          XLSX.writeFile(wb, "danh_sach_khach_hang.xlsx");
+        })
+        .catch((error) => {
+          setLoadingState(false);
+          console.error("Something error when fetch API", error);
+        });
     } catch (error) {
       setLoadingState(false);
       console.error("Lỗi khi lấy khách hàng", error);
     }
   };
-
-  const searchKhachHangs = useCallback(async () => {
-    try {
-      setLoadingState(true);
-      const response = await api.get(
-          "/admin/khach-hang/tim-kiem",
-          {
-            params: {
-              keyword: filters.keyword,
-              gioiTinh: filters.gioiTinh === "all" ? null : filters.gioiTinh,
-              trangThai: filters.trangThai === "all" ? null : filters.trangThai,
-              soDienThoai: filters.soDienThoai === "all" ? null : filters.soDienThoai,
-              page: filters.currentPage,
-              size: 5,
-            },
-          }
-      );
-      if(response.status && response.status == 200){
-        setLoadingState(false);
-        setKhachHangs(
-            Array.isArray(response.data.data) ? response.data.data : []
-        );
-        setTotalPages(response.data.totalCount);
-      }
-    } catch (error) {
-      setLoadingState(false);
-      console.error("Lỗi khi tìm kiếm khách hàng", error);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    searchKhachHangs();
-  }, [filters, searchKhachHangs]);
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setFilters({ ...filters, currentPage: newPage });
-    }
-  };
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    let newValue = value;
-
-    if (name === "gioiTinh" || name === "trangThai") {
-      if (value === "true") {
-        newValue = true;
-      } else if (value === "false") {
-        newValue = false;
-      } else {
-        // value === 'all'
-        newValue = null;
-      }
-    }
-    setFilters({ ...filters, [name]: newValue, currentPage: 0 });
-  };
-
-  const navigate = useNavigate();
-
-  const renderPageNumbers = () => {
-    let pageNumbers = [];
-    const maxPagesToShow = 6;
-
-    if (totalPages <= maxPagesToShow) {
-      pageNumbers = Array.from({ length: totalPages }, (_, index) => index);
-    } else {
-      if (filters.currentPage <= 3) {
-        pageNumbers = [0, 1, "...", totalPages - 1];
-      } else if (filters.currentPage >= totalPages - 4) {
-        pageNumbers = [
-          0,
-          "...",
-          totalPages - 5,
-          totalPages - 4,
-          totalPages - 3,
-          totalPages - 2,
-          totalPages - 1,
-        ];
-      } else {
-        pageNumbers = [
-          0,
-          "...",
-          filters.currentPage - 1,
-          filters.currentPage,
-          filters.currentPage + 1,
-          "...",
-          totalPages - 1,
-        ];
-      }
-    }
-
-    return pageNumbers.map((page, index) => {
-      if (page === "...") {
-        return (
-            <span key={index} className="mx-1 p-2">
-            ...
-          </span>
-        );
-      } else {
-        return (
-            <button
-                key={page}
-                className={`mx-1 p-1 rounded ${page === filters.currentPage ? "bg-blue-500 text-white" : "bg-gray-200"
-                }`}
-                onClick={() => handlePageChange(page)}
-            >
-              {page + 1}
-            </button>
-        );
-      }
-    });
-  };
-
   return (
-      <div className="p-6 space-y-4">
-        {loading && <Spinner />} {/* Show the spinner while loading */}
-        <h1 className="text-lg font-semibold mb-4">Khách hàng</h1>
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-sm font-semibold mb-4">Bộ Lọc</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="relative text-sm">
-              <Search className="absolute left-3 top-3 text-gray-400" size={16} />
-              <input
-                  type="text"
-                  name="keyword"
-                  value={filters.keyword}
-                  onChange={(e) =>
-                      setFilters({ ...filters, keyword: e.target.value, currentPage: 0 })
-                  }
-                  placeholder="Tìm theo tên hoặc mã"
-                  className="w-full pl-10 p-2 border rounded-md"
-              />
-            </div>
+    <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 1 }}>
+        <Link underline="hover" color="inherit" onClick={() => navigate("/admin/dashboard")} sx={{ cursor: "pointer" }}>
+          Thống kê
+        </Link>
+        <Typography color="text.primary">Khách hàng</Typography>
+      </Breadcrumbs>
 
-            <div className="relative text-sm">
-              <select
-                  name="gioiTinh"
-                  value={
-                    filters.gioiTinh === null ? "all" : filters.gioiTinh.toString()
-                  } // Important for displaying the correct option
-                  onChange={handleFilterChange}
-                  className="border p-2 rounded-md w-full"
-              >
-                <option value="all">Giới tính</option>
-                <option value="true">Nam</option>
-                <option value="false">Nữ</option>
-              </select>
-            </div>
+      {/* Tiêu đề */}
 
-            <div className="relative text-sm">
-              <select
-                  name="trangThai"
-                  value={filters.trangThai === null ? "all" : filters.trangThai.toString()}
-                  onChange={handleFilterChange}
-                  className="border p-2 rounded-md w-full"
-              >
-                <option value="all">Trạng thái</option>
-                <option value="true">Hoạt Động</option>
-                <option value="false">Ngừng Hoạt Động</option>
-              </select>
-            </div>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
+          Quản lý Khách hàng
+        </Typography>
 
-          </div>
-        </div>
-
-        <div
-            className="bg-white p-4 rounded-lg shadow-md"
-            style={{ height: "400px" }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold">Danh Sách Khách Hàng</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                  title="Thêm mới"
-                  className="flex items-center justify-center border border-black rounded-full w-8 h-8"
-                  onClick={() => navigate("/admin/add-customer")}
-              >
-                <Plus size={20} stroke="black" />
-              </button>
-
-              <button
-                  title="Xuất Excel"
-                  className="flex items-center justify-center border border-black rounded-full w-8 h-8"
-                  onClick={exportToExcel}
-              >
-                <span className="text-sm">📤</span>
-              </button>
-            </div>
-          </div>
-          <div className="overflow-auto flex-grow" style={{ height: "300px" }}>
-            <table className="w-full border-collapse text-sm">
-              <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-2 text-center">STT</th>
-                <th className="p-2 text-center">Mã</th>
-                <th className="p-2 text-center">Email</th>
-                <th className="p-2 text-center">Tên</th>
-                <th className="p-2 text-center">Số Điện Thoại</th>
-                <th className="p-2 text-center">Địa chỉ</th>
-                <th className="p-2 text-center">Giới Tính</th>
-                <th className="p-2 text-center">Trạng Thái</th>
-                <th className="p-2 text-center">Hành Động</th>
-              </tr>
-              </thead>
-              <tbody>
-              {Array.isArray(customers) ? (
-                  customers.map((customer, index) => (
-                      <tr key={`customer-${customer.id}`} className="border-t">
-                        <td className="p-2 text-center">{index + 1}</td>
-                        <td className="p-2 text-center">{customer.maKhachHang}</td>
-                        <td className="p-2 text-center">{customer.email}</td>
-                        <td className="p-2 text-center">{customer.hoTen}</td>
-                        <td className="p-2 text-center">{customer.soDienThoai}</td>
-                        <td className="p-2 text-center">{customer.addressDetails ? customer.addressDetails : ""}</td>
-                        <td className="p-2 text-center">
-                          {customer.gioiTinh ? "Nam" : "Nữ"}
-                        </td>
-                        <td className="p-2 text-center">
-                      <span
-                          className={`px-2 py-1 rounded text-white w-28 inline-block text-center ${customer.trangThai ? "bg-green-500" : "bg-red-500"
-                          }`}
-                      >
-                        {customer.trangThai ? "Hoạt động" : "Ngừng hoạt động"}
-                      </span>
-                        </td>
-                        <td className="p-2 text-center flex justify-center space-x-2">
-                          <button className="text-black p-1 rounded" onClick={() => navigate(`/admin/edit-customer/${customer.id}`)}>
-                            <Eye size={18} stroke="black" />
-                          </button>
-                        </td>
-                      </tr>
-                  ))
-              ) : (
-                  <tr>
-                    <td colSpan="8" className="text-center p-4">
-                      Không có dữ liệu
-                    </td>
-                  </tr>
-              )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Thêm các nút phân trang và số trang */}
-          <div
-              style={{
-                padding: "2px 0",
-                display: "flex",
-                justifyContent: "center",
-              }}
-          >
-            <button
-                className="mx-1 p-0.5 bg-gray-200 rounded"
-                onClick={() => handlePageChange(filters.currentPage - 1)}
-                disabled={filters.currentPage === 0}
+        <Grid container spacing={1} width="auto">
+          <Grid item>
+            <IconButton
+              color="primary"
+              title="Thêm mới"
+              onClick={() => navigate("/admin/add-customer")}
             >
-              <ChevronLeft size={18} stroke="black" />
-            </button>
-            {renderPageNumbers()}
-            <button
-                className="mx-1 p-0.5 bg-gray-200 rounded"
-                onClick={() => handlePageChange(filters.currentPage + 1)}
-                disabled={filters.currentPage >= totalPages - 1}
+              <AddOutlinedIcon />
+            </IconButton>
+          </Grid>
+          <Grid item>
+            <IconButton
+              color="primary"
+              title="Xuất Excel"
+              onClick={exportToExcel}
             >
-              <ChevronRight size={18} stroke="black" />
-            </button>
-          </div>
-        </div>
-      </div>
+              <FileDownloadOutlinedIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* DataGrid */}
+      <Paper sx={{ height: '66vh', width: '100%', boxShadow: 3, borderRadius: 2 }}>
+        <DataGrid
+          getRowId={(row) => row.idKhachHang}
+          rows={rows}
+          columns={columns}
+          pageSizeOptions={[5, 10, 15]}
+          disableColumnResize
+          initialState={{
+            pagination: {
+              paginationModel: { page: 0, pageSize: 5 },
+            },
+          }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#f5f5f5',
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-row': {
+              '&:hover': {
+                backgroundColor: '#f0f0f0',
+              },
+            },
+            '& .MuiDataGrid-footerContainer': {
+              borderTop: 'none',
+            },
+            '& .MuiDataGrid-cell': {
+              padding: '12px',
+            },
+            '& .MuiDataGrid-columnSeparator': {
+              visibility: 'hidden',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 'bold',
+              color: '#333',
+            },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            }
+          }}
+          disableRowSelectionOnClick
+          localeText={vietnameseLocaleText}
+        />
+      </Paper>
+
+    </Box>
   );
 }

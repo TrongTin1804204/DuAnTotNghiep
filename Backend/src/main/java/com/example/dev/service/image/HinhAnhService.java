@@ -16,4 +16,8 @@ public class HinhAnhService {
     public List<HinhAnh> getAllImageByProduct(Integer productId) {
         return hinhAnhRepo.findImageByProduct(productId);
     }
+
+    public List<String> getUrlByProductDetail(Integer productId) {
+        return hinhAnhRepo.listURl(productId);
+    }
 }

@@ -4,7 +4,6 @@ import { useLocation, NavLink } from "react-router-dom";
 import ImageGallery from "./ProductImage";
 import { useCart } from "../cart/CartContext";
 import Notification from "../../../components/Notification";
-import { ToastContainer } from "react-toastify";
 export default function ProductDetails() {
     const location = useLocation();
     const product = location.state?.product;
@@ -18,7 +17,7 @@ export default function ProductDetails() {
     const [quantity, setQuantity] = useState(0);
 
     const { cartCount, setCartCount } = useCart(); // Lấy hàm cập nhật số lượng giỏ hàng
-    
+
     const handleAddToCart = async () => {
         if (!productSelected?.idChiTietSanPham) {
             Notification("Vui lòng chọn size sản phẩm", "error");
@@ -160,7 +159,7 @@ export default function ProductDetails() {
                             />
                         ))}
                     </div>
-                    
+
                     {/* Chọn kích cỡ */}
                     <div className="flex-auto">
                         <h1 className="text-lg font-semibold ">Chọn kích cỡ</h1>
@@ -188,7 +187,6 @@ export default function ProductDetails() {
                     </div>
                 </div>
             </div>
-            <ToastContainer />
         </div>
     );
 }

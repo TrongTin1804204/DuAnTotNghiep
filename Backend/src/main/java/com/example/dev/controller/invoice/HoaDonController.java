@@ -186,10 +186,10 @@ public class HoaDonController {
 
     @PostMapping("/thanh-toan-vnpay")
     @PermitAll
-    public ResponseEntity<?> taoHoaDonVaThanhToan(@RequestBody HoaDonResponse hoaDonResponse, Authentication auth, HttpServletRequest req) {
+    public ResponseEntity<?> taoHoaDonVaThanhToan(@RequestBody HoaDonResponse hoaDonResponse, Authentication auth) {
         String vnp_IpAddr = IP_ADDRESS;
         try {
-            String paymentUrl = hoaDonService.taoHoaDonVaThanhToan(hoaDonResponse, auth, vnp_IpAddr, req);
+            String paymentUrl = hoaDonService.taoHoaDonVaThanhToan(hoaDonResponse, auth);
             return ResponseEntity.ok(Collections.singletonMap("paymentUrl", paymentUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi tạo hóa đơn: " + e.getMessage());

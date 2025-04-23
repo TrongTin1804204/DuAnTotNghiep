@@ -6,7 +6,6 @@ import { Dialog } from "@headlessui/react";
 import Button from "@mui/material/Button";
 import AddAddress from "./AddAddress"; // Import form nhập thông tin
 import Notification from "../../../components/Notification";
-import { ToastContainer } from "react-toastify";
 import { getUserId } from "../../../security/DecodeJWT";
 import { calculateShippingFee } from "./calculateShippingFee";
 import SelectAddress from "./SelectAddress"; // Import SelectAddress component
@@ -34,6 +33,8 @@ const Checkout = () => {
     const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
     // 
+    const [diaChiChiTiet, setDiaChiChiTiet] = useState("");
+    // 
     const [openAddressDialog, setOpenAddressDialog] = useState(false);
 
     const handleCloseAddressDialog = (confirm) => {
@@ -48,9 +49,18 @@ const Checkout = () => {
         try {
             if (userId != "") {
                 const req = customerAddresses.find(a => a.id == selectedAddress);
+                const addressParts = req.diaChiChiTiet.split(',');
+                // Replace first part (detailed address) with new value, keep the rest
+                addressParts[0] = diaChiChiTiet;
+
+                const updatedAddress = {
+                    ...req,
+                    diaChiChiTiet: diaChiChiTiet
+                };
+
                 await api.post(
-                    `/admin/dia-chi/update-address/${selectedAddress}/-1`,
-                    req
+                    `/admin/dia-chi/update-address/-1`,
+                    updatedAddress
                 ).then(res => {
                     if (res.status == 200) {
                         Notification("Cập nhật thành công!", "success")
@@ -116,8 +126,6 @@ const Checkout = () => {
 
     // Thêm hàm lấy địa chỉ cập nhật từ backend
     useEffect(() => {
-
-
         getDataUser()
     }, [selectedCustomerId]);
     const getDataUser = async () => {
@@ -127,7 +135,9 @@ const Checkout = () => {
             })
                 .then(async response => {
                     setCustomerAddresses(response.data);
-                    setSelectedAddress(response.data.find(addr => addr.macDinh === true)?.id)
+                    const defaultAddress = response.data.find(addr => addr.macDinh === true)
+                    setSelectedAddress(defaultAddress.id)
+                    setDiaChiChiTiet(defaultAddress.diaChiChiTiet.split(',')[0])
                     const serviceId = 53321; // ID dịch vụ của GHN (thay đổi nếu cần)
                     const shopId = 1542; // ID cửa hàng của bạn trên GHN (thay đổi nếu cần)
                     // Tính tổng khối lượng và giá trị đơn hàng
@@ -266,14 +276,14 @@ const Checkout = () => {
 
         const orderData = {
             khachHang: isGuest ? null : currentAddress?.khachHang?.idKhachHang,
-            tenNguoiNhan: currentAddress?.tenNguoiNhan ||  customerData.tenNguoiNhan||"Khách lẻ",
-            soDienThoai: currentAddress?.soDienThoai || customerData.soDienThoai||"",
-            email: currentAddress?.khachHang?.email ||  customerData.email|| "",
-            ghiChu: currentAddress?.ghiChu ||  customerData.ghiChu || "",
+            tenNguoiNhan: currentAddress?.tenNguoiNhan || customerData.tenNguoiNhan || "Khách lẻ",
+            soDienThoai: currentAddress?.soDienThoai || customerData.soDienThoai || "",
+            email: currentAddress?.khachHang?.email || customerData.email || "",
+            ghiChu: currentAddress?.ghiChu || customerData.ghiChu || "",
 
-            tinhThanhPho: customerData?.provinceID  || currentAddress?.thanhPho,  // Lấy từ provinceID nếu có
-            quanHuyen: customerData?.districtID  || currentAddress?.quanHuyen,     // Lấy từ districtID nếu có
-            xaPhuong: customerData?.wardCode  || currentAddress?.xaPhuong,           // Lấy từ wardCode nếu có
+            tinhThanhPho: customerData?.provinceID || currentAddress?.thanhPho,  // Lấy từ provinceID nếu có
+            quanHuyen: customerData?.districtID || currentAddress?.quanHuyen,     // Lấy từ districtID nếu có
+            xaPhuong: customerData?.wardCode || currentAddress?.xaPhuong,           // Lấy từ wardCode nếu có
 
             ngayGiaoHang: null,
             tongTien: totalPrice - discountAmount + shippingFee,
@@ -306,6 +316,7 @@ const Checkout = () => {
                     body: JSON.stringify(orderData)
                 });
             } else if (paymentMethod === "VNPAY") {
+
                 response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-vnpay", {
                     method: "POST",
                     headers: {
@@ -363,7 +374,6 @@ const Checkout = () => {
                     onUpdate={handleAddressUpdate}
                 />
             )} */}
-            <ToastContainer />
             <div className="border-t-4 border-red-600 p-4 bg-white rounded-md shadow-md">
                 <div className="flex justify-between">
                     <h2 className="text-red-600 text-lg font-bold flex items-center gap-2">
@@ -401,7 +411,7 @@ const Checkout = () => {
                                             <InputLabel id='address'>Địa chỉ</InputLabel>
                                             <Select
                                                 label="Địa chỉ"
-                                                value={selectedAddress}
+                                                value={selectedAddress || ""}
                                                 onChange={handleAddressChange}
                                                 labelId="address"
                                                 size="small"
@@ -414,7 +424,18 @@ const Checkout = () => {
                                                 ))}
                                             </Select>
                                         </FormControl>
-
+                                        <Box>
+                                            <TextField
+                                                // disabled={invoice?.trangThai != "Chờ xác nhận"}
+                                                label="Địa chỉ chi tiết"
+                                                variant="outlined"
+                                                size="small"
+                                                fullWidth
+                                                sx={{ fontSize: "10px" }}
+                                                value={diaChiChiTiet || ""}
+                                                onChange={(e) => setDiaChiChiTiet(e.target.value)}
+                                            />
+                                        </Box>
                                         {/* )} */}
                                         <Box display="flex" gap={2}>
                                             <TextField

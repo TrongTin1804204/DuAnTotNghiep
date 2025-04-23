@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 import api from '../../../security/Axios';
 import { hasPermission } from "../../../security/DecodeJWT";
 import { useNavigate } from 'react-router-dom';
@@ -29,11 +28,11 @@ import {
     MenuItem
 } from "@mui/material";
 import { Trash } from "lucide-react";
-import { Add, Remove} from '@mui/icons-material';
+import { Add, Remove } from '@mui/icons-material';
 import PaymentHistory from './PaymentHistory';
 import AddressDialog from './AddNewAddress';
 export default function DetailOrdersCustomer() {
-    const {idHd } = useParams();
+    const { idHd } = useParams();
     const [invoice, setInvoice] = useState();
     const [payment, setPayment] = useState();
     const [showHistory, setShowHistory] = useState(false);
@@ -49,11 +48,11 @@ export default function DetailOrdersCustomer() {
 
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [customerAddress, setCustomerAddress] = useState([]);
-    
+
 
     useEffect(() => {
         if (localStorage.getItem("token")) {
-            if (!hasPermission("CUSTOMER") ) {
+            if (!hasPermission("CUSTOMER")) {
                 navigate("/login");
             }
         }
@@ -284,7 +283,7 @@ export default function DetailOrdersCustomer() {
         console.log(selectedAddress);
         console.log(req);
         await api.post(
-            `/admin/dia-chi/update-address/${selectedAddress}/${idHd}`,
+            `/admin/dia-chi/update-address/${idHd}`,
             req
         ).then(res => {
             if (res.status == 200) {
@@ -526,7 +525,7 @@ export default function DetailOrdersCustomer() {
 
                                         {invoice?.trangThai == "Chờ xác nhận" && (
                                             <div className='m-2'>
-                                                <Button variant="contained" color="primary" size='small' onClick={e => setOpenAddressDialog(true)}>{invoice?.loaiDon === "Online" && invoice?.khachHang === null  ? "Sửa địa chỉ" : "Thêm địa chỉ"}</Button>
+                                                <Button variant="contained" color="primary" size='small' onClick={e => setOpenAddressDialog(true)}>{invoice?.loaiDon === "Online" && invoice?.khachHang === null ? "Sửa địa chỉ" : "Thêm địa chỉ"}</Button>
                                             </div>
                                         )}
                                     </div>
@@ -557,7 +556,7 @@ export default function DetailOrdersCustomer() {
                                             </FormControl>
 
                                         )}
-                                    
+
                                         <Box display="flex" gap={2}>
                                             <TextField
                                                 label="Tên người nhận"
@@ -839,7 +838,6 @@ export default function DetailOrdersCustomer() {
             <AddressDialog hoaDon={invoice} reload={reload} open={openAddressDialog} onClose={handleCloseAddressDialog} />
             {/* ô lịch sử thanh toán */}
             <PaymentHistory idHoaDon={idHd} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
-            <ToastContainer />
         </div >
     )
 }

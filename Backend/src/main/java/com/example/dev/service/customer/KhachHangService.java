@@ -1,6 +1,8 @@
 package com.example.dev.service.customer;
 
 import com.example.dev.DTO.response.CloudinaryResponse;
+import com.example.dev.DTO.response.customer.KhachHangResponse;
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.customer.DiaChi;
 import com.example.dev.entity.customer.KhachHang;
 import com.example.dev.mapper.AddressMapper;
@@ -20,6 +22,7 @@ import com.example.dev.util.baseModel.BaseResponse;
 import com.example.dev.validator.KhachHangValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
+@Slf4j
 @Service
 public class KhachHangService {
 
@@ -55,23 +59,7 @@ public class KhachHangService {
     private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
 
     public List<KhachHang> getAllCustomerIsStatusTrue() {
-        List<KhachHang> khachHangList = khachHangRepo.findByTrangThaiIsTrue();
-
-        for (KhachHang kh : khachHangList) {
-            String diaChi = kh.getDiaChi();
-
-            if (diaChi == null || diaChi.trim().isEmpty()) {
-                continue; // Bỏ qua vòng lặp nếu địa chỉ null hoặc trống
-            }
-
-            String[] address = diaChi.split(", ");
-            String thanhPho = (address.length > 0) ? address[0] : "Không xác định";
-            String quan = (address.length > 1) ? address[1] : "Không xác định";
-            String xa = (address.length > 2) ? address[2] : "Không xác định";
-
-        }
-
-        return khachHangList;
+        return khachHangRepo.findByTrangThaiIsTrue();
     }
 
 //    public List<KhachHang> getAll() {
@@ -158,66 +146,66 @@ public class KhachHangService {
             sendMailMapper.setToMail(khachHang.getEmail());
             sendMailMapper.setSubject("Notice: Register successfully");
             sendMailMapper.setContent("Welcome to CenciddiShop. Your account: " + khachHang.getEmail() + " , password: " + khachHang.getMatKhau() + ". Let login and try with special experience");
-            int sendMailStatus = sendMailService.sendMail(sendMailMapper);
+            sendMailService.sendMail(sendMailMapper);
         }
         response.setSuccessResponse("Insert successful", modelSave.getIdKhachHang());
         return response;
     }
 
-    @Transactional
-    public BaseResponse<KhachHang> suaKhachHang(CustomerMapper model) {
-        BaseResponse<KhachHang> baseResponse = new BaseResponse<>();
-
-        KhachHang khachHang = new KhachHang();
-
-        KhachHang existing = khachHangRepo.findByMaKhachHang(model.getMaKhachHang())
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
-        khachHang = model.toKhachHang();
-
-        try {
-            khachHangValidator.validateKhachHang(khachHang, model.getId()); // Passing existing customer id for update
-        } catch (Exception e) {
-            baseResponse.setFailResponse(e.getMessage(), null);
-            return baseResponse;
-        }
-
-        if (model.getImageBase64() != null && !model.getImageBase64().isEmpty()) {
-            LocalDateTime localDateTime = LocalDateTime.now();
-            String outputFilePath = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() + existing.getIdKhachHang() + "portrait.png";
-            String base64String = model.getImageBase64().split("base64,")[1];
-            byte[] imageBytes = Base64.getDecoder().decode(base64String);
-            try {
-                final String fileName = FileUpLoadUtil.getFileName(outputFilePath);
-                final CloudinaryResponse cloudinaryResponse = this.cloudinaryService.uploadFileByte(imageBytes, fileName, khachHang.getMaKhachHang(), 1);
-                existing.setHinhAnh(cloudinaryResponse.getUrl());
-            } catch (Exception e) {
-                e.printStackTrace();
-                baseResponse.setFailResponse(e.getMessage(), null);
-                return baseResponse;
-            }
-        }
-
-        existing.setHoTen(model.getHoTen());
-        existing.setGioiTinh(model.isGioiTinh());
-        existing.setSoDienThoai(model.getSoDienThoai());
-        KhachHang modelSave = khachHangRepo.saveAndFlush(existing);
-        if (modelSave.getIdKhachHang() != null) {
-            baseResponse.setSuccessResponse("Information customer updated", modelSave);
-        }
-        if (modelSave.getIdKhachHang() != null) {
-            List<DiaChi> diaChis = new ArrayList<>();
-//            if (!model.getAddressMappers().isEmpty()) {
-//                List<Integer> diaChiIds = model.getAddressMappers().stream().map(AddressMapper::getId).filter(eId -> eId != 0).toList();
-//                diaChiRepo.deleteAllById(diaChiIds);
-//                diaChiRepo.flush();
-//                diaChis = model.getAddressMappers().stream().filter(e -> e.getStage() == 1).map(e -> new DiaChi(null, e.getCustomerId() == 0 ? model.getId() : e.getCustomerId(), e.getNameReceive(), e.getPhoneNumber(), e.getProvinceId(),
-//                        e.getDistrictId(), e.getWardId(), e.getFullInfo(), e.getNote(), e.isStatus(), 1)).toList();
-//                diaChiRepo.saveAllAndFlush(diaChis);
+//    @Transactional
+//    public BaseResponse<KhachHang> suaKhachHang(CustomerMapper model) {
+//        BaseResponse<KhachHang> baseResponse = new BaseResponse<>();
+//
+//        KhachHang khachHang = new KhachHang();
+//
+//        KhachHang existing = khachHangRepo.findByMaKhachHang(model.getMaKhachHang())
+//                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy khách hàng"));
+//        khachHang = model.toKhachHang();
+//
+//        try {
+//            khachHangValidator.validateKhachHang(khachHang, model.getId()); // Passing existing customer id for update
+//        } catch (Exception e) {
+//            baseResponse.setFailResponse(e.getMessage(), null);
+//            return baseResponse;
+//        }
+//
+//        if (model.getImageBase64() != null && !model.getImageBase64().isEmpty()) {
+//            LocalDateTime localDateTime = LocalDateTime.now();
+//            String outputFilePath = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() + existing.getIdKhachHang() + "portrait.png";
+//            String base64String = model.getImageBase64().split("base64,")[1];
+//            byte[] imageBytes = Base64.getDecoder().decode(base64String);
+//            try {
+//                final String fileName = FileUpLoadUtil.getFileName(outputFilePath);
+//                final CloudinaryResponse cloudinaryResponse = this.cloudinaryService.uploadFileByte(imageBytes, fileName, khachHang.getMaKhachHang(), 1);
+//                existing.setHinhAnh(cloudinaryResponse.getUrl());
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                baseResponse.setFailResponse(e.getMessage(), null);
+//                return baseResponse;
 //            }
-        }
-
-        return baseResponse;
-    }
+//        }
+//
+//        existing.setHoTen(model.getHoTen());
+//        existing.setGioiTinh(model.isGioiTinh());
+//        existing.setSoDienThoai(model.getSoDienThoai());
+//        KhachHang modelSave = khachHangRepo.saveAndFlush(existing);
+//        if (modelSave.getIdKhachHang() != null) {
+//            baseResponse.setSuccessResponse("Information customer updated", modelSave);
+//        }
+//        if (modelSave.getIdKhachHang() != null) {
+//            List<DiaChi> diaChis = new ArrayList<>();
+////            if (!model.getAddressMappers().isEmpty()) {
+////                List<Integer> diaChiIds = model.getAddressMappers().stream().map(AddressMapper::getId).filter(eId -> eId != 0).toList();
+////                diaChiRepo.deleteAllById(diaChiIds);
+////                diaChiRepo.flush();
+////                diaChis = model.getAddressMappers().stream().filter(e -> e.getStage() == 1).map(e -> new DiaChi(null, e.getCustomerId() == 0 ? model.getId() : e.getCustomerId(), e.getNameReceive(), e.getPhoneNumber(), e.getProvinceId(),
+////                        e.getDistrictId(), e.getWardId(), e.getFullInfo(), e.getNote(), e.isStatus(), 1)).toList();
+////                diaChiRepo.saveAllAndFlush(diaChis);
+////            }
+//        }
+//
+//        return baseResponse;
+//    }
 
     @Transactional
     public BaseResponse<CustomerMapper> updateAddress(CustomerMapper model) {
@@ -237,7 +225,9 @@ public class KhachHangService {
 
     @Transactional
     public void xoaKhachHang(Integer id) {
-        khachHangRepo.deleteById(id);
+        KhachHang kh = khachHangRepo.findById(id).orElseThrow();
+        kh.setTrangThai(false);
+        khachHangRepo.saveAndFlush(kh);
     }
 
     public CustomerMapper detailKhachHang(Integer id) {
@@ -299,12 +289,12 @@ public class KhachHangService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        for (KhachHang e : customerList) {
-//            CustomerMapper customerMapperModel = e.toKhachHang();
-//            addressModelCustoms.stream().filter(address -> Objects.equals(address.getIdKhachHang(), e.getIdKhachHang())).findFirst().
-//                    ifPresent(model -> customerMapperModel.setAddressDetails(model.getDiaChiChiTiet()));
-//            customerMappers.add(customerMapperModel);
-//        }
+        for (KhachHang e : customerList) {
+            CustomerMapper customerMapperModel = e.toKhachHang();
+            addressModelCustoms.stream().filter(address -> Objects.equals(address.getKhachHang().getIdKhachHang(), e.getIdKhachHang())).findFirst().
+                    ifPresent(model -> customerMapperModel.setAddressDetails(model.getDiaChiChiTiet()));
+            customerMappers.add(customerMapperModel);
+        }
         response.setTotalCount(models.getTotalPages());
         response.setSuccessResponse("Success", customerMappers);
         return response;
@@ -319,8 +309,8 @@ public class KhachHangService {
                 .map(diaChi -> {
                     diaChi.setTenNguoiNhan(addressMapper.getNameReceive());
                     diaChi.setSoDienThoai(addressMapper.getPhoneNumber());
-//                    diaChi.setThanhPho(addressMapper.getProvinceId());
-//                    diaChi.setQuanHuyen(addressMapper.getDistrictId());
+                    diaChi.setThanhPho(Integer.getInteger(addressMapper.getProvinceId()));
+                    diaChi.setQuanHuyen(Integer.getInteger(addressMapper.getDistrictId()));
                     diaChi.setXaPhuong(addressMapper.getWardId());
                     diaChi.setDiaChiChiTiet(addressMapper.getAddressDetail());
                     diaChi.setGhiChu(addressMapper.getNote());
@@ -367,7 +357,104 @@ public class KhachHangService {
         return khachHangRepo.findAll();
     }
 
+    public KhachHang getDetail(Integer idKhachHang){
+        return khachHangRepo.findById(idKhachHang).orElseThrow();
+    }
+    public List<?> getAllKh(){
+        return khachHangRepo.getAllKh();
+    }
     public List<DiaChi> getCustomerAddress(Integer idKhachHang) {
         return diaChiRepo.findByKhachHang_IdKhachHang(idKhachHang);
     }
+
+    public BaseResponse<?> addNewCustomer(KhachHangResponse khachHangResponse,MultipartFile file){
+        try {
+            BaseResponse<?> response = new BaseResponse<>();
+            final String fileName = FileUpLoadUtil.getFileName(file.getOriginalFilename());
+
+            Optional<KhachHang> existingPhone = khachHangRepo.findBySoDienThoai(khachHangResponse.getSoDienThoai());
+            if (existingPhone.isPresent()) {
+                response.setMessage("Số điện thoại đã tồn tại");
+                response.setCode(BaseConstant.CustomResponseCode.ERROR.getCode());
+                return response;
+            }
+            Optional<KhachHang> existingMa = khachHangRepo.findByMaKhachHang(khachHangResponse.getMaKhachHang());
+            if (existingMa.isPresent()) {
+                response.setMessage("Mã khách hàng đã tồn tại");
+                response.setCode(BaseConstant.CustomResponseCode.ERROR.getCode());
+                return response;
+            }
+            Optional<KhachHang> existingEmail = khachHangRepo.findByEmail(khachHangResponse.getEmail());
+            if (existingEmail.isPresent()) {
+                response.setCode(BaseConstant.CustomResponseCode.ERROR.getCode());
+                response.setMessage("Email đã tồn tại");
+                return response;
+            }
+            String password = iUtil.generatePassword();
+            DiaChi diaChi = new DiaChi();
+            KhachHang khachHang = new KhachHang();
+            String fullAddress =
+                    khachHangResponse.getAddressDetails() + ", "
+                    +khachHangResponse.getWardName() +", "
+                    +khachHangResponse.getDistrictName() +", "
+                    +khachHangResponse.getProvinceName() +", ";
+            khachHang.setTrangThai(true);
+            khachHang.setMaKhachHang(khachHangResponse.getMaKhachHang());
+            khachHang.setHoTen(khachHangResponse.getHoTen());
+            khachHang.setSoDienThoai(khachHangResponse.getSoDienThoai());
+            khachHang.setGioiTinh(khachHangResponse.getGioiTinh());
+            khachHang.setEmail(khachHangResponse.getEmail());
+            khachHang.setMatKhau(passwordEncoder.encode(password));
+
+            FileUpLoadUtil.assertAllowed(file, FileUpLoadUtil.IMAGE_PATTERN);
+            final CloudinaryResponse cloudinaryResponse = this.cloudinaryService.uploadFile(file, fileName, "Khachhangtest", 1);
+            khachHang.setHinhAnh(cloudinaryResponse.getUrl());
+            KhachHang  newKh =  khachHangRepo.save(khachHang);
+
+            diaChi.setThanhPho(khachHangResponse.getProvinceId());
+            diaChi.setQuanHuyen(khachHangResponse.getDistrictId());
+            diaChi.setXaPhuong(khachHangResponse.getWardId());
+            diaChi.setDiaChiChiTiet(fullAddress);
+            diaChi.setKhachHang(newKh);
+            diaChi.setTenNguoiNhan(khachHangResponse.getHoTen());
+            diaChi.setSoDienThoai(khachHangResponse.getSoDienThoai());
+            diaChi.setMacDinh(true);
+            diaChiRepo.save(diaChi);
+
+            SendMailMapper sendMailMapper = new SendMailMapper();
+            sendMailMapper.setToMail(khachHang.getEmail());
+            sendMailMapper.setSubject("Notice: Register successfully");
+            sendMailMapper.setContent("Welcome to CenndiiiShop. Your account: " + khachHang.getEmail() + " , password: " + password + ". Let login and try with special experience");
+            sendMailService.sendMail(sendMailMapper);
+            return BaseResponse.builder().code(BaseConstant.CustomResponseCode.SUCCESS.getCode()).message("Thêm thành công").build();
+        } catch (Exception e) {
+            return BaseResponse.builder().code(BaseConstant.CustomResponseCode.ERROR.getCode()).message(e.getMessage()).build();
+        }
+    }
+
+    public BaseResponse<?> suaKhachHang(KhachHang khachHang,MultipartFile file) {
+        try {
+            KhachHang kh = khachHangRepo.findById(khachHang.getIdKhachHang()).orElseThrow();
+            BaseResponse baseResponse = new BaseResponse();
+            if (!khachHang.getHinhAnh().isEmpty()){
+                if (file != null){
+                    final String fileName = FileUpLoadUtil.getFileName(file.getOriginalFilename());
+                    FileUpLoadUtil.assertAllowed(file, FileUpLoadUtil.IMAGE_PATTERN);
+                    final CloudinaryResponse cloudinaryResponse = this.cloudinaryService.uploadFile(file, fileName, "Khachhangtest", 1);
+                    khachHang.setHinhAnh(cloudinaryResponse.getUrl());
+                }
+            }
+
+            khachHang.setMatKhau(kh.getMatKhau());
+            khachHang.setMaKhachHang(kh.getMaKhachHang());
+            khachHangRepo.save(khachHang);
+            baseResponse.setCode(BaseConstant.CustomResponseCode.SUCCESS.getCode());
+            baseResponse.setMessage(BaseConstant.CustomResponseCode.SUCCESS.getMessage());
+            return baseResponse;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return BaseResponse.builder().code(BaseConstant.CustomResponseCode.ERROR.getCode()).message(e.getMessage()).build();
+        }
+    }
+
 }

@@ -2,7 +2,6 @@ import ImageSlider from "../components/slide/ImageSlider";
 import { useLocation } from "react-router-dom";
 import Notification from "../../components/Notification";
 import { useEffect } from "react";
-import { ToastContainer } from "react-toastify";
 export default function Home() {
     const location = useLocation();
     const success = location.state?.success; // Nhận true hoặc false
@@ -17,7 +16,6 @@ export default function Home() {
 
     return (
         <div>
-            <ToastContainer/>
             <div className="w-full">
                 <ImageSlider />
             </div>

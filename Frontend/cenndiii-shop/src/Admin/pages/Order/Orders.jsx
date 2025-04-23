@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Alert from "../../../components/Alert";
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 import {
     Dialog,
     DialogTitle,
@@ -29,7 +28,7 @@ import { Add, Remove } from '@mui/icons-material';
 import DetailsPayment from "./DetailsPayment";
 import { hasPermission } from '../../../security/DecodeJWT';
 import api from '../../../security/Axios';
-
+import DetailPaymentsV2 from './DetailsPaymentV2';
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
 
@@ -653,6 +652,10 @@ export default function Orders() {
                                         reloadTab={reloadTab}
                                         totalItem={orderItemsByTab}
                                     />
+                                    {/* <DetailPaymentsV2
+                                        invoiceId={invoiceId}
+                                        reloadTab={reloadTab}
+                                    /> */}
                                 </div>
                             </div>
                         </TabPanel>
@@ -864,7 +867,6 @@ export default function Orders() {
                 open={openAlert}
                 message={alertMessage}
                 onClose={handleAlertClose} />
-            <ToastContainer />
         </div>
     );
 }

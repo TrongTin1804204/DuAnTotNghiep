@@ -4,10 +4,9 @@ import axios from "axios";
 import moment from "moment";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Dialog } from "@headlessui/react";
-import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
+import Notification from "../../../components/Notification";
 export default function CouponDetails() {
     const { id } = useParams();
     const [coupon, setCoupon] = useState(null);
@@ -22,7 +21,7 @@ export default function CouponDetails() {
     const [filters, setFilters] = useState({ keyword: "" });
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     useEffect(() => {
-        if(localStorage.getItem("token")){
+        if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
                 navigate("/admin/login");
             }
@@ -46,7 +45,7 @@ export default function CouponDetails() {
                 fetchCustomers(0); // Fetch initial customers
             } catch (error) {
                 console.error("Lỗi khi lấy chi tiết phiếu giảm giá:", error);
-                toast.error("Lỗi khi lấy chi tiết phiếu giảm giá");
+                Notification("Lỗi khi lấy chi tiết phiếu giảm giá", "error");
             }
         };
 
@@ -60,7 +59,7 @@ export default function CouponDetails() {
             setTotalPages(response.data.totalPages);
         } catch (error) {
             console.error('Lỗi khi lấy danh sách khách hàng:', error);
-            toast.error('Lỗi khi lấy danh sách khách hàng');
+            Notification("Lỗi khi lấy danh sách khách hàng", "error");
         }
     };
 
@@ -79,7 +78,7 @@ export default function CouponDetails() {
             }
         } catch (error) {
             console.error("Error searching data:", error);
-            toast.error("Lỗi khi tìm kiếm khách hàng");
+            Notification("Lỗi khi tìm kiếm khách hàng", "error");
         }
     }, [filters, currentPage]);
 
@@ -103,21 +102,21 @@ export default function CouponDetails() {
             try {
                 setIsUpdating(true);
                 await api.post(`/admin/phieu-giam-gia/sua/${id}`, requestData);
-                toast.success("Cập nhật phiếu giảm giá thành công");
+                Notification("Cập nhật phiếu giảm giá thành công", "success");
                 navigate('/admin/coupons', { state: { message: `Cập nhật thành công phiếu giảm giá có mã: ${coupon.maKhuyenMai}` } });
             } catch (error) {
                 if (error.response && error.response.data) {
                     setErrors(error.response.data);
-                    toast.error("Lỗi khi cập nhật phiếu giảm giá");
+                    Notification("Lỗi khi cập nhật phiếu giảm giá", "error");
                 } else {
                     console.error('Lỗi khi cập nhật phiếu giảm giá:', error.message);
-                    toast.error("Lỗi khi cập nhật phiếu giảm giá");
+                    Notification("Lỗi khi cập nhật phiếu giảm giá", "error");
                 }
             } finally {
                 setIsUpdating(false);
             }
         } else {
-            toast.error("Vui lòng kiểm tra lại thông tin");
+            Notification("Vui lòng kiểm tra lại thông tin", "error");
         }
         closeModal();
     };
@@ -346,7 +345,6 @@ export default function CouponDetails() {
 
     return (
         <div className="p-6 space-y-4">
-            <ToastContainer />
             <div className="flex items-center font-semibold mb-4">
                 <h1>Phiếu Giảm Giá /</h1>
                 <h2 className="ml-1 font-normal">Chi Tiết Phiếu Giảm Giá</h2>

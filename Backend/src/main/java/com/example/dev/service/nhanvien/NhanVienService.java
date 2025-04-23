@@ -43,8 +43,9 @@ public class NhanVienService {
     }
 
     public List<NhanVien> themNv(NhanVien nhanVien){
-        nhanVien.setMatKhau(passwordEncoder.encode(nhanVien.getMatKhau()));
         emailService.sendAccount(nhanVien);
+        nhanVien.setMatKhau(passwordEncoder.encode(nhanVien.getMatKhau()));
+        nhanVien.setVaiTro("STAFF");
         nhanVienRepo.save(nhanVien);
         return getNv();
     }

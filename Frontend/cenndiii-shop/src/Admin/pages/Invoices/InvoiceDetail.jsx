@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Notification from '../../../components/Notification';
-import { ToastContainer } from 'react-toastify';
 import api from '../../../security/Axios';
 import { hasPermission } from "../../../security/DecodeJWT";
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +43,7 @@ export default function InvoiceDetail() {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [customerAddress, setCustomerAddress] = useState([]);
 
-
+    const [diaChiChiTiet, setDiaChiChiTiet] = useState("");
     useEffect(() => {
         if (localStorage.getItem("token")) {
             if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
@@ -62,6 +61,7 @@ export default function InvoiceDetail() {
             if (response.data.diaChiKhachHang) {
                 setCustomerAddress(response.data.diaChiKhachHang)
                 setSelectedAddress(response.data.diaChiKhachHang.find(addr => addr.macDinh === true)?.id);
+                setDiaChiChiTiet(response.data.diaChiKhachHang.find(addr => addr.macDinh === true)?.diaChiChiTiet?.split(",")[0]);
             }
         }
     };
@@ -274,19 +274,33 @@ export default function InvoiceDetail() {
 
     const handleUpdateAddress = async () => {
         const req = customerAddress.find(a => a.id == selectedAddress);
-        console.log(selectedAddress);
-        console.log(req);
-        await api.post(
-            `/admin/dia-chi/update-address/${selectedAddress}/${idHd}`,
-            req
-        ).then(res => {
-            if (res.status == 200) {
-                Notification("Cập nhật thành công!", "success")
+        if (req) {
+            // Create a new address string with the updated diaChiChiTiet
+            const addressParts = req.diaChiChiTiet.split(',');
+            // Replace first part (detailed address) with new value, keep the rest
+            addressParts[0] = diaChiChiTiet;
+            const updatedAddress = {
+                ...req,
+                diaChiChiTiet: diaChiChiTiet
+            };
+
+            try {
+                const response = await api.post(
+                    `/admin/dia-chi/update-address/${idHd}`,
+                    updatedAddress
+                );
+
+                if (response.status === 200) {
+                    Notification("Cập nhật thành công!", "success");
+                    fetchInvoice();
+                    getProductFromDetailsInvoice();
+                }
+            } catch (error) {
+                console.error("Error updating address:", error);
+                Notification("Cập nhật thất bại!", "error");
             }
-        })
-        fetchInvoice();
-        getProductFromDetailsInvoice();
-    }
+        }
+    };
 
     const validate = () => {
         const hasError = orderItemsByTab?.some(item => {
@@ -296,10 +310,10 @@ export default function InvoiceDetail() {
             }
             return false;
         });
-    
+
         return !hasError; // Nếu có lỗi thì trả false
     }
-    
+
     const continues = async () => {
         try {
             if (validate()) {
@@ -643,7 +657,7 @@ export default function InvoiceDetail() {
                                             </FormControl>
 
                                         )}
-                                        {customerAddress.length <= 0 && (
+                                        {customerAddress.length <= 0 ? (
                                             <Box>
                                                 <TextField
                                                     disabled={invoice?.trangThai != "Chờ xác nhận"}
@@ -653,6 +667,19 @@ export default function InvoiceDetail() {
                                                     fullWidth
                                                     sx={{ fontSize: "10px" }}
                                                     value={currentAddress?.diaChiChiTiet || ""}
+                                                />
+                                            </Box>
+                                        ) : (
+                                            <Box>
+                                                <TextField
+                                                    disabled={invoice?.trangThai != "Chờ xác nhận"}
+                                                    label="Địa chỉ chi tiết"
+                                                    variant="outlined"
+                                                    size="small"
+                                                    fullWidth
+                                                    sx={{ fontSize: "10px" }}
+                                                    value={diaChiChiTiet || ""}
+                                                    onChange={(e) => setDiaChiChiTiet(e.target.value)}
                                                 />
                                             </Box>
                                         )}
@@ -667,6 +694,7 @@ export default function InvoiceDetail() {
                                                 value={currentAddress?.tenNguoiNhan || ""}
                                                 onChange={(e) => handleInputChange("tenNguoiNhan", e.target.value)}
                                             />
+
                                             <TextField
                                                 label="Số điện thoại"
                                                 variant="outlined"
@@ -939,7 +967,6 @@ export default function InvoiceDetail() {
             <AddressDialog hoaDon={invoice} reload={reload} open={openAddressDialog} onClose={handleCloseAddressDialog} />
             {/* ô lịch sử thanh toán */}
             <PaymentHistory idHoaDon={idHd} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
-            <ToastContainer />
         </div >
     )
 }
