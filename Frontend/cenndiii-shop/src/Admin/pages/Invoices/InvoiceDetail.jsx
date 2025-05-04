@@ -32,7 +32,7 @@ import { Add, Remove } from '@mui/icons-material';
 import PaymentHistory from './PaymentHistory';
 import AddressDialog from './AddNewAddress';
 export default function InvoiceDetail() {
-    const { idHd } = useParams();
+    const { idHoaDon } = useParams();
     const [invoice, setInvoice] = useState();
     const navigate = useNavigate();
     const [total, setTotal] = useState(0);
@@ -55,8 +55,8 @@ export default function InvoiceDetail() {
 
 
     const fetchInvoice = async () => {
-        if (idHd) {
-            const response = await api.get(`/admin/hoa-don/hien-thi/${idHd}`);
+        if (idHoaDon) {
+            const response = await api.get(`/admin/hoa-don/hien-thi/${idHoaDon}`);
             setInvoice(response.data.hoaDon);
             if (response.data.diaChiKhachHang) {
                 setCustomerAddress(response.data.diaChiKhachHang)
@@ -71,7 +71,7 @@ export default function InvoiceDetail() {
         try {
 
             const requestData = {
-                idHoaDon: idHd,
+                idHoaDon: idHoaDon,
                 idHoaDonChiTiet: idHdct,
                 idChiTietSanPham: idCtsp
             };
@@ -105,7 +105,7 @@ export default function InvoiceDetail() {
 
     const getProductFromDetailsInvoice = async () => {
         try {
-            const response = await api.get(`/admin/hdct/get-cart/${idHd}`);
+            const response = await api.get(`/admin/hdct/get-cart/${idHoaDon}`);
             setOrderItemsByTab(response.data);
         } catch (error) {
             console.error("Error fetching product details:", error);
@@ -119,7 +119,7 @@ export default function InvoiceDetail() {
     useEffect(() => {
         fetchInvoice();
         getProductFromDetailsInvoice();
-    }, [idHd]);
+    }, [idHoaDon]);
     useEffect(() => {
         getProductFromDetailsInvoice()
     }, [])
@@ -177,7 +177,7 @@ export default function InvoiceDetail() {
             }
 
             const requestData = {
-                idHoaDon: idHd,
+                idHoaDon: idHoaDon,
                 idChiTietSanPham: productDetailSelected.idChiTietSanPham,
                 soLuongMua: selectedQuantity,
                 giaSauGiam: productDetailSelected.giaSauGiam
@@ -214,7 +214,7 @@ export default function InvoiceDetail() {
         if (newQuantity == "tru" || newQuantity == "cong") {
             try {
                 const requestData = {
-                    idHoaDon: idHd,
+                    idHoaDon: idHoaDon,
                     idHoaDonChiTiet: idHoaDonChiTiet,
                     idChiTietSanPham: idChiTietSanPham,
                     soLuongMua: newQuantity == "tru" ? Number(-1) : Number(1),
@@ -231,7 +231,7 @@ export default function InvoiceDetail() {
         } else if (typeof (Number(newQuantity)) == "number") {
             try {
                 const requestData = {
-                    idHoaDon: idHd,
+                    idHoaDon: idHoaDon,
                     idHoaDonChiTiet: idHoaDonChiTiet,
                     idChiTietSanPham: idChiTietSanPham,
                     soLuongMua: Number(newQuantity),
@@ -286,7 +286,7 @@ export default function InvoiceDetail() {
 
             try {
                 const response = await api.post(
-                    `/admin/dia-chi/update-address/${idHd}`,
+                    `/admin/dia-chi/update-address/${idHoaDon}`,
                     updatedAddress
                 );
 
@@ -966,7 +966,7 @@ export default function InvoiceDetail() {
 
             <AddressDialog hoaDon={invoice} reload={reload} open={openAddressDialog} onClose={handleCloseAddressDialog} />
             {/* ô lịch sử thanh toán */}
-            <PaymentHistory idHoaDon={idHd} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
+            <PaymentHistory idHoaDon={idHoaDon} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
         </div >
     )
 }

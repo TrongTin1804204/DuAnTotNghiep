@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Alert from "../../../../components/Alert";
 import { ImageList, ImageListItem } from "@mui/material";
 import api from "../../../../security/Axios";
-import { hasPermission } from "../../../../security/DecodeJWT";
+import { hasPermission, logout } from "../../../../security/DecodeJWT";
 import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
 
@@ -48,8 +48,9 @@ export default function ProductDetails() {
   const [images, setImages] = useState([]); // danh sách ảnh
 
   useEffect(() => {
-    if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
+    if (!hasPermission("ADMIN")) {
       navigate("/admin/login");
+      logout();
     }
   }, [navigate]);
   const handleAlertClose = (confirm) => {
@@ -439,17 +440,6 @@ export default function ProductDetails() {
 
   return (
     <div className="p-6 space-y-4 text-sm">
-      <nav className="text-gray-500 mb-4">
-        <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/dashboard")}>
-          Trang chủ
-        </span>{" "}
-        &gt;{" "}
-        <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/products")}>
-          Sản phẩm
-        </span>{" "}
-        &gt; <span className="font-semibold text-black">Chi tiết sản phẩm</span>
-      </nav>
-
       {/* Card 1 - Bộ Lọc */}
       <div className="bg-white p-4 rounded-lg shadow-md">
         <h2 className="text-sm font-semibold mb-4">Bộ Lọc</h2>

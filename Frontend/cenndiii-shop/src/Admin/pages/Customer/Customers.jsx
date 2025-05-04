@@ -163,16 +163,7 @@ export default function Customer() {
   };
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        aria-label="breadcrumb"
-        sx={{ mb: 1 }}>
-        <Link underline="hover" color="inherit" onClick={() => navigate("/admin/dashboard")} sx={{ cursor: "pointer" }}>
-          Thống kê
-        </Link>
-        <Typography color="text.primary">Khách hàng</Typography>
-      </Breadcrumbs>
+
 
       {/* Tiêu đề */}
 

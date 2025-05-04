@@ -49,9 +49,15 @@ export const getSub = () => {
     return decodedToken.sub;
 };
 
-export const logout = (permisson) => {
+export const getPhoneNumber = () => {
+    const decodedToken = getDecodedToken();
+    if (!decodedToken || !decodedToken.phoneNum) return "";
+    return decodedToken.phoneNum;
+};
+
+export const logout = () => {
 
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
-    
+
 }

@@ -5,6 +5,7 @@ import api from "../../../security/Axios";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
+import Notification from '../../../components/Notification';
 
 export default function AddDiscounts() {
   const [filters, setFilters] = useState({ search: "" });
@@ -66,34 +67,26 @@ export default function AddDiscounts() {
     // Kiểm tra nếu ngày bắt đầu chưa được chọn
     if (!addMaDGG.ngayBatDau) {
       setErrorNBT(true); // Hiển thị lỗi nếu chưa chọn ngày
-      toast.error("Ngày bắt đầu không được để trống!");
+      Notification("Ngày bắt đầu không được để trống!", "error");
       return;
     } else if (addMaDGG.ngayBatDau < now) {
       setErrorNBT(true);
-      toast.error("Ngày bắt đầu không được là ngày quá khứ!", {
-        position: "top-right",
-      });
+      Notification("Ngày bắt đầu không được là ngày quá khứ!", "error");
       return;
     } else {
       setErrorNBT(false); // Nếu đã chọn ngày, xóa lỗi
     }
     if (!addMaDGG.ngayKetThuc) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không được để trống!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không được để trống!", "error");
       return;
     } else if (addMaDGG.ngayKetThuc < now) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không được là ngày quá khứ!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không được là ngày quá khứ!", "error");
       return;
     } else if (addMaDGG.ngayKetThuc <= addMaDGG.ngayBatDau) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không thể nhỏ hơn hoặc bằng ngày bắt đầu!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không thể nhỏ hơn hoặc bằng ngày bắt đầu!", "error");
       return;
     } else {
       setErrorNKT(false);
@@ -104,26 +97,10 @@ export default function AddDiscounts() {
     }
     const result = await addDotGiamGias(); // Gọi hàm thêm mới
     if (result && result.status === 1) {
-      toast.success("Thêm mới thành công!", {
-        position: "top-right", // Đảm bảo rằng bạn đã sử dụng position đúng
-        style: {
-          backgroundColor: "#28a745",
-          color: "white",
-          borderRadius: "8px",
-          padding: "10px 20px",
-        },
-      });
+      Notification("Thêm mới thành công!", "success");
       navigate("/admin/discounts");
     } else {
-      toast.error("Thêm mới không thành công, vui lòng thử lại!", {
-        position: "top-right",
-        style: {
-          backgroundColor: "#dc3545",
-          color: "white",
-          borderRadius: "8px",
-          padding: "10px 20px",
-        },
-      });
+      Notification("Thêm mới không thành công, vui lòng thử lại!", "error");
     }
   };
 

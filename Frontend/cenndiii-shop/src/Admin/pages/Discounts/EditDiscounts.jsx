@@ -6,6 +6,8 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../security/Axios";
+import Notification from '../../../components/Notification';
+
 export const formatDateFromArray = (dateArray) => {
   if (!dateArray) return '';
 
@@ -67,34 +69,26 @@ export default function EditDiscounts() {
     // Kiểm tra nếu ngày bắt đầu chưa được chọn
     if (!editMaDGG.ngayBatDau) {
       setErrorNBT(true); // Hiển thị lỗi nếu chưa chọn ngày
-      toast.error("Ngày bắt đầu không được để trống!");
+      Notification("Ngày bắt đầu không được để trống!", "error");
       return;
     } else if (editMaDGG.ngayBatDau < now) {
       setErrorNBT(true);
-      toast.error("Ngày bắt đầu không được là ngày quá khứ!", {
-        position: "top-right",
-      });
+      Notification("Ngày bắt đầu không được là ngày quá khứ!", "error");
       return;
     } else {
       setErrorNBT(false); // Nếu đã chọn ngày, xóa lỗi
     }
     if (!editMaDGG.ngayKetThuc) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không được để trống!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không được để trống!", "error");
       return;
     } else if (editMaDGG.ngayKetThuc < now) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không được là ngày quá khứ!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không được là ngày quá khứ!", "error");
       return;
     } else if (editMaDGG.ngayKetThuc <= editMaDGG.ngayBatDau) {
       setErrorNKT(true);
-      toast.error("Ngày kết thúc không thể nhỏ hơn hoặc bằng ngày bắt đầu!", {
-        position: "top-right",
-      });
+      Notification("Ngày kết thúc không thể nhỏ hơn hoặc bằng ngày bắt đầu!", "error");
       return;
     } else {
       setErrorNKT(false);
@@ -105,26 +99,10 @@ export default function EditDiscounts() {
     }
     const result = await editDotGiamGias(); // Gọi hàm cập nhật
     if (result && result.status === 1) {
-      toast.success("Cập nhật thành công!", {
-        position: "top-right", // Đảm bảo rằng bạn đã sử dụng position đúng
-        style: {
-          backgroundColor: "#28a745",
-          color: "white",
-          borderRadius: "8px",
-          pediting: "10px 20px",
-        },
-      });
+      Notification("Cập nhật thành công!", "success");
       navigate("/admin/discounts"); // Chuyển hướng sau 1 giây
     } else {
-      toast.error("Cập nhật không thành công, vui lòng thử lại!", {
-        position: "top-right",
-        style: {
-          backgroundColor: "#dc3545",
-          color: "white",
-          borderRadius: "8px",
-          pediting: "10px 20px",
-        },
-      });
+      Notification("Cập nhật không thành công, vui lòng thử lại!", "error");
     }
   };
 

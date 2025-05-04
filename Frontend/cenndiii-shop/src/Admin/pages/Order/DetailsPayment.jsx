@@ -23,6 +23,8 @@ import Delivery from "./Delivery";
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
 import Alert from "../../../components/Alert";
+import Notification from '../../../components/Notification';
+
 const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const navigate = useNavigate();
@@ -727,7 +729,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             setVoucherSearched(filtered.length > 0);
 
             if (filtered.length === 0) {
-                toast.warn("Không có phiếu giảm giá hoặc chưa đủ điều kiện áp dụng");
+                Notification("Không có phiếu giảm giá hoặc chưa đủ điều kiện áp dụng", "warning");
             }
         }
     };

@@ -5,9 +5,9 @@ import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../../pages/cart/CartContext"; // Import useCart
 import { Menu, MenuItem } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getPermissions,getUserName,logout } from "../../../security/DecodeJWT";
+import { getPermissions, getUserName, logout } from "../../../security/DecodeJWT";
 const Navbar = () => {
-  const { cartCount } = useCart(); 
+  const { cartCount } = useCart();
   const [scrolling, setScrolling] = useState(false);
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -19,15 +19,15 @@ const Navbar = () => {
     { link: "contact", name: "Liên hệ" },
     { link: "about", name: "Về chúng tôi" }
   ];
-  const [user,setUser] = useState([])
-  const [userName,setUserName] = useState("");
+  const [user, setUser] = useState([])
+  const [userName, setUserName] = useState("");
   const isLoggedIn = localStorage.getItem("token");
 
-  useEffect(()=>{
+  useEffect(() => {
     setUser(getPermissions());
     setUserName(getUserName())
-  },[isLoggedIn])
-  
+  }, [isLoggedIn])
+
 
   const handleAvatarClick = (event) => {
     if (!isLoggedIn) {
@@ -36,7 +36,7 @@ const Navbar = () => {
       setAnchorEl(event.currentTarget);
     }
   };
-  
+
 
   const handleClose = () => {
     setAnchorEl(null);
@@ -45,14 +45,18 @@ const Navbar = () => {
   const handleLogout = () => {
     handleClose();
     navigate("/home");
-    logout(user); 
+    logout(user);
   };
-  
+
   const handleOrder = () => {
     navigate("/orders-customer");
     handleClose();
   };
 
+  const handleChangePassword = () => {
+    navigate("/change-password");
+    handleClose();
+  };
 
   const handleScroll = useCallback(() => {
     requestAnimationFrame(() => setScrolling(window.scrollY > 400));
@@ -133,6 +137,7 @@ const Navbar = () => {
               {userName}
             </MenuItem>
             <MenuItem onClick={handleOrder}>Đơn hàng</MenuItem>
+            <MenuItem onClick={handleChangePassword}>Đổi mật khẩu</MenuItem>
             <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
           </Menu>
         </div>

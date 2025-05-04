@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Loading from "../../../../components/Loading";
 import Alert from "../../../../components/Alert";
 import api from "../../../../security/Axios";
+import { hasPermission, logout } from "../../../../security/DecodeJWT";
 
 const removeDiacritics = (str) => {
   return str
@@ -89,6 +90,13 @@ export default function ProductDetails() {
 
   const [alertOpen, setAlertOpen] = useState(false); // mở alert
   const [alertMessage, setAlertMessage] = useState(''); // thông báo alert
+
+  useEffect(() => {
+    if (!hasPermission("ADMIN")) {
+      navigate("/admin/login");
+      logout();
+    }
+  }, [navigate]);
 
   const handleAlertClose = (confirm) => {
     setAlertOpen(false);
@@ -600,18 +608,6 @@ export default function ProductDetails() {
 
   return (
     <div className="p-2 space-y-4 text-sm">
-      {/* Breadcrumb */}
-      <nav className="text-gray-500 mb-4">
-        <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/dashboard")}>
-          Trang chủ
-        </span>{" "}
-        &gt;{" "}
-        <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/products")}>
-          Sản phẩm
-        </span>{" "}
-        &gt; <span className="font-semibold text-black">Thêm chi tiết sản phẩm</span>
-      </nav>
-      {/* <h1 className="text-lg font-semibold mb-4">Chi Tiết Sản Phẩm</h1> */}
 
       {/* Layout 2 cột: Cột bên trái (Card 1 & Card 2), Cột bên phải (Card 3) */}
       <div className="">

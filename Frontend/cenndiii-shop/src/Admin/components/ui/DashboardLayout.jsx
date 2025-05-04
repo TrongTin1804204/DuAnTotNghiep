@@ -4,18 +4,24 @@ import Navbar from "./Navbar";
 
 export default function DashboardLayout() {
   return (
-      <div className="flex h-screen bg-gray-100 ">
-        <div className="fixed inset-y-0 left-0 bg-white shadow-lg flex flex-col z-50">
-          <Sidebar />
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="fixed inset-y-0 left-0 w-[200px] z-30">
+        <Sidebar />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 ml-[200px] flex flex-col">
+        {/* Navbar - now spans full width minus sidebar */}
+        <div className="fixed top-0 left-[200px] right-0 z-20">
+          <Navbar />
         </div>
-        <div className="flex flex-col flex-1 ml-[200px]">
-          <div className="fixed top-0 left-0 right-0 h-16 bg-white shadow-md z-60">
-            <Navbar />
-          </div>
-          <div className="flex-1 mt-16 overflow-auto">
-            <Outlet />
-          </div>
+
+        {/* Main Content Area with padding for navbar */}
+        <div className="mt-16 flex-1 overflow-y-auto">
+          <Outlet />
         </div>
       </div>
+    </div>
   );
 }

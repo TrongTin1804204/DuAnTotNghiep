@@ -1,11 +1,13 @@
 package com.example.dev.service;
 
+import com.example.dev.DTO.UserLogin.UserLogin;
 import com.example.dev.entity.customer.KhachHang;
 import com.example.dev.entity.PhieuGiamGia;
 import com.example.dev.entity.PhieuGiamGiaChiTiet;
 import com.example.dev.repository.customer.KhachHangRepository;
 import com.example.dev.repository.voucher.PhieuGiamGiaChiTietRepository;
 import com.example.dev.repository.voucher.PhieuGiamGiaRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -51,7 +53,7 @@ public class PhieuGiamGiaService {
 
     // hiển thị bên bán hàng
     public List<PhieuGiamGia> getPhieuGiamGia(Integer khachHangId) {
-        if (khachHangId == null) {
+        if (khachHangId == null || khachHangId < 0) {
             // Nếu không có khách hàng cụ thể (khách lẻ), chỉ lấy phiếu Công Khai
             return giamGiaRepository.findPublicVouchers();
         }
@@ -100,22 +102,22 @@ public class PhieuGiamGiaService {
 
     // thêm
     @Transactional
-    public PhieuGiamGia themPhieuGiamGia(PhieuGiamGia phieuGiamGia) {
-        phieuGiamGia.setNguoiTao("Nguyen Van A"); // gắn cứng nào có role tính sau
+    public PhieuGiamGia themPhieuGiamGia(PhieuGiamGia phieuGiamGia, Authentication authentication  ) {
+        UserLogin user = (UserLogin) authentication.getPrincipal();
+        phieuGiamGia.setNguoiTao(user.getUsername()); // gắn cứng nào có role tính sau
         phieuGiamGia.setMaKhuyenMai(generateDiscountCode()); // Tự động sinh mã giảm giá
 
         if ("Công Khai".equals(phieuGiamGia.getLoai())) {
             List<KhachHang> allCustomers = khachHangRepository.findAll();
             for (KhachHang customer : allCustomers) {
-                PhieuGiamGiaChiTiet chiTiet = new PhieuGiamGiaChiTiet();
-                chiTiet.setPhieuGiamGia(phieuGiamGia);
-                chiTiet.setKhachHang(customer);
-                chiTiet.setNgayTao(LocalDateTime.now());
-                chiTiet.setNgaySua(LocalDateTime.now());
-                chiTiet.setNguoiTao("Nguyen Van A");
-                chiTiet.setNguoiSua("Nguyen Van A");
-                phieuGiamGia.getDanhSachKhachHang().add(chiTiet);
-
+//                PhieuGiamGiaChiTiet chiTiet = new PhieuGiamGiaChiTiet();
+//                chiTiet.setPhieuGiamGia(phieuGiamGia);
+//                chiTiet.setKhachHang(customer);
+//                chiTiet.setNgayTao(LocalDateTime.now());
+//                chiTiet.setNgaySua(LocalDateTime.now());
+//                chiTiet.setNguoiTao(user.getUsername());
+//                chiTiet.setNguoiSua(user.getUsername());
+//                phieuGiamGia.getDanhSachKhachHang().add(chiTiet);
                 // Gửi email cho khách hàng
                 emailService.sendDiscountEmailCongKhai(customer, phieuGiamGia);
             }
@@ -128,8 +130,8 @@ public class PhieuGiamGiaService {
                     chiTiet.setKhachHang(khachHang);
                     chiTiet.setNgayTao(LocalDateTime.now());
                     chiTiet.setNgaySua(LocalDateTime.now());
-                    chiTiet.setNguoiTao("Nguyen Van A");
-                    chiTiet.setNguoiSua("Nguyen Van A");// chưa có gắn tạm
+                    chiTiet.setNguoiTao(user.getUsername());
+                    chiTiet.setNguoiSua(user.getUsername());// chưa có gắn tạm
                     // Gửi email cho khách hàng
                     emailService.sendDiscountEmailCaNhan(khachHang, phieuGiamGia);
                 }
@@ -224,7 +226,7 @@ public class PhieuGiamGiaService {
 
     // update
     @Transactional
-    public PhieuGiamGia updatePhieuGiamGia(Integer id, PhieuGiamGia phieuGiamGia) {
+    public PhieuGiamGia updatePhieuGiamGia(Integer id, PhieuGiamGia phieuGiamGia,Authentication authentication) {
         PhieuGiamGia existingPhieu = timPhieuGiamTheoID(id);
         if (existingPhieu == null) {
             throw new RuntimeException("PhieuGiamGia with ID " + id + " not found");
@@ -237,9 +239,9 @@ public class PhieuGiamGiaService {
         updatePhieuInfo(existingPhieu, phieuGiamGia);
 
         if ("Công Khai".equals(existingPhieu.getLoai()) || "Công Khai".equals(phieuGiamGia.getLoai())) {
-            updateKhachHangCongKhai(existingPhieu, phieuGiamGia, hasImportantChanges);
+            updateKhachHangCongKhai(existingPhieu, phieuGiamGia, hasImportantChanges,authentication);
         } else {
-            updateKhachHangCaNhan(existingPhieu, phieuGiamGia, hasImportantChanges);
+            updateKhachHangCaNhan(existingPhieu, phieuGiamGia, hasImportantChanges,authentication);
         }
 
         return giamGiaRepository.save(existingPhieu);
@@ -271,7 +273,8 @@ public class PhieuGiamGiaService {
     }
 
 
-    private void updateKhachHangCongKhai(PhieuGiamGia existingPhieu, PhieuGiamGia newPhieu, boolean hasImportantChanges) {
+    private void updateKhachHangCongKhai(PhieuGiamGia existingPhieu, PhieuGiamGia newPhieu, boolean hasImportantChanges,Authentication authentication) {
+        UserLogin user = (UserLogin) authentication.getPrincipal();
         Set<Integer> oldCustomerIds = existingPhieu.getDanhSachKhachHang().stream().map(chiTiet -> chiTiet.getKhachHang().getIdKhachHang()).collect(Collectors.toSet());
 
         List<KhachHang> allCustomers = khachHangRepository.findAll();
@@ -288,8 +291,8 @@ public class PhieuGiamGiaService {
                 chiTiet.setKhachHang(customer);
                 chiTiet.setNgayTao(LocalDateTime.now());
                 chiTiet.setNgaySua(LocalDateTime.now());
-                chiTiet.setNguoiTao("Nguyen Van A");
-                chiTiet.setNguoiSua("Nguyen Van A");
+                chiTiet.setNguoiTao(user.getUsername());
+                chiTiet.setNguoiSua(user.getUsername());
                 existingPhieu.getDanhSachKhachHang().add(chiTiet);
                 chiTietRepository.save(chiTiet);
                 safeSendEmail(() -> emailService.sendDiscountEmailCongKhai(customer, existingPhieu));
@@ -307,7 +310,9 @@ public class PhieuGiamGiaService {
 
     }
 
-    private void updateKhachHangCaNhan(PhieuGiamGia existingPhieu, PhieuGiamGia newPhieu, boolean hasImportantChanges) {
+    private void updateKhachHangCaNhan(PhieuGiamGia existingPhieu, PhieuGiamGia newPhieu, boolean hasImportantChanges,Authentication authentication) {
+        UserLogin user = (UserLogin) authentication.getPrincipal();
+
         Set<Integer> oldCustomerIds = existingPhieu.getDanhSachKhachHang().stream().map(chiTiet -> chiTiet.getKhachHang().getIdKhachHang()).collect(Collectors.toSet());
 
         Set<Integer> newCustomerIds = newPhieu.getDanhSachKhachHang().stream().map(chiTiet -> chiTiet.getKhachHang().getIdKhachHang()).collect(Collectors.toSet());
@@ -343,8 +348,8 @@ public class PhieuGiamGiaService {
                     chiTiet.setKhachHang(khachHang);
                     chiTiet.setNgayTao(LocalDateTime.now());
                     chiTiet.setNgaySua(LocalDateTime.now());
-                    chiTiet.setNguoiTao("Nguyen Van A");
-                    chiTiet.setNguoiSua("Nguyen Van A");
+                    chiTiet.setNguoiTao(user.getUsername());
+                    chiTiet.setNguoiSua(user.getUsername());
                     existingPhieu.getDanhSachKhachHang().add(chiTiet);
                     chiTietRepository.save(chiTiet);
                     safeSendEmail(() -> emailService.sendDiscountEmailCaNhan(khachHang, existingPhieu));

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/chat-lieu")
-
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class ChatLieuController {
     @Autowired
     ChatLieuService chatLieuService;
@@ -25,13 +25,11 @@ public class ChatLieuController {
         return ResponseEntity.ok(chatLieuService.getChatLieuBan());
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/them")
     public ResponseEntity<?> themChatLieu(@RequestBody ChatLieu cl){
         return ResponseEntity.ok(chatLieuService.themChatLieu(cl));
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/sua")
     public ResponseEntity<?> suaChatLieu(@RequestBody ChatLieu cl){
         try {

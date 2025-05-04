@@ -4,12 +4,14 @@ import Home from "./pages/Home";
 import Shop from "./pages/shop/Shop";
 import ProductDetails from "./pages/shop/ProductDetails";
 import Cart from "./pages/cart/Cart";
-import LoginForm from "../security/Login";
+import LoginForm from "./components/auth/Login";
+import SignUpForm from "./components/auth/SignUp";
+import ForgotPasswordForm from "./components/auth/ForgotPassword";
 import Checkout from "./pages/cart/Checkout";
 import PaymentStatus from "./pages/cart/PaymentStatus";
 import OrdersCustomer from "./pages/order/OrdersCustomer";
 import DetailOrdersCustomer from "./pages/order/DetailOrdersCustomer";
-
+import ChangePasswordForm from "./components/auth/ChangePassword";
 
 export default function UserRoute() {
     return (
@@ -25,7 +27,9 @@ export default function UserRoute() {
                 <Route path="payment-status" element={<PaymentStatus />} />
                 <Route path="orders-customer" element={<OrdersCustomer />} />
                 <Route path="detail-orders-customer/:idHd" element={<DetailOrdersCustomer />} />
-            
+                <Route path="sign-up" element={<SignUpForm />} />
+                <Route path="forgot-password" element={<ForgotPasswordForm />} />
+                <Route path="change-password" element={<ChangePasswordForm />} />
             </Route>
         </Routes>
     )

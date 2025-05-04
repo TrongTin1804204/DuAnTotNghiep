@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/de-giay")
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class DeGiayController {
     @Autowired
     DeGiayService deGiayService;
@@ -23,12 +24,10 @@ public class DeGiayController {
         return ResponseEntity.ok(deGiayService.deGiayBan());
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/them")
     public ResponseEntity<?> themDeGiay(@RequestBody DeGiay dg) {
         return ResponseEntity.ok(deGiayService.themDeGiay(dg));
     }
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/sua")
     public ResponseEntity<?> suaDeGiay(@RequestBody DeGiay dg) {
 

@@ -291,17 +291,19 @@ export default function Discounts() {
       <div className="bg-white p-4 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-sm font-semibold">Danh Sách Đợt Giảm Giá</h2>
-          <button className="flex items-center justify-center border border-black rounded-full w-8 h-8">
-            <NavLink
-              to="/admin/discounts/add"
-              className={({ isActive }) =>
-                `block transition-all ${isActive ? "bg-gray-300" : "hover:bg-gray-100"
-                }`
-              }
-            >
-              <Plus size={20} stroke="black" />
-            </NavLink>
-          </button>
+          {hasPermission("ADMIN") && (
+            <button className="flex items-center justify-center border border-black rounded-full w-8 h-8">
+              <NavLink
+                to="/admin/discounts/add"
+                className={({ isActive }) =>
+                  `block transition-all ${isActive ? "bg-gray-300" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <Plus size={20} stroke="black" />
+              </NavLink>
+            </button>
+          )}
         </div>
         <table className="w-full border-collapse text-sm table-fixed">
           <thead>
@@ -314,7 +316,9 @@ export default function Discounts() {
               <th className="p-2 w-40">Thời gian bắt đầu</th>
               <th className="p-2 w-40">Thời gian kết thúc</th>
               <th className="p-2 w-32">Trạng Thái</th>
-              <th className="p-2 w-24">Hành Động</th>
+              {hasPermission("ADMIN") && (
+                <th className="p-2 w-24">Hành Động</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -362,17 +366,19 @@ export default function Discounts() {
                           : "Đang diễn ra"}
                     </span>
                   </td>
-                  <td className="p-2 flex space-x-2 justify-center items-center">
-                    <NavLink
-                      to={`/admin/discounts/edit/${dotGiamGia.idDotGiamGia}`}
-                      className={({ isActive }) =>
-                        `text-black p-1 rounded ${isActive ? "bg-gray-300" : "hover:bg-gray-100"
-                        }`
-                      }
-                    >
-                      <Eye size={18} stroke="black" />
-                    </NavLink>
-                  </td>
+                  {hasPermission("ADMIN") && (
+                    <td className="p-2 flex space-x-2 justify-center items-center">
+                      <NavLink
+                        to={`/admin/discounts/edit/${dotGiamGia.idDotGiamGia}`}
+                        className={({ isActive }) =>
+                          `text-black p-1 rounded ${isActive ? "bg-gray-300" : "hover:bg-gray-100"
+                          }`
+                        }
+                      >
+                        <Eye size={18} stroke="black" />
+                      </NavLink>
+                    </td>
+                  )}
                 </tr>
               );
             })}

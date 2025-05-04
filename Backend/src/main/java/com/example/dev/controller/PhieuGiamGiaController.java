@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -70,10 +71,10 @@ public class PhieuGiamGiaController {
 
     // thêm pgg
     @PostMapping("/them")
-    public ResponseEntity<?> themPhieuGiamGia(@Valid @RequestBody PhieuGiamGia phieuGiamGia) {
+    public ResponseEntity<?> themPhieuGiamGia(@Valid @RequestBody PhieuGiamGia phieuGiamGia, Authentication authentication) {
 //        System.out.println("Dữ liệu nhận: " + phieuGiamGia);
 //        System.out.println("Danh sách khách hàng: " + phieuGiamGia.getDanhSachKhachHang());
-        return ResponseEntity.ok(phieuGiamGiaService.themPhieuGiamGia(phieuGiamGia));
+        return ResponseEntity.ok(phieuGiamGiaService.themPhieuGiamGia(phieuGiamGia,authentication));
     }
 
     // xuat excel
@@ -107,9 +108,9 @@ public class PhieuGiamGiaController {
 
     // sửa
     @PostMapping("/sua/{id}")
-    public ResponseEntity<?> suaPhieuGiamGia(@PathVariable int id, @Valid @RequestBody PhieuGiamGia phieuGiamGia) {
+    public ResponseEntity<?> suaPhieuGiamGia(@PathVariable int id, @Valid @RequestBody PhieuGiamGia phieuGiamGia,Authentication authentication) {
         try {
-            PhieuGiamGia updatedPhieu = phieuGiamGiaService.updatePhieuGiamGia(id, phieuGiamGia);
+            PhieuGiamGia updatedPhieu = phieuGiamGiaService.updatePhieuGiamGia(id, phieuGiamGia,authentication);
             return ResponseEntity.ok(updatedPhieu);
         } catch (ResponseStatusException e) {
             System.err.println("Lỗi cập nhật phiếu giảm giá: " + e.getReason());

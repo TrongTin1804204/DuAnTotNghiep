@@ -59,6 +59,13 @@ public interface NhanVienRepo extends JpaRepository<NhanVien, Integer> {
     Optional<NhanVien> findBySoDienThoai(String soDienThoai);
     Optional<NhanVien> findByEmail(String email);
     Optional<NhanVien> findByCccd(String cccd);
+
+    @Query("""
+    SELECT nv FROM NhanVien nv
+        WHERE (:key IS NOT NULL AND nv.soDienThoai = :key)
+           OR (:key IS NOT NULL AND nv.email = :key)
+""")
+    Optional<NhanVien> findByEmailOrPhonenum(@Param("key") String key);
 }
 
 

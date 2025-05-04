@@ -19,12 +19,19 @@ import { Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
+import { hasPermission, logout } from "../../../security/DecodeJWT";
 
 const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
   const [ten, setTen] = useState('');
   const [trangThai, setTrangThai] = useState(false);
   const [error, setError] = useState('');
-
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!hasPermission("ADMIN")) {
+      navigate("/admin/login");
+      logout();
+    }
+  }, [navigate]);
   useEffect(() => {
     if (data) {
       setTen(data.ten);
@@ -208,23 +215,6 @@ export default function ChatLieu() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        aria-label="breadcrumb"
-        sx={{ mb: 1 }}
-      >
-        <Link
-          underline="hover"
-          color="inherit"
-          onClick={() => navigate("/admin/dashboard")}
-          sx={{ cursor: "pointer" }}
-        >
-          Thống kê
-        </Link>
-        <Typography color="text.primary">Chất liệu</Typography>
-      </Breadcrumbs>
-
       {/* Tiêu đề */}
       <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
         Quản lý Chất liệu

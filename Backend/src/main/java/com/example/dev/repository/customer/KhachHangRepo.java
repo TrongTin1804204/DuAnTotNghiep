@@ -31,6 +31,14 @@ public interface KhachHangRepo extends JpaRepository<KhachHang, Integer> {
     Optional<KhachHang> findByEmail(String email);
     List<KhachHang> findByTrangThaiIsTrue();
 
+    @Query("""
+    SELECT kh FROM KhachHang kh
+    WHERE (:key IS NOT NULL AND kh.soDienThoai = :key)
+       OR (:key IS NOT NULL AND kh.email = :key)
+    
+""")
+    Optional<KhachHang> findByEmailOrPhonenum(@Param("key") String key);
+
     @Query(value = """
     SELECT\s
         kh.id_khach_hang,

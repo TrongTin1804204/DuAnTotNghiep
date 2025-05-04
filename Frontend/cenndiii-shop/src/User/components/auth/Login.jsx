@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import axios from "axios";
-import { Decode, getDecodedToken } from "./DecodeJWT";
+import { Decode, getDecodedToken } from "../../../security/DecodeJWT";
 import { useNavigate } from "react-router-dom";
+import Notification from "../../../components/Notification";
 export default function LoginForm() {
   const [phoneNum, setPhoneNum] = useState("");
   const [password, setPassword] = useState("");
@@ -17,8 +18,8 @@ export default function LoginForm() {
         password: password,
         isCustomer: true,
       }).then((res) => {
-
-        if (res.status === 200) {
+        if (res.data != "" && res.status === 200) {
+          Notification(res.data.message, "success");
           const token = res.data.token;
           const refreshToken = res.data.refreshToken;
 
@@ -34,11 +35,13 @@ export default function LoginForm() {
               navigate("/login");
             }
           }
+          Notification("Đăng nhập thành công!", "success");
+        } else {
+          Notification("Sai tên tài khoản hoặc mật khẩu", "error");
         }
       });
-
     } catch (error) {
-
+      Notification("Đăng nhập thất bại!", "error");
     }
   };
 
@@ -54,6 +57,7 @@ export default function LoginForm() {
               type="number"
               value={phoneNum}
               onChange={(e) => setPhoneNum(e.target.value)}
+              placeholder="Số điện thoại"
               className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               required
             />
@@ -70,13 +74,24 @@ export default function LoginForm() {
               className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               required
             />
-            {/* <button
+            <button
               type="button"
               className="absolute right-3 top-3 text-gray-400"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button> */}
+            </button>
+          </div>
+
+          {/* Forgot Password Link */}
+          <div className="mb-4 text-right">
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-blue-600 hover:underline"
+            >
+              Quên mật khẩu?
+            </button>
           </div>
 
           {/* Login Button */}
@@ -86,6 +101,18 @@ export default function LoginForm() {
           >
             Đăng nhập
           </button>
+
+          {/* Sign Up Link */}
+          <div className="mt-4 text-center">
+            <span className="text-gray-600">Chưa có tài khoản? </span>
+            <button
+              type="button"
+              onClick={() => navigate("/sign-up")}
+              className="text-blue-600 hover:underline"
+            >
+              Đăng ký ngay
+            </button>
+          </div>
         </form>
       </div>
     </div>

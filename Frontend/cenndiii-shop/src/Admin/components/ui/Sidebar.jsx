@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Home, ShoppingCart, User, Percent, Box, FileText, ChevronRight } from "lucide-react";
 import { hasPermission } from "../../../security/DecodeJWT";
+
 export default function Sidebar() {
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -10,21 +11,24 @@ export default function Sidebar() {
   };
 
   const handleMenuClick = () => {
-    setOpenMenu(null); // Đóng tất cả menu con khi chọn menu không có menu con
+    setOpenMenu(null);
   };
 
   return (
-    <aside className="w-[200px] h-screen bg-white p-4 shadow-md flex flex-col text-xs">
-      <div className="text-center mb-6">
+    <aside className="h-full bg-white shadow-lg flex flex-col">
+      {/* Logo section - fixed at top */}
+      <div className="p-4 border-b">
         <img src="/logo.png" alt="" className="h-20 mx-auto" />
       </div>
-      <nav className="space-y-2">
+
+      {/* Navigation section - scrollable */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-2 text-xs scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         <NavLink
           to="/admin/dashboard"
           className={({ isActive }) =>
             `flex items-center space-x-2 p-2 rounded transition-all ${isActive ? "bg-gray-300" : "hover:bg-gray-200"}`
           }
-          onClick={handleMenuClick} // Đóng menu con khi chọn menu này
+          onClick={handleMenuClick}
         >
           <Home size={20} />
           <span>Thống kê</span>
@@ -35,7 +39,7 @@ export default function Sidebar() {
           className={({ isActive }) =>
             `flex items-center space-x-2 p-2 rounded transition-all ${isActive ? "bg-gray-300" : "hover:bg-gray-200"}`
           }
-          onClick={handleMenuClick} // Đóng menu con khi chọn menu này
+          onClick={handleMenuClick}
         >
           <ShoppingCart size={20} />
           <span>Bán hàng tại quầy</span>
@@ -46,7 +50,7 @@ export default function Sidebar() {
           className={({ isActive }) =>
             `flex items-center space-x-2 p-2 rounded transition-all ${isActive ? "bg-gray-300" : "hover:bg-gray-200"}`
           }
-          onClick={handleMenuClick} // Đóng menu con khi chọn menu này
+          onClick={handleMenuClick}
         >
           <FileText size={20} />
           <span>Hóa đơn</span>
@@ -68,7 +72,7 @@ export default function Sidebar() {
             />
           </button>
           <div
-            className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "sales" ? "max-h-64 overflow-y-auto opacity-100" : "max-h-0 opacity-0"
+            className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "sales" ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
               }`}
           >
             <NavLink
@@ -92,7 +96,6 @@ export default function Sidebar() {
 
         {/* Quản lý sản phẩm */}
         {hasPermission("ADMIN") && (
-
           <div>
             <button
               onClick={() => toggleMenu("products")}
@@ -107,9 +110,8 @@ export default function Sidebar() {
                 className={`transition-transform duration-300 ${openMenu === "products" ? "rotate-90" : ""}`}
               />
             </button>
-
             <div
-              className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "products" ? "max-h-50 opacity-100" : "max-h-0 opacity-0"
+              className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "products" ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
                 }`}
             >
               <NavLink
@@ -196,7 +198,7 @@ export default function Sidebar() {
           </div>
         )}
 
-
+        {/* Quản lý tài khoản */}
         <div>
           <button
             onClick={() => toggleMenu("account")}
@@ -212,7 +214,7 @@ export default function Sidebar() {
             />
           </button>
           <div
-            className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "account" ? "max-h-64 overflow-y-auto opacity-100" : "max-h-0 opacity-0"
+            className={`pl-6 transition-all duration-300 overflow-hidden ${openMenu === "account" ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
               }`}
           >
             <NavLink

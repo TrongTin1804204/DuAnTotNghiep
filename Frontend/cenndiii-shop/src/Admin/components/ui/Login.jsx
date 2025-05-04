@@ -3,13 +3,13 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import axios from "axios";
 import { Decode } from "../../../security/DecodeJWT";
 import { useNavigate } from "react-router-dom";
-
+import Notification from "../../../components/Notification";
 export default function LoginPage() {
   const [phoneNum, setPhoneNum] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
+  const [error, setError] = useState("");
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -18,9 +18,8 @@ export default function LoginPage() {
         password: password,
         isCustomer: false,
       });
-      console.log(res.data);
 
-      if (res.status === 200) {
+      if (res.status === 200 && res.data != "") {
         const token = res.data.token;
         const refreshToken = res.data.refreshToken;
 
@@ -29,8 +28,11 @@ export default function LoginPage() {
 
         const decodedToken = Decode(token);
         navigate(decodedToken.permissions[0] === "ADMIN" || decodedToken.permissions[0] === "STAFF" ? "/admin" : "/home");
+      } else {
+        setError("Sai tên tài khoản hoặc mật khẩu!");
       }
     } catch (error) {
+      Notification("Lỗi khi đăng nhập!", "error");
       console.error("Login failed", error);
     }
   };
@@ -79,7 +81,7 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-
+            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
             {/* Nút đăng nhập */}
             <button
               type="submit"

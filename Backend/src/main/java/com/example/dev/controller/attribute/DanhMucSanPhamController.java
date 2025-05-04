@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/danh-muc")
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class DanhMucSanPhamController {
     @Autowired
     DanhMucService danhMucService;
@@ -24,13 +25,11 @@ public class DanhMucSanPhamController {
         return ResponseEntity.ok(danhMucService.getDanhMucSanPhamBan());
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/them")
     public ResponseEntity<?> themDanhMucSanPham(@RequestBody DanhMucSanPham dmsp){
         return ResponseEntity.ok(danhMucService.themDanhMucSanPham(dmsp));
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/sua")
     public ResponseEntity<?> suaDanhMucSanPham(@RequestBody DanhMucSanPham dmsp){
         try {

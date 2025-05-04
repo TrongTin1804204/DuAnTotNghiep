@@ -379,11 +379,6 @@ export default function Orders() {
 
     return (
         <div className="p-4 text-[10px]">
-            <nav className="text-gray-500 mb-4">
-                <span className="cursor-pointer hover:underline" onClick={() => navigate("/admin/dashboard")}>Thống kê</span>{" "} &gt;{" "}
-                <span className="font-semibold text-black">Bán hàng</span>
-            </nav>
-
             <div className="bg-white p-4 rounded-lg shadow-md relative ">
                 <Box sx={{ flexGrow: 1, maxWidth: 870, bgcolor: 'background.paper' }}>
                     <Tabs
@@ -646,16 +641,16 @@ export default function Orders() {
                                     </div>
                                 </div>
                                 <div className='w-[33%]'>
-                                    <DetailsPayment
+                                    {/* <DetailsPayment
                                         total={total}
                                         invoiceId={invoiceId}
                                         reloadTab={reloadTab}
                                         totalItem={orderItemsByTab}
-                                    />
-                                    {/* <DetailPaymentsV2
+                                    /> */}
+                                    <DetailPaymentsV2
                                         invoiceId={invoiceId}
                                         reloadTab={reloadTab}
-                                    /> */}
+                                    />
                                 </div>
                             </div>
                         </TabPanel>

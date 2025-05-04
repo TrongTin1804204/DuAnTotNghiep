@@ -17,14 +17,17 @@ public class SanPhamController {
     @Autowired
     SanPhamService sanPhamService;
 
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @GetMapping("/hien-thi")
     public ResponseEntity<?> hienThi(@RequestParam(defaultValue = "") String keyword) {
         return ResponseEntity.ok(sanPhamService.getSpDTO(keyword));
     }
-//    @GetMapping("/hien-thi")
-//    public ResponseEntity<?> hienThi(@RequestBody SearchRequest searchRequest) {
-//        return ResponseEntity.ok(sanPhamService.getSpDTO(searchRequest));
-//    }
+
+    // @GetMapping("/hien-thi")
+    // public ResponseEntity<?> hienThi(@RequestBody SearchRequest searchRequest) {
+    // return ResponseEntity.ok(sanPhamService.getSpDTO(searchRequest));
+    // }
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @GetMapping("/hien-thi/true")
     public ResponseEntity<?> hienThiDangBan() {
         return ResponseEntity.ok(sanPhamService.getSanPhamBan());
@@ -35,19 +38,19 @@ public class SanPhamController {
         return ResponseEntity.ok(sanPhamService.getProductOnl());
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping("/them")
-    public ResponseEntity<?> themSp(@RequestBody SanPham sanPham,Authentication authentication) {
-        return ResponseEntity.ok(sanPhamService.themSanPham(sanPham,authentication));
+    public ResponseEntity<?> themSp(@RequestBody SanPham sanPham, Authentication authentication) {
+        return ResponseEntity.ok(sanPhamService.themSanPham(sanPham, authentication));
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping("/sua")
     public ResponseEntity<?> suaSp(@RequestBody SanPham sanPham, Authentication authentication) {
         try {
-            sanPhamService.suaSanPham(sanPham,authentication);
+            sanPhamService.suaSanPham(sanPham, authentication);
             return ResponseEntity.ok("");
-        } catch (Exception e){
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

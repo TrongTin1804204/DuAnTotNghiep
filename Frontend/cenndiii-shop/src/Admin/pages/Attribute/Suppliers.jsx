@@ -124,10 +124,15 @@ const vietnameseLocaleText = {
   }
 };
 import Notification from '../../../components/Notification';
-
+import { hasPermission, logout } from "../../../security/DecodeJWT";
 export default function Supplier() {
   const navigate = useNavigate();
-
+  useEffect(() => {
+    if (!hasPermission("ADMIN")) {
+      navigate("/admin/login");
+      logout();
+    }
+  }, [navigate]);
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
@@ -208,22 +213,7 @@ export default function Supplier() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        aria-label="breadcrumb"
-        sx={{ mb: 1 }}
-      >
-        <Link
-          underline="hover"
-          color="inherit"
-          onClick={() => navigate("/admin/dashboard")}
-          sx={{ cursor: "pointer" }}
-        >
-          Thống kê
-        </Link>
-        <Typography color="text.primary">Nhà cung cấp</Typography>
-      </Breadcrumbs>
+
 
       {/* Tiêu đề */}
       <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>

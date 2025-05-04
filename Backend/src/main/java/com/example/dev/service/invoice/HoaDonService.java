@@ -492,11 +492,11 @@ public class HoaDonService {
             hoaDon.setKhachHang(null);
         }
 
-//        if (hoaDonResponse.getVoucher() != null) {
-//            hoaDon.setPhieuGiamGia(phieuGiamGiaRepository.findById(hoaDonResponse.getVoucher()).orElse(null));
-//        } else {
-//            hoaDon.setPhieuGiamGia(null);
-//        }
+        if (hoaDonResponse.getIdPhieuGiamGia() != null) {
+            hoaDon.setPhieuGiamGia(phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElse(null));
+        } else {
+            hoaDon.setPhieuGiamGia(null);
+        }
 
 
         hoaDon.setNguoiTao("Guest");

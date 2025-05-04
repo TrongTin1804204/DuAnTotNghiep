@@ -110,8 +110,8 @@ export default function Invoices() {
         fetchInvoices();
     };
 
-    const goToDetail = (maHoaDon, id) => {
-        navigate(`/admin/invoice-detail/${maHoaDon}/${id}`);
+    const goToDetail = (id) => {
+        navigate(`/admin/invoice-detail/${id}`);
     }
 
     const countByTrangThai = invoices.reduce((acc, hoaDon) => {
@@ -264,7 +264,7 @@ export default function Invoices() {
                                 <td className="px-4 py-2">{formatDateFromArray(invoice.ngayTao)}</td>
                                 <td className="px-4 py-2">{invoice.loaiDon}</td>
                                 <td className="px-4 py-2"><EyeIcon className="hover:cursor-pointer"
-                                    onClick={() => goToDetail(invoice.maHoaDon, invoice.idHoaDon)} /></td>
+                                    onClick={() => goToDetail(invoice.idHoaDon)} /></td>
                             </tr>
                         ))}
                     </tbody>

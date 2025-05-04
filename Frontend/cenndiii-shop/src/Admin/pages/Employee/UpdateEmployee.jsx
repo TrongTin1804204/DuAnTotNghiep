@@ -5,7 +5,8 @@ import "../../static/AddEmployee/style.css";
 import cryptoRandomString from 'crypto-random-string';
 import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
-import { toast } from "react-toastify";
+import Notification from '../../../components/Notification';
+
 export default function EditEmployee() {
     const { id } = useParams(); // Lấy ID từ URL
     const navigate = useNavigate();
@@ -32,17 +33,11 @@ export default function EditEmployee() {
     const [loading, setLoading] = useState(false); // Trạng thái loading
 
     const handleSuccess = () => {
-        toast.success("Sửa nhân viên thành công!", {
-            position: "top-right",
-            autoClose: 3000,
-        })
+        Notification("Sửa nhân viên thành công!", "success");
     };
 
     const handleError = () => {
-        toast.error("Lỗi khi sửa nhân viên!", {
-            position: "top-right",
-            autoClose: 3000,
-        });
+        Notification("Lỗi khi sửa nhân viên!", "error");
     };
     // 🟢 Lấy dữ liệu nhân viên
     useEffect(() => {
@@ -262,10 +257,7 @@ export default function EditEmployee() {
         try {
             const response = await api.put(`/admin/nhan-vien/sua/${id}`, formData);
             if (response.status === 200) {
-                toast.success("Cập nhật nhân viên thành công!", {
-                    position: "top-right",
-                    autoClose: 3000,
-                })
+                Notification("Cập nhật nhân viên thành công!", "success");
                 navigate("/admin/employees");
             }
         } catch (error) {
@@ -273,7 +265,7 @@ export default function EditEmployee() {
                 setErrors(error.response.data); // Lưu lỗi vào state
             } else {
                 console.error("Lỗi khi cập nhật nhân viên:", error);
-                toast.error("Có lỗi xảy ra, vui lòng thử lại!", { position: "top-right", autoClose: 3000, });
+                Notification("Có lỗi xảy ra, vui lòng thử lại!", "error");
             }
         } finally {
             setLoading(false);

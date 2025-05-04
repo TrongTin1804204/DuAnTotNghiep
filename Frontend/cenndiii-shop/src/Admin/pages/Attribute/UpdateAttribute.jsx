@@ -8,12 +8,20 @@ import {
     Typography,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-
+import { hasPermission, logout } from "../../../security/DecodeJWT";
+import { useNavigate } from 'react-router-dom';
 export default function EditModal({ open, onClose, onSave, data, existingNames = [], type }) {
     const [ten, setTen] = useState('');
     const [trangThai, setTrangThai] = useState(false);
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
+    useEffect(() => {
+        if (!hasPermission("ADMIN")) {
+            navigate("/admin/login");
+            logout();
+        }
+    }, [navigate]);
     useEffect(() => {
         if (data) {
             setTen(data.ten);

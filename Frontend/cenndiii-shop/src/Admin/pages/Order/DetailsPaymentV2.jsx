@@ -50,25 +50,42 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
     };
 
     const fetchCusAddress = async (idKhachHang) => {
-        try {
-            const response = await api.get(`/admin/dia-chi/get-address/${idKhachHang}`);
-            setAddresses(response.data);
-
-            if (response.status === 200) {
-                response.data.find(address => {
-                    if (address.macDinh) {
-                        setSelectedAddress(address.id);
+        if (idKhachHang) {
+            try {
+                await api.get(`/admin/dia-chi/get-address/${idKhachHang}`).then(res => {
+                    if (res.status === 200) {
+                        setAddresses(res.data);
+                        res.data.find(address => {
+                            if (address.macDinh) {
+                                setSelectedAddress(address.id);
+                            }
+                        })
                     }
                 })
-            } else {
+            } catch (error) {
+                console.error("Error fetching customer address:", error);
+                setAddresses([]);
                 setSelectedAddress('');
             }
-        } catch (error) {
-            console.error("Error fetching customer address:", error);
-            setAddresses([]);
-            setSelectedAddress('');
         }
     }
+
+
+    const fetchCoupons = async (khachHangId) => {
+        try {
+            const response = await api.get("/admin/phieu-giam-gia/hien-thi-voucher", {
+                params: {
+                    khachHangId: khachHangId
+                }
+            });
+            setCoupons(response.data);
+            setSelectedCoupon(response.data[0].id);
+        } catch (error) {
+            console.error("Error fetching coupons:", error);
+        }
+    };
+
+
     const handleChangeAddress = async (addressId) => {
         try {
             setSelectedAddress(addressId);
@@ -91,9 +108,15 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
         fetchCustomers();
     }, [selectedCustomer]);
 
+    const handleChangeCustomer = (customerId) => {
+        setSelectedCustomer(customerId)
+        fetchCusAddress(customerId)
+        fetchCoupons(customerId);
+    }
+
     return (
         <Box sx={{ p: 1, borderRadius: 1, border: '1px solid #ccc' }}>
-            <Box >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <FormHelperText sx={{ fontSize: 14, color: 'black' }}>
                     Chọn khách hàng và địa chỉ giao hàng
                 </FormHelperText>
@@ -113,8 +136,7 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
                         value={selectedCustomer ?? ""}
                         label="Khách hàng"
                         onChange={e => {
-                            setSelectedCustomer(e.target.value)
-                            fetchCusAddress(e.target.value)
+                            handleChangeCustomer(e.target.value)
                         }}
                         size="small"
                         sx={{ fontSize: 12, width: "100%" }}
@@ -143,7 +165,7 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
                         </InputLabel>
                         <Select
                             labelId="address-select"
-                            value={selectedAddress ?? ""}
+                            value={selectedAddress}
                             label="Địa chỉ"
                             onChange={e => handleChangeAddress(e.target.value)}
                             size="small"
@@ -166,8 +188,6 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
                         <Button variant="contained" color="primary" size='small' onClick={e => setOpenAddAddressDialog(true)}>Thêm địa chỉ</Button>
                     </Box>
                 )}
-            </Box>
-            <Box>
                 {/* Tìm kiếm mã giảm giá */}
                 <TextField
                     label="Nhập mã giảm giá"
@@ -180,18 +200,27 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
 
                 {/* Select mã giảm giá có sẵn */}
                 <FormControl>
-                    <InputLabel id="coupon-select" sx={{ fontSize: 12 }}>Chọn mã giảm giá</InputLabel>
+                    <InputLabel
+                        id="coupon-select"
+                        sx={{
+                            fontSize: 12,
+                            paddingTop: '5px', // đẩy xuống để label không bị chạm
+                            minWidth: 300,       // hoặc set chiều rộng để chữ không bị tràn
+                        }}
+                    >
+                        Chọn mã giảm giá
+                    </InputLabel>
                     <Select
                         labelId="coupon-select"
-                        value={selectedCoupon ?? ""}
+                        value={selectedCoupon}
                         label="Chọn mã giảm giá"
                         onChange={(e) => setSelectedCoupon(e.target.value)}
                         size="small"
-                        sx={{ fontSize: 12, width: "100%", marginTop: 1 }}
+                        sx={{ fontSize: 12, width: "100%" }}
                     >
                         {coupons.map((coupon) => (
-                            <MenuItem key={coupon.id} value={coupon.maGiamGia}>
-                                {coupon.maGiamGia} - Giảm {coupon.phanTramGiam}%
+                            <MenuItem key={coupon.id} value={coupon.id}>
+                                {coupon.tenKhuyenMai}
                             </MenuItem>
                         ))}
                     </Select>

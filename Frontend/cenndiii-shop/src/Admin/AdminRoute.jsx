@@ -28,12 +28,12 @@ import UpdateEmployee from "./pages/Employee/UpdateEmployee";
 import DetailEmployee from "./pages/Employee/DetailEmployee";
 import AddCustomers from "./pages/Customer/AddCustomers";
 import EditCustomer from "./pages/Customer/EditCustomer";
-import "react-toastify/dist/ReactToastify.css";
 import InvoiceDetail from "./pages/Invoices/InvoiceDetail";
 import Test from "./pages/test";
 import LoginPage from "./components/ui/Login"
 import PaymentStatus from "./pages/Order/PaymentStatus"
 import DetailPaymentsV2 from "./pages/Order/DetailsPaymentV2";
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
 export default function AdminRoute() {
     return (
         <Routes>
@@ -61,17 +61,18 @@ export default function AdminRoute() {
                 <Route path="discounts" element={<Discounts />} />
                 <Route path="coupons" element={<Coupons />} />
                 <Route path="product-details" element={<ProductsDetails />} />
-                <Route path="product-details-manager/phan-trang/:id" element={<ProductsManager />} />
+                <Route path="product-details-manager/:id" element={<ProductsManager />} />
                 <Route path="discounts/add" element={<AddDiscounts />} />
                 <Route path="discounts/edit/:idDGG" element={<EditDiscounts />} />
                 <Route path="add-coupon" element={<AddCoupon />} />
                 <Route path="coupons/:id" element={<CouponDetails />} />
                 <Route path="add-customer" element={<AddCustomers />} />
                 <Route path="edit-customer/:id" element={<EditCustomer />} />
-                <Route path="invoice-detail/:id/:idHd" element={<InvoiceDetail />} />
+                <Route path="invoice-detail/:idHoaDon" element={<InvoiceDetail />} />
                 <Route path="payment-status" element={<PaymentStatus />} />
                 {/* <Route path="/test" element={<DynamicForm />} /> */}
                 <Route path="test" element={<DetailPaymentsV2 />} />
+                <Route path="change-password" element={<ChangePassword />} />
 
             </Route>
         </Routes>

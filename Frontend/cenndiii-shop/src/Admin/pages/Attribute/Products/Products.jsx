@@ -6,7 +6,7 @@ import Notification from '../../../../components/Notification';
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../../security/Axios";
 import { formatDateFromArray } from "../../../../untils/FormatDate";
-import { hasPermission } from "../../../../security/DecodeJWT";
+import { hasPermission, logout } from "../../../../security/DecodeJWT";
 import {
   Box,
   Typography,
@@ -56,8 +56,9 @@ export default function ProductManagement() {
     }
   };
   useEffect(() => {
-    if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
+    if (!hasPermission("ADMIN")) {
       navigate("/admin/login");
+      logout();
     }
   }, [navigate]);
 
@@ -215,7 +216,7 @@ export default function ProductManagement() {
       renderCell: (params) => (
         <Box >
           <IconButton>
-            <NavLink to={`/admin/product-details-manager/phan-trang/${params.row.idSanPham}`} className="text-black p-1 rounded">
+            <NavLink to={`/admin/product-details-manager/${params.row.idSanPham}`} className="text-black p-1 rounded">
               <Eye size={18} stroke="black" />
             </NavLink>
           </IconButton>
@@ -236,21 +237,7 @@ export default function ProductManagement() {
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
       <Box sx={{ mb: 4 }}>
-        <Breadcrumbs
-          separator={<NavigateNextIcon fontSize="small" />}
-          aria-label="breadcrumb"
-          sx={{ mb: 1 }}
-        >
-          <Link
-            underline="hover"
-            color="inherit"
-            onClick={() => navigate("/admin/dashboard")}
-            sx={{ cursor: "pointer" }}
-          >
-            Trang chủ
-          </Link>
-          <Typography color="text.primary">Sản phẩm</Typography>
-        </Breadcrumbs>
+
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>

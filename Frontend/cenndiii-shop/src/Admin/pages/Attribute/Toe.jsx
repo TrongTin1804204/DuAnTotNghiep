@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
 import EditModal from './UpdateAttribute';
-
+import { hasPermission, logout } from "../../../security/DecodeJWT";
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
   columnMenuLabel: 'Menu',
@@ -39,7 +39,12 @@ export default function ShoeToe() {
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
-
+  useEffect(() => {
+    if (!hasPermission("ADMIN")) {
+      navigate("/admin/login");
+      logout();
+    }
+  }, [navigate]);
   const openEditModal = (row) => {
     setEditingRow(row);
     setEditModalOpen(true);
@@ -116,22 +121,6 @@ export default function ShoeToe() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        aria-label="breadcrumb"
-        sx={{ mb: 1 }}
-      >
-        <Link
-          underline="hover"
-          color="inherit"
-          onClick={() => navigate("/admin/dashboard")}
-          sx={{ cursor: "pointer" }}
-        >
-          Thống kê
-        </Link>
-        <Typography color="text.primary">Mũi giày</Typography>
-      </Breadcrumbs>
 
       {/* Tiêu đề */}
       <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
