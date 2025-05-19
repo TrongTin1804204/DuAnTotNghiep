@@ -46,7 +46,8 @@ public class JWTConfig {
             "/admin/khach-hang/update-address-selected",
             "/admin/khach-hang/update-address-direct",
             "/admin/khach-hang/them-dia-chi",
-            "/admin/hoa-don/hien-thi-hoa-don"
+            "/admin/hoa-don/hien-thi-hoa-don",
+            "/admin/hoa-don/payment-status"
     };
 
 

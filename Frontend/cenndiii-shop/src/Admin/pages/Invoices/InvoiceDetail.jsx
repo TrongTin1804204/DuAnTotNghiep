@@ -52,7 +52,13 @@ export default function InvoiceDetail() {
         }
     }, [navigate]);
 
-
+    const [payments, setPayments] = useState([]);
+    const fetchInvoicePaymentHistory = async () => {
+        if (idHoaDon) {
+            const response = await api.get(`/admin/hoa-don/${idHoaDon}/lich-su-thanh-toan`);
+            setPayments(response.data[response.data.length - 1]);
+        };
+    }
 
     const fetchInvoice = async () => {
         if (idHoaDon) {
@@ -89,6 +95,9 @@ export default function InvoiceDetail() {
     const [orderItemsByTab, setOrderItemsByTab] = useState({}); // Thêm state này
     const [removeItem, setRemoveItem] = useState([]);
     const [openDeleteProductDialog, setOpenDeleteProductDialog] = useState(false);
+    const [openCancelDialog, setOpenCancelDialog] = useState(false);
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+    const [lyDoHuy, setLyDoHuy] = useState("");
     useEffect(() => {
         if (!Array.isArray(orderItemsByTab) || orderItemsByTab.length === 0) {
             setTotal(0);
@@ -119,10 +128,8 @@ export default function InvoiceDetail() {
     useEffect(() => {
         fetchInvoice();
         getProductFromDetailsInvoice();
+        fetchInvoicePaymentHistory();
     }, [idHoaDon]);
-    useEffect(() => {
-        getProductFromDetailsInvoice()
-    }, [])
     const handleCloseDialog = (confirm) => {
         setOpenDeleteProductDialog(false);
         if (confirm) {
@@ -302,26 +309,30 @@ export default function InvoiceDetail() {
         }
     };
 
-    const validate = () => {
-        const hasError = orderItemsByTab?.some(item => {
-            if (item.soLuongMua > item.kho) {
-                Notification("Yêu cầu thương lượng với khách và cập nhật lại số lượng!", "error");
-                return true; // Nếu có lỗi → trả về true
-            }
-            return false;
-        });
+    // const validate = () => {
+    //     const hasError = orderItemsByTab?.some(item => {
+    //         if (item.soLuongMua > item.kho) {
+    //             Notification("Yêu cầu thương lượng với khách và cập nhật lại số lượng!", "error");
+    //             return true; // Nếu có lỗi → trả về true
+    //         }
+    //         return false;
+    //     });
 
-        return !hasError; // Nếu có lỗi thì trả false
-    }
+    //     return !hasError; // Nếu có lỗi thì trả false
+    // }
 
     const continues = async () => {
         try {
-            if (validate()) {
-                const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/xac-nhan`)
-                if (response.data != "") {
-                    reload();
-                }
+            // if (validate()) {
+            const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/xac-nhan`)
+            console.log(response.data);
+
+            if (response.data.code != 500) {
+                reload();
+            } else {
+                Notification(response.data.message, "error");
             }
+            // }
         } catch (error) {
             console.log(error);
         }
@@ -329,8 +340,55 @@ export default function InvoiceDetail() {
 
     const back = async () => {
         try {
-            const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`)
+            // Kiểm tra nếu là hủy đơn thì hiện dialog nhập lý do
+            if (statusBtn(invoice?.trangThai)?.includes("Hủy")) {
+                setOpenCancelDialog(true);
+                return;
+            }
+
+            // Nếu không phải hủy đơn thì hiện Alert xác nhận
+            setOpenConfirmDialog(true);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleConfirmBack = async () => {
+        try {
+            const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`,
+                {},
+                {
+                    params: {
+                        ghiChu: ""
+                    }
+                }
+            )
             if (response.data != "") {
+                reload();
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleCancelOrder = async () => {
+        if (!lyDoHuy.trim()) {
+            Notification("Vui lòng nhập lý do hủy đơn!", "warning");
+            return;
+        }
+
+        try {
+            const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`,
+                {},
+                {
+                    params: {
+                        ghiChu: lyDoHuy
+                    }
+                }
+            )
+            if (response.data != "") {
+                setOpenCancelDialog(false);
+                setLyDoHuy("");
                 reload();
             }
         } catch (error) {
@@ -348,8 +406,13 @@ export default function InvoiceDetail() {
 
     const statusBtn = (status) => {
         if (status === "Chờ xác nhận" || status === "Đã hoàn thành") {
-            return "Hủy"
+            if (payments?.hinhThucThanhToan === "VNPay") {
+                return "Hủy đơn và hoàn tiền"
+            } else {
+                return "Hủy đơn"
+            }
         }
+
         if (status === "Đã xác nhận") {
             return "Về chờ xác nhận"
         }
@@ -376,16 +439,19 @@ export default function InvoiceDetail() {
                 />
                 <div className="flex justify-around w-full mt-4">
                     <div className="flex justify-between w-[300px]">
-                        {invoice?.trangThai != "Hủy" && (
-                            <Button variant="contained" color="primary" onClick={() => continues()} >
-                                Tiếp tục
-                            </Button>
-                        )}
-                        {isVisible() && (
-                            <Button variant="contained" color="secondary" onClick={() => back()} >
-                                {statusBtn(invoice?.trangThai)}
-                            </Button>
-                        )}
+                        {invoice?.trangThai != "Đã hoàn thành" &&
+                            invoice?.loaiDon === "Online" && invoice?.trangThai !== "Hủy" && (
+                                <>
+                                    <Button variant="contained" color="primary" onClick={() => continues()}>
+                                        Tiếp tục
+                                    </Button>
+                                    {isVisible() && (
+                                        <Button variant="contained" color="secondary" onClick={() => back()}>
+                                            {statusBtn(invoice?.trangThai)}
+                                        </Button>
+                                    )}
+                                </>
+                            )}
                     </div>
                     <div>
                         <Button variant="contained" color="info" onClick={handleOpenHistory}>
@@ -615,7 +681,7 @@ export default function InvoiceDetail() {
                         </TableContainer>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-md grid grid-cols-5 gap-4 h-[350px]">
+                <div className="bg-white p-4 rounded-lg shadow-md grid grid-cols-5 gap-4 h-[400px]">
                     <div className="flex flex-col justify-between bg-white p-4 rounded-lg border col-span-3 h-full">
                         <div>
                             <div className='flex flex-col justify-between text-sm'>
@@ -765,7 +831,15 @@ export default function InvoiceDetail() {
                             <div className='flex justify-between'>
                                 <span className='font-bold flex-none'>Số tiền cần thanh toán:</span>
                                 <span className='text-red-500 font-semibold'>{invoice?.tongTien?.toLocaleString()} đ</span>
+
                             </div>
+                            {payments?.hinhThucThanhToan === "VNPay" &&
+                                payments?.trangThai && (
+                                    <div className='flex justify-between'>
+                                        <span className='font-bold flex-none'>Số tiền đã thanh toán:</span>
+                                        <span className='text-green-500 font-semibold'>{payments?.soTienThanhToan?.toLocaleString()} đ</span>
+                                    </div>
+                                )}
                         </div>
                     </div>
                 </div>
@@ -774,6 +848,16 @@ export default function InvoiceDetail() {
                 open={openDeleteProductDialog}
                 message={"Bạn có chắc chắn muốn xóa sản phẩm này không?"}
                 onClose={handleCloseDialog}
+            />
+            <Alert
+                open={openConfirmDialog}
+                message={"Bạn có chắc chắn muốn thực hiện hành động này không?"}
+                onClose={(confirm) => {
+                    setOpenConfirmDialog(false);
+                    if (confirm) {
+                        handleConfirmBack();
+                    }
+                }}
             />
             <Dialog
                 open={openDialogProduct}
@@ -967,6 +1051,34 @@ export default function InvoiceDetail() {
             <AddressDialog hoaDon={invoice} reload={reload} open={openAddressDialog} onClose={handleCloseAddressDialog} />
             {/* ô lịch sử thanh toán */}
             <PaymentHistory idHoaDon={idHoaDon} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
+
+            <Dialog
+                open={openCancelDialog}
+                onClose={() => setOpenCancelDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Nhập lý do hủy đơn</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Lý do hủy"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={lyDoHuy}
+                        onChange={(e) => setLyDoHuy(e.target.value)}
+                        required
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenCancelDialog(false)}>Hủy</Button>
+                    <Button onClick={handleCancelOrder} variant="contained" color="primary">
+                        Xác nhận
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div >
     )
 }

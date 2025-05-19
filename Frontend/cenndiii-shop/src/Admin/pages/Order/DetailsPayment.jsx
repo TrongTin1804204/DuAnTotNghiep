@@ -392,28 +392,48 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     };
 
     const calculateShippingFee = async () => {
-        if (!selectedWard || !selectedDistrict) return;  // Kiểm tra địa chỉ đã chọn chưa
+        if (!selectedWard || !selectedDistrict) return;
+
+        // Tính toán kích thước và cân nặng tổng
+        let totalLength = 0;
+        let totalWidth = 0;
+        let totalHeight = 0;
+        let totalWeight = 0;
+
+        const items = totalItem.map(item => {
+            const itemLength = 20;
+            const itemWidth = 20;
+            const itemHeight = 12;
+            const itemWeight = 1000;
+
+            totalLength += itemLength;
+            totalWidth += itemWidth;
+            totalHeight += itemHeight * item.soLuong;
+            totalWeight += itemWeight * item.soLuong;
+
+            return {
+                name: item.name,
+                quantity: item.soLuong,
+                length: itemLength,
+                width: itemWidth,
+                height: itemHeight,
+                weight: itemWeight
+            };
+        });
 
         const requestData = {
-            "service_type_id": 2, // cái này
+            "service_type_id": 2,
             "from_district_id": 1542,
             "from_ward_code": "1A0607",
             "to_district_id": Number(selectedDistrict),
             "to_ward_code": selectedWard,
-            "length": 40,
-            "width": 20,
-            "height": 20,
-            "weight": 2000,
+            "length": totalLength,
+            "width": totalWidth,
+            "height": totalHeight,
+            "weight": totalWeight,
             "insurance_value": 0,
             "coupon": null,
-            "items": totalItem.map(item => ({
-                "name": item.name,
-                "quantity": item.soLuong,
-                "length": 200,
-                "width": 200,
-                "height": 200,
-                "weight": 1000
-            }))
+            "items": items
         }
 
         try {
@@ -430,8 +450,9 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             );
             if (response.status === 200) {
                 setAmount(response.data.data.total);
+                // Cập nhật tổng tiền sau khi có phí ship
             } else {
-                setAmount(31000);  // Nếu API không trả về dữ liệu, mặc định 31k
+                setAmount(31000);
             }
         } catch (error) {
             if (error.response) {
@@ -1029,11 +1050,13 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                         <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-2">
                                 <label>Phí vận chuyển:</label>
-                                <img
-                                    src="https://product.hstatic.net/1000405368/product/giao_hang_nhanh_toan_quoc_color.b7d18fe5_39425b03ee544ab2966d465756a00f89_small.png"
-                                    alt="Giao Hàng Nhanh"
-                                    className="w-24 h-12"
-                                />
+                                {deliveryMethod === "giaohang" && (
+                                    <img
+                                        src="https://product.hstatic.net/1000405368/product/giao_hang_nhanh_toan_quoc_color.b7d18fe5_39425b03ee544ab2966d465756a00f89_small.png"
+                                        alt="Giao Hàng Nhanh"
+                                        className="w-24 h-12"
+                                    />
+                                )}
                             </div>
                             <div className="text-red-500">
                                 <span className=""> + </span>

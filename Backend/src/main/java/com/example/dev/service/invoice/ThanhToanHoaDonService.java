@@ -37,10 +37,10 @@ public class ThanhToanHoaDonService {
        HoaDon hoaDon = hoaDonRepository.findById(idHoaDon).orElseThrow();
 
         if (daThanhToan) {
-            thanhToanHoaDonhoaDon.setTrangThai(true);
+            thanhToanHoaDonhoaDon.setTrangThai(1);
             log.info("thanhToanHoaDon >> save success");
         } else {
-            thanhToanHoaDonhoaDon.setTrangThai(false);
+            thanhToanHoaDonhoaDon.setTrangThai(0);
             hoaDon.setTrangThai("Hủy");
         }
 

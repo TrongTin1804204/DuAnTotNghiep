@@ -65,10 +65,12 @@ QontoStepIcon.propTypes = {
 const OrderStepper = ({ order, id }) => {
     const [histories, setHistories] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [paymentHistory, setPaymentHistory] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchHistories();
+        fetchPaymentHistory();
     }, [order]);
 
     const fetchHistories = async () => {
@@ -82,6 +84,17 @@ const OrderStepper = ({ order, id }) => {
         }
     }
 
+    const fetchPaymentHistory = async () => {
+        if (order) {
+            try {
+                const response = await api.get(`/admin/hoa-don/${order.idHoaDon}/lich-su-thanh-toan`);
+                setPaymentHistory(response.data);
+            } catch (error) {
+                console.error("Lỗi khi lấy lịch sử thanh toán:", error);
+            }
+        }
+    }
+
     const handleCancelOrder = () => {
         setIsConfirmOpen(true);
     }
@@ -91,7 +104,7 @@ const OrderStepper = ({ order, id }) => {
             const response = await api.put(`/admin/hoa-don/${order.maHoaDon}/huy`);
             if (response.data !== "") {
                 fetchHistories();
-                navigate("/ordersCustomer");
+                navigate("/orders-customer");
             }
         } catch (error) {
             console.log(error);
@@ -102,6 +115,19 @@ const OrderStepper = ({ order, id }) => {
 
     const closeConfirmDialog = () => {
         setIsConfirmOpen(false);
+    };
+
+    const shouldShowCancelButton = () => {
+        // Kiểm tra nếu có lịch sử thanh toán
+        if (paymentHistory && paymentHistory.length > 0) {
+            // Lấy thanh toán gần nhất
+            const latestPayment = paymentHistory[0];
+            // Nếu trạng thái là true và hình thức là VNPay thì ẩn nút
+            if (latestPayment.trangThai === true && latestPayment.hinhThucThanhToan === "VNPay") {
+                return false;
+            }
+        }
+        return true;
     };
 
     if (!order) {
@@ -125,7 +151,7 @@ const OrderStepper = ({ order, id }) => {
                 ))}
             </Stepper>
 
-            {order.trangThai === "Chờ xác nhận" && (
+            {order.trangThai === "Chờ xác nhận" && shouldShowCancelButton() && (
                 <div className="flex justify-end w-full mt-4">
                     <Button variant="contained" color="primary" onClick={handleCancelOrder}>
                         Hủy đơn hàng
@@ -144,20 +170,20 @@ const OrderStepper = ({ order, id }) => {
                         </p>
 
                         <div className="mt-6 flex justify-center gap-4">
-                                <button
-                                    onClick={closeConfirmDialog}
-                                    className="w-32 py-2 border border-gray-400 text-gray-600 rounded-md hover:bg-gray-100 transition"
-                                >
-                                    Hủy
-                                </button>
+                            <button
+                                onClick={closeConfirmDialog}
+                                className="w-32 py-2 border border-gray-400 text-gray-600 rounded-md hover:bg-gray-100 transition"
+                            >
+                                Hủy
+                            </button>
 
-                                <button
-                                    onClick={cancelOrder}
-                                    className="w-32 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                >
-                                    Xác nhận
-                                </button>
-                            </div>
+                            <button
+                                onClick={cancelOrder}
+                                className="w-32 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                            >
+                                Xác nhận
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

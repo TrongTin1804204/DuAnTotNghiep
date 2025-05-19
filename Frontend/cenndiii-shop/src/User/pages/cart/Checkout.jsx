@@ -269,6 +269,92 @@ const Checkout = () => {
 
     const navigate = useNavigate();
 
+    // const handlePlaceOrder = async () => {
+    //     setIsConfirmOpen(false);
+    //     const token = localStorage.getItem("token");
+    //     const isGuest = !token;
+
+    //     const orderData = {
+    //         khachHang: isGuest ? null : currentAddress?.khachHang?.idKhachHang,
+    //         tenNguoiNhan: currentAddress?.tenNguoiNhan || customerData?.hoTen || "Khách lẻ",
+    //         soDienThoai: currentAddress?.soDienThoai || customerData?.soDienThoai || "",
+    //         email: currentAddress?.khachHang?.email || customerData?.email || "",
+    //         ghiChu: currentAddress?.ghiChu || customerData?.ghiChu || "",
+
+    //         tinhThanhPho: customerData?.provinceID || currentAddress?.thanhPho,  // Lấy từ provinceID nếu có
+    //         quanHuyen: customerData?.districtID || currentAddress?.quanHuyen,     // Lấy từ districtID nếu có
+    //         xaPhuong: customerData?.wardCode || currentAddress?.xaPhuong,           // Lấy từ wardCode nếu có
+
+    //         ngayGiaoHang: null,
+    //         tongTien: totalPrice - discountAmount + shippingFee,
+    //         phiVanChuyen: shippingFee,
+    //         trangThai: "Chờ xác nhận",
+    //         loaiDon: "Online",
+    //         idPhieuGiamGia: selectedVoucher ? selectedVoucher.id : null,
+    //         danhSachSanPham: selectedItems.map(item => ({
+    //             idChiTietSanPham: item.productId,
+    //             soLuongMua: item.soLuong,
+    //             giaSauGiam: item.gia,
+    //             tenSanPham: item.tenSanPham,
+    //             anhSanPham: item.img,
+    //         })),
+    //         giaDuocGiam: discountAmount,
+    //         diaChiChiTiet: currentAddress?.diaChiChiTiet || customerData?.diaChiChiTiet || "",
+    //     };
+    //     // console.log(customerData);
+    //     // console.log(currentAddress);
+    //     // console.log(orderData);
+
+    //     try {
+    //         let response;
+    //         if (paymentMethod === "COD") {
+    //             response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-cod", {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                     ...(token && { "Authorization": `Bearer ${token}` })
+    //                 },
+    //                 body: JSON.stringify(orderData)
+    //             });
+    //         } else if (paymentMethod === "VNPAY") {
+
+    //             response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-vnpay", {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                     ...(token && { "Authorization": `Bearer ${token}` })
+    //                 },
+    //                 body: JSON.stringify(orderData)
+    //             });
+
+    //             localStorage.setItem("orderData", JSON.stringify(orderData));
+    //         }
+
+    //         const result = await response.json();
+    //         if (response.ok) {
+    //             if (paymentMethod === "COD") {
+    //                 await fetch("http://localhost:8080/api/cart/clear", {
+    //                     method: "POST",
+    //                     credentials: "include",
+    //                     headers: { ...(token && { "Authorization": `Bearer ${token}` }) }
+    //                 });
+
+    //                 setCartCount(prev => prev === 0);
+    //                 navigate("/home", { state: { success: true } });
+    //             } else if (paymentMethod === "VNPAY") {
+    //                 window.location.href = result.paymentUrl;
+    //             }
+    //         } else {
+    //             Notification(result.error || "Đặt hàng thất bại", "error");
+    //         }
+    //     } catch (error) {
+    //         console.error("Lỗi đặt hàng:", error);
+    //         Notification("Có lỗi xảy ra, vui lòng thử lại.", "error");
+    //     } finally {
+    //         localStorage.removeItem("orderData");
+    //     }
+    // };
+
     const handlePlaceOrder = async () => {
         setIsConfirmOpen(false);
         const token = localStorage.getItem("token");
@@ -276,10 +362,10 @@ const Checkout = () => {
 
         const orderData = {
             khachHang: isGuest ? null : currentAddress?.khachHang?.idKhachHang,
-            tenNguoiNhan: currentAddress?.tenNguoiNhan || customerData.tenNguoiNhan || "Khách lẻ",
-            soDienThoai: currentAddress?.soDienThoai || customerData.soDienThoai || "",
-            email: currentAddress?.khachHang?.email || customerData.email || "",
-            ghiChu: currentAddress?.ghiChu || customerData.ghiChu || "",
+            tenNguoiNhan: currentAddress?.tenNguoiNhan || customerData?.hoTen || "Khách lẻ",
+            soDienThoai: currentAddress?.soDienThoai || customerData?.soDienThoai || "",
+            email: currentAddress?.khachHang?.email || customerData?.email || "",
+            ghiChu: currentAddress?.ghiChu || customerData?.ghiChu || "",
 
             tinhThanhPho: customerData?.provinceID || currentAddress?.thanhPho,  // Lấy từ provinceID nếu có
             quanHuyen: customerData?.districtID || currentAddress?.quanHuyen,     // Lấy từ districtID nếu có
@@ -302,12 +388,13 @@ const Checkout = () => {
             diaChiChiTiet: currentAddress?.diaChiChiTiet || customerData?.diaChiChiTiet || "",
         };
         // console.log(customerData);
+        // console.log(currentAddress);
         // console.log(orderData);
 
         try {
-            let response;
             if (paymentMethod === "COD") {
-                response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-cod", {
+
+                const response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-cod", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -315,21 +402,8 @@ const Checkout = () => {
                     },
                     body: JSON.stringify(orderData)
                 });
-            } else if (paymentMethod === "VNPAY") {
-
-                response = await fetch("http://localhost:8080/admin/hoa-don/thanh-toan-vnpay", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...(token && { "Authorization": `Bearer ${token}` })
-                    },
-                    body: JSON.stringify(orderData)
-                });
-            }
-
-            const result = await response.json();
-            if (response.ok) {
-                if (paymentMethod === "COD") {
+                const result = await response.json();
+                if (response.ok) {
                     await fetch("http://localhost:8080/api/cart/clear", {
                         method: "POST",
                         credentials: "include",
@@ -338,18 +412,27 @@ const Checkout = () => {
 
                     setCartCount(prev => prev === 0);
                     navigate("/home", { state: { success: true } });
-                } else if (paymentMethod === "VNPAY") {
-                    window.location.href = result.paymentUrl;
+                } else {
+                    Notification(result.error || "Đặt hàng thất bại", "error");
                 }
-            } else {
-                Notification(result.error || "Đặt hàng thất bại", "error");
+            } else if (paymentMethod === "VNPAY") {
+
+                const res = await api.get("http://localhost:8080/api/payment/create", {
+                    params: {
+                        amount: totalPrice - discountAmount + shippingFee,
+                        language: "vn"
+                    }
+                });
+                localStorage.setItem("orderData", JSON.stringify(orderData));
+                window.location.href = res.data;
             }
+
+
         } catch (error) {
             console.error("Lỗi đặt hàng:", error);
             Notification("Có lỗi xảy ra, vui lòng thử lại.", "error");
         }
     };
-
     return (
         <div className="p-4 bg-white rounded-xl shadow-sm max-w-5xl mx-auto mt-[64px] space-y-6">
             <button

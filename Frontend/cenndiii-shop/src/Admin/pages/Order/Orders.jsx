@@ -21,14 +21,39 @@ import {
     TextField,
     Badge,
     Box,
-    TablePagination
+    TablePagination,
+    InputAdornment,
+    IconButton,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from "@mui/material";
-import { Trash, Ticket } from "lucide-react";
+import { Trash, Ticket, Search } from "lucide-react";
+import CloseIcon from '@mui/icons-material/Close';
 import { Add, Remove } from '@mui/icons-material';
 import DetailsPayment from "./DetailsPayment";
 import { hasPermission } from '../../../security/DecodeJWT';
 import api from '../../../security/Axios';
 import DetailPaymentsV2 from './DetailsPaymentV2';
+import { DataGrid } from '@mui/x-data-grid';
+
+const vietnameseLocaleText = {
+    noRowsLabel: 'Không có dữ liệu',
+    columnMenuLabel: 'Menu',
+    columnMenuShowColumns: 'Hiển thị cột',
+    columnMenuFilter: 'Bộ lọc',
+    columnMenuHideColumn: 'Ẩn cột',
+    columnMenuUnsort: 'Bỏ sắp xếp',
+    columnMenuSortAsc: 'Sắp xếp tăng dần',
+    columnMenuSortDesc: 'Sắp xếp giảm dần',
+    footerRowsPerPage: 'Số hàng mỗi trang:',
+    MuiTablePagination: {
+        labelRowsPerPage: 'Số hàng mỗi trang:',
+        labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
+    }
+};
+
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
 
@@ -91,6 +116,137 @@ export default function Orders() {
     //  Tong tien
     const [total, setTotal] = useState(0);
 
+    // Thêm hàm lọc dữ liệu
+    const filteredProducts = productDetails.filter((item) => {
+        if (!item.trangThai || item.giaDuocTinh || Number(item.soLuong) <= 0) return false;
+        return true;
+    });
+
+    // Thêm state cho search
+    const [searchText, setSearchText] = useState('');
+
+    // Thêm các state cho combobox
+    const [shoeCollars, setShoeCollars] = useState([]);
+    const [shoeSoles, setShoeSoles] = useState([]);
+    const [shoeToes, setShoeToes] = useState([]);
+    const [materials, setMaterials] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+    const [categories, setCategories] = useState([]);
+
+    // State cho giá trị được chọn
+    const [selectedShoeCollar, setSelectedShoeCollar] = useState(null);
+    const [selectedShoeSole, setSelectedShoeSole] = useState(null);
+    const [selectedShoeToe, setSelectedShoeToe] = useState(null);
+    const [selectedMaterial, setSelectedMaterial] = useState(null);
+    const [selectedBrand, setSelectedBrand] = useState(null);
+    const [selectedSupplier, setSelectedSupplier] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+
+    // Định nghĩa columns cho DataGrid
+    const columns = [
+        {
+            field: 'sanPham',
+            headerName: 'Sản phẩm',
+            flex: 1,
+            minWidth: 250,
+            renderCell: (params) => (
+                <div className='flex items-center gap-2'>
+                    <img
+                        src={params.row.lienKet}
+                        alt={params.row.sanPham}
+                        className='w-10 h-10 object-cover rounded-md'
+                    />
+                    <span className='font-medium text-sm'>{params.row.sanPham}</span>
+                </div>
+            ),
+        },
+        {
+            field: 'sp',
+            headerName: 'Màu sắc/Kích cỡ',
+            flex: 0.8,
+            minWidth: 120,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: params.row.mauSac,
+                            border: '1px solid #ddd'
+                        }}
+                    />
+                    <span className='text-gray-600 text-sm'>
+                        {params.row.mauSac} / {params.row.kichCo}
+                    </span>
+                </Box>
+            ),
+        },
+        {
+            field: 'thongTinSanPham',
+            headerName: 'Thông tin sản phẩm',
+            flex: 2,
+            minWidth: 300,
+            renderCell: (params) => (
+                <span className='text-gray-600 text-sm'>
+                    {`${params.row.coGiay}, ${params.row.muiGiay}, ${params.row.deGiay}, ${params.row.thuongHieu}, ${params.row.chatLieu}, ${params.row.nhaCungCap}, ${params.row.danhMucSanPham}`}
+                </span>
+            ),
+        },
+        {
+            field: 'giaSauGiam',
+            headerName: 'Giá',
+            flex: 0.8,
+            minWidth: 120,
+            renderCell: (params) => (
+                <div className="flex flex-col">
+                    {Number(params.row.giaSauGiam) !== Number(params.row.gia) ? (
+                        <div className="flex flex-col">
+                            <span className='font-medium text-red-500 text-sm'>
+                                {params.row.giaSauGiam.toLocaleString()} đ
+                            </span>
+                            <span className="line-through text-[#929292] text-xs">
+                                {params.row.gia.toLocaleString()} đ
+                            </span>
+                        </div>
+                    ) : (
+                        <span className='font-medium text-sm'>
+                            {params.row.gia.toLocaleString()} đ
+                        </span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            field: 'soLuong',
+            headerName: 'Số lượng',
+            flex: 0.6,
+            minWidth: 100,
+            renderCell: (params) => (
+                <span className='font-medium text-sm'>
+                    {params.row.soLuong}
+                </span>
+            ),
+        },
+        {
+            field: 'actions',
+            headerName: 'Hành động',
+            flex: 0.6,
+            minWidth: 100,
+            renderCell: (params) => (
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleOpenSelectQuantity(params.row)}
+                    className='bg-blue-500 hover:bg-blue-600 text-sm'
+                >
+                    Chọn
+                </Button>
+            ),
+        },
+    ];
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -377,6 +533,76 @@ export default function Orders() {
         }
     };
 
+    // Thêm hàm filter
+    const getFilteredRows = () => {
+        let filtered = filteredProducts;
+
+        // Lọc theo text search
+        if (searchText) {
+            filtered = filtered.filter((row) => {
+                return Object.keys(row).some((field) => {
+                    const value = row[field];
+                    if (value == null) return false;
+                    return value.toString().toLowerCase().includes(searchText.toLowerCase());
+                });
+            });
+        }
+
+        // Lọc theo các thuộc tính được chọn
+        if (selectedShoeCollar) {
+            filtered = filtered.filter(row => row.coGiay === selectedShoeCollar.ten);
+        }
+        if (selectedShoeSole) {
+            filtered = filtered.filter(row => row.deGiay === selectedShoeSole.ten);
+        }
+        if (selectedShoeToe) {
+            filtered = filtered.filter(row => row.muiGiay === selectedShoeToe.ten);
+        }
+        if (selectedMaterial) {
+            filtered = filtered.filter(row => row.chatLieu === selectedMaterial.ten);
+        }
+        if (selectedBrand) {
+            filtered = filtered.filter(row => row.thuongHieu === selectedBrand.ten);
+        }
+        if (selectedSupplier) {
+            filtered = filtered.filter(row => row.nhaCungCap === selectedSupplier.ten);
+        }
+        if (selectedCategory) {
+            filtered = filtered.filter(row => row.danhMucSanPham === selectedCategory.ten);
+        }
+
+        return filtered;
+    };
+
+    // Thêm useEffect để lấy dữ liệu cho combobox
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [coGiayRes, deGiayRes, muiGiayRes, chatLieuRes, thuongHieuRes, nhaCungCapRes, danhMucRes] = await Promise.all([
+                    api.get("/admin/co-giay/hien-thi/true"),
+                    api.get("/admin/de-giay/hien-thi/true"),
+                    api.get("/admin/mui-giay/hien-thi/true"),
+                    api.get("/admin/chat-lieu/hien-thi/true"),
+                    api.get("/admin/thuong-hieu/hien-thi/true"),
+                    api.get("/admin/nha-cung-cap/hien-thi/true"),
+                    api.get("/admin/danh-muc/hien-thi/true")
+                ]);
+
+                setShoeCollars(coGiayRes.data);
+                setShoeSoles(deGiayRes.data);
+                setShoeToes(muiGiayRes.data);
+                setMaterials(chatLieuRes.data);
+                setBrands(thuongHieuRes.data);
+                setSuppliers(nhaCungCapRes.data);
+                setCategories(danhMucRes.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         <div className="p-4 text-[10px]">
             <div className="bg-white p-4 rounded-lg shadow-md relative ">
@@ -641,16 +867,16 @@ export default function Orders() {
                                     </div>
                                 </div>
                                 <div className='w-[33%]'>
-                                    {/* <DetailsPayment
+                                    <DetailsPayment
                                         total={total}
                                         invoiceId={invoiceId}
                                         reloadTab={reloadTab}
                                         totalItem={orderItemsByTab}
-                                    /> */}
-                                    <DetailPaymentsV2
+                                    />
+                                    {/* <DetailPaymentsV2
                                         invoiceId={invoiceId}
                                         reloadTab={reloadTab}
-                                    />
+                                    /> */}
                                 </div>
                             </div>
                         </TabPanel>
@@ -675,108 +901,224 @@ export default function Orders() {
                 onClose={handleCloseDialog}
                 maxWidth="xl"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        maxHeight: '90vh',
+                        height: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }
+                }}
             >
-                <DialogTitle>Danh sách sản phẩm</DialogTitle>
-                <DialogContent>
-                    <TableContainer component={Paper}>
-                        <Table >
-                            <TableHead >
-                                <TableRow>
-                                    {/* <TableCell>Ảnh</TableCell> */}
-                                    <TableCell sx={{ width: "400px" }}>Sản phẩm</TableCell>
-                                    <TableCell>Màu sắc</TableCell>
-                                    <TableCell>Kích cỡ</TableCell>
-                                    {/* <TableCell>Cổ giày</TableCell>
-                                    <TableCell>Mũi giày</TableCell>
-                                    <TableCell>Thương hiệu</TableCell>
-                                    <TableCell>Chất liệu</TableCell>
-                                    <TableCell>Nhà cung cấp</TableCell>
-                                    <TableCell>Danh mục sản phẩm</TableCell> */}
-                                    <TableCell sx={{ width: "150px", textAlign: "center" }}>Giá</TableCell>
-                                    <TableCell sx={{ width: "50px", textAlign: "center" }}>Số lượng</TableCell>
-                                    <TableCell sx={{ width: "10px", textAlign: "center" }}>Hành động</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {productDetails && productDetails.length > 0 ? (
-                                    productDetails.map((item) => (
-                                        item.trangThai && (
-                                            !item.giaDuocTinh && (
-                                                Number(item.soLuong) > 0 && (
-                                                    <TableRow key={item.idChiTietSanPham} >
-                                                        <TableCell sx={{ width: "400px" }}>
-                                                            <div className='flex justify-content-center gap-x-2'>
-                                                                <img
-                                                                    src={item.lienKet}
-                                                                    alt={item.sanPham.ten}
-                                                                    className={`w-12 h-12 object-cover inset-0 rounded-md inline-block`}
-                                                                />
-                                                                {item.sanPham}
-                                                                {/* <span className="flex items-center space-x-2">
-                                                                    <span>{item.sanPham} &#91;</span>
-                                                                    <span
-                                                                        className="w-4 h-4 rounded-full"
-                                                                        style={{ backgroundColor: item.mauSac }}
-                                                                    ></span>
-                                                                    <span>{item.kichCo} &#93;</span>
-                                                                </span> */}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <span className="flex items-center space-x-2">
-                                                                <span
-                                                                    className="w-4 h-4 rounded-full"
-                                                                    style={{ backgroundColor: item.mauSac }}
-                                                                ></span>
-                                                                <span className=''> {item.mauSac}</span>
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell>{item.kichCo}</TableCell>
-                                                        {/* <TableCell>{item.coGiay}</TableCell>
-                                                        <TableCell>{item.muiGiay}</TableCell>
-                                                        <TableCell>{item.deGiay}</TableCell>
-                                                        <TableCell>{item.thuongHieu}</TableCell>
-                                                        <TableCell>{item.chatLieu}</TableCell>
-                                                        <TableCell>{item.nhaCungCap}</TableCell>
-                                                        <TableCell>{item.danhMucSanPham}</TableCell> */}
-                                                        <TableCell sx={{ textAlign: "center" }}>{item.giaSauGiam.toLocaleString()} đ</TableCell>
-                                                        <TableCell sx={{ textAlign: "center" }}>{item.soLuong}</TableCell>
-                                                        <TableCell sx={{ width: "10px", textAlign: "center" }}>
-                                                            <Button
-                                                                variant="contained"
-                                                                onClick={() => {
-                                                                    // if (item.soLuong <= 0) {
-                                                                    // Notification(
-                                                                    // "Hàng đã hết! Xin vui lòng chọn sản phẩm khác !",
-                                                                    // "warning"
-                                                                    // );
-                                                                    // } else {
-                                                                    handleOpenSelectQuantity(item);
-                                                                    // }
-                                                                }}
-                                                            >
-                                                                Chọn
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )
-                                            )
-                                        )
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={12} align="center">
-                                            Không có dữ liệu
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                <DialogTitle sx={{
+                    p: 2,
+                    borderBottom: '1px solid #e0e0e0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <h2 className='text-xl font-semibold'>Danh sách sản phẩm</h2>
+                    <IconButton
+                        onClick={handleCloseDialog}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: 'gray',
+                            '&:hover': {
+                                color: 'black',
+                            },
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, flex: 1, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Thêm thanh tìm kiếm */}
+                        <div className="p-2 border-b">
+                            <div className="grid grid-cols-4 gap-2 mb-2">
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Tìm kiếm sản phẩm..."
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search size={16} />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: searchText && (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => setSearchText('')}
+                                                >
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Cổ giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeCollar || ''}
+                                        onChange={(e) => setSelectedShoeCollar(e.target.value)}
+                                        label="Cổ giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeCollars.map((item) => (
+                                            <MenuItem key={item.idCoGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Đế giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeSole || ''}
+                                        onChange={(e) => setSelectedShoeSole(e.target.value)}
+                                        label="Đế giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeSoles.map((item) => (
+                                            <MenuItem key={item.idDeGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Mũi giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeToe || ''}
+                                        onChange={(e) => setSelectedShoeToe(e.target.value)}
+                                        label="Mũi giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeToes.map((item) => (
+                                            <MenuItem key={item.idMuiGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Chất liệu</InputLabel>
+                                    <Select
+                                        value={selectedMaterial || ''}
+                                        onChange={(e) => setSelectedMaterial(e.target.value)}
+                                        label="Chất liệu"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {materials.map((item) => (
+                                            <MenuItem key={item.idChatLieu} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Thương hiệu</InputLabel>
+                                    <Select
+                                        value={selectedBrand || ''}
+                                        onChange={(e) => setSelectedBrand(e.target.value)}
+                                        label="Thương hiệu"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {brands.map((item) => (
+                                            <MenuItem key={item.idThuongHieu} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Nhà cung cấp</InputLabel>
+                                    <Select
+                                        value={selectedSupplier || ''}
+                                        onChange={(e) => setSelectedSupplier(e.target.value)}
+                                        label="Nhà cung cấp"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {suppliers.map((item) => (
+                                            <MenuItem key={item.idNhaCungCap} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Danh mục</InputLabel>
+                                    <Select
+                                        value={selectedCategory || ''}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                        label="Danh mục"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {categories.map((item) => (
+                                            <MenuItem key={item.idDanhMuc} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                        </div>
+                        <DataGrid
+                            getRowId={(row) => row.idChiTietSanPham}
+                            rows={getFilteredRows()}
+                            columns={columns}
+                            pageSize={10}
+                            rowsPerPageOptions={[10, 25, 50]}
+                            checkboxSelection={false}
+                            disableSelectionOnClick
+                            disableColumnSelector
+                            disableColumnMenu
+                            hideFooterSelectedRowCount
+                            sx={{
+                                '& .MuiDataGrid-cell:focus': {
+                                    outline: 'none',
+                                },
+                                '& .MuiDataGrid-columnHeaders': {
+                                    backgroundColor: '#f5f5f5',
+                                    fontWeight: 'bold',
+                                },
+                                '& .MuiDataGrid-virtualScroller': {
+                                    overflow: 'auto',
+                                },
+                                '& .MuiDataGrid-footerContainer': {
+                                    borderTop: '1px solid #e0e0e0',
+                                },
+                                '& .MuiDataGrid-cell': {
+                                    whiteSpace: 'normal',
+                                    lineHeight: 'normal',
+                                    padding: '8px',
+                                },
+                                '& .MuiDataGrid-columnHeader': {
+                                    whiteSpace: 'normal',
+                                    lineHeight: 'normal',
+                                    padding: '8px',
+                                },
+                                '& .MuiDataGrid-main': {
+                                    overflow: 'hidden',
+                                },
+                                '& .MuiDataGrid-virtualScrollerContent': {
+                                    height: '100% !important',
+                                    overflow: 'auto !important'
+                                }
+                            }}
+                            localeText={vietnameseLocaleText}
+                            style={{ height: 'calc(100vh - 250px)' }}
+                        />
+                    </div>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>Đóng</Button>
-                </DialogActions>
             </Dialog>
 
             {/* Dialog chọn số lượng sản phẩm */}

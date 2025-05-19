@@ -8,6 +8,7 @@ import com.example.dev.entity.invoice.ThanhToanHoaDon;
 import com.example.dev.service.invoice.HoaDonService;
 import com.example.dev.service.invoice.LichSuHoaDonService;
 import com.example.dev.service.invoice.ThanhToanHoaDonService;
+import com.example.dev.util.baseModel.BaseResponse;
 import jakarta.annotation.security.PermitAll;
 import javax.servlet.http.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,9 +99,8 @@ public class HoaDonController {
     }
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
     @PutMapping("/{maHoaDon}/xac-nhan")
-    public ResponseEntity<Object> xacNhan(@PathVariable String maHoaDon, Authentication auth) {
-        HoaDon hoaDon = hoaDonService.xacnhan(maHoaDon, auth);
-        return ResponseEntity.ok(hoaDon);
+    public BaseResponse<?> xacNhan(@PathVariable String maHoaDon, Authentication auth) {
+        return hoaDonService.xacnhan(maHoaDon, auth);
     }
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
     @PutMapping("/{maHoaDon}/huy")
@@ -109,11 +109,10 @@ public class HoaDonController {
         return ResponseEntity.ok(hoaDon);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PutMapping("/{maHoaDon}/quay-lai")
-    public ResponseEntity<Object> quayLai(@PathVariable String maHoaDon, Authentication auth) {
-        HoaDon hoaDon = hoaDonService.quaylai(maHoaDon, auth);
-        return ResponseEntity.ok(hoaDon);
+    public BaseResponse<?> quayLai(@PathVariable String maHoaDon, Authentication auth,@RequestParam(required = false,defaultValue = "Không có") String ghiChu) {
+        return hoaDonService.quaylai(maHoaDon,ghiChu, auth);
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF','CUSTOMER')")
@@ -184,18 +183,27 @@ public class HoaDonController {
     }
 
 
-    @PostMapping("/thanh-toan-vnpay")
-    @PermitAll
-    public ResponseEntity<?> taoHoaDonVaThanhToan(@RequestBody HoaDonResponse hoaDonResponse, Authentication auth) {
-        String vnp_IpAddr = IP_ADDRESS;
-        try {
-            String paymentUrl = hoaDonService.taoHoaDonVaThanhToan(hoaDonResponse, auth);
-            return ResponseEntity.ok(Collections.singletonMap("paymentUrl", paymentUrl));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi tạo hóa đơn: " + e.getMessage());
-        }
-    }
+//    @PostMapping("/thanh-toan-vnpay")
+//    @PermitAll
+//    public ResponseEntity<?> taoHoaDonVaThanhToan(@RequestBody HoaDonResponse hoaDonResponse, Authentication auth) {
+//        try {
+//            String paymentUrl = hoaDonService.taoHoaDonVaThanhToan(hoaDonResponse, auth);
+//            return ResponseEntity.ok(Collections.singletonMap("paymentUrl", paymentUrl));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi tạo hóa đơn: " + e.getMessage());
+//        }
+//    }
 
+    @PostMapping("/payment-status")
+    public BaseResponse<?> getPaymentStatus(
+            @RequestParam String payDate,
+            @RequestParam String transactionNo,
+            @RequestParam String txnRef,
+            @RequestBody HoaDonResponse hd,
+            Authentication authentication
+    )  {
+        return hoaDonService.paidVNPayBill(payDate,transactionNo,txnRef,hd, authentication);
+    }
 
     @GetMapping("/hien-thi-hoa-don")
     public ResponseEntity<?> hienThiHoaDonKhachHang(@RequestParam(value = "idKhachHang", required = false) Integer idKhachHang) {

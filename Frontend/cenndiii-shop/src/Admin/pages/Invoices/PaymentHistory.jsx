@@ -14,8 +14,14 @@ export default function PaymentHistoryDialog({ idHoaDon, open, onClose }) {
             };
             fetchInvoicePaymentHistory();
         }
-    }, [idHoaDon,open]);
+    }, [open]);
 
+    const getStatus = (status) => {
+        if (status === 0) return "Chưa thanh toán"
+        if (status === 1) return "Đã thanh toán"
+        if (status === 2) return "Hoàn tiền toàn phần"
+        if (status === 3) return "Hoàn tiền một phần"
+    }
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>Lịch sử thanh toán</DialogTitle>
@@ -41,7 +47,7 @@ export default function PaymentHistoryDialog({ idHoaDon, open, onClose }) {
                                         <TableCell className="px-4 py-2">{payment.hinhThucThanhToan}</TableCell>
                                         <TableCell className="px-4 py-2">{formatDateFromArray(payment.ngayTao)}</TableCell>
                                         <TableCell className="px-4 py-2">{payment.soTienThanhToan}</TableCell>
-                                        <TableCell className="px-4 py-2">{payment.trangThai ? 'Đã thanh toán' : 'Chưa thanh toán'}</TableCell>
+                                        <TableCell className="px-4 py-2">{getStatus(payment.trangThai)}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (

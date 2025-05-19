@@ -11,6 +11,7 @@ export default function PaymentHistoryDialog({ idHoaDon, open, onClose }) {
             const fetchInvoicePaymentHistory = async () => {
                 const response = await api.get(`/admin/hoa-don/${idHoaDon}/lich-su-thanh-toan`);
                 setPayments(response.data);
+                console.log(response.data);
             };
             fetchInvoicePaymentHistory();
         }

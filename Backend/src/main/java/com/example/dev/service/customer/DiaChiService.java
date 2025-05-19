@@ -171,7 +171,6 @@ public class DiaChiService {
 
             // Tạo request body
             ShipRequest request = ShipRequest.builder().serviceTypeId(SERVICE_TYPE).fromDistrictId(FROM_DISTRICT_ID).fromWardCode(FROM_WARD_CODE).toDistrictId(districtId).toWardCode(wardCode).length(length).width(width).height(height).weight(weight).insuranceValue(insurance_value)
-//                .coupon(coupon)
                     .items(items).build();
 
             String url = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee";

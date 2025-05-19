@@ -597,7 +597,7 @@ export default function ProductDetails() {
         );
         await handleUploadImages(productResponse.data);
         Notification("Thêm chi tiết sản phẩm thành công", "success");
-        navigate(`/admin/product-details-manager/phan-trang/${productSelected.value}`);
+        navigate(`/admin/product-details-manager/${productSelected.value}`);
       } catch (error) {
         Notification("Lỗi khi thêm chi tiết sản phẩm", "error");
       } finally {

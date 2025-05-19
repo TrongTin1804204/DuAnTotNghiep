@@ -221,7 +221,7 @@ export default function ProductManagement() {
             </NavLink>
           </IconButton>
           <IconButton onClick={() => openEditModal(params.row)} size="small" className="gap-2">
-            <Edit size={18} />
+            <Edit size={18} color="black" />
           </IconButton>
         </Box>
 
