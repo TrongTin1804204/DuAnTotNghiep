@@ -3,7 +3,7 @@ import axios from "axios";
 import { TextField, Select, MenuItem, FormControl, InputLabel, Button, Typography } from "@mui/material";
 import calculateShippingFee from "./calculateShippingFee";
 
-const AddAddress = ({ onConfirm, existingData }) => {
+const AddAddress = ({ onConfirm, existingData, items }) => {
     const [formData, setFormData] = useState(existingData || {
         hoTen: '',
         soDienThoai: '',
@@ -14,12 +14,12 @@ const AddAddress = ({ onConfirm, existingData }) => {
         diaChiChiTiet: '',
         ghiChu: ''
     });
-    const [diaChiChiTiet,setDiaChiChiTiet] = useState("");
-    const [errDiaChiChiTiet,setErrDiaChiChiTiet] = useState("");
+    const [diaChiChiTiet, setDiaChiChiTiet] = useState("");
+    const [errDiaChiChiTiet, setErrDiaChiChiTiet] = useState("");
     const [errors, setErrors] = useState({});
-    useEffect(()=>{
-        
-    },[diaChiChiTiet])
+    useEffect(() => {
+
+    }, [diaChiChiTiet])
     useEffect(() => {
         if (existingData) {
             setFormData(existingData);
@@ -104,7 +104,7 @@ const AddAddress = ({ onConfirm, existingData }) => {
         tempErrors.selectedWard = selectedWard ? "" : "Vui lòng chọn Xã/Phường.";
         if (diaChiChiTiet === "") {
             setErrDiaChiChiTiet("Vui lòng nhập địa chỉ chi tiết!")
-        }else{
+        } else {
             setErrDiaChiChiTiet("")
         }
         setErrors(tempErrors);
@@ -112,9 +112,9 @@ const AddAddress = ({ onConfirm, existingData }) => {
     };
 
     const handleConfirm = async () => {
-        
+
         if (validate()) {
-            
+
             const fullAddress = `${diaChiChiTiet}, ${selectedWard?.WardName || ''}, ${selectedDistrict?.DistrictName || ''}, ${selectedProvince?.ProvinceName || ''}`;
 
             let shippingFee = 0;
@@ -122,7 +122,7 @@ const AddAddress = ({ onConfirm, existingData }) => {
                 try {
                     const fee = await calculateShippingFee(
                         `${selectedProvince.ProvinceID}, ${selectedDistrict.DistrictID}, ${selectedWard.WardCode}`,
-                        []
+                        items
                     );
                     shippingFee = fee;
                 } catch (error) {
@@ -139,7 +139,7 @@ const AddAddress = ({ onConfirm, existingData }) => {
                 phiVanChuyen: shippingFee,
                 diaChiChiTiet: fullAddress
             });
-            
+
         }
     };
 

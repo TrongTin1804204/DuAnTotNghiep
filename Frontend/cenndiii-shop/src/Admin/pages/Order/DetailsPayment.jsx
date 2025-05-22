@@ -17,6 +17,8 @@ import {
     Select,
     InputLabel,
     MenuItem,
+    Box,
+    FormHelperText,
 } from '@mui/material';
 import CustomerDialog from "../Customer/AddCustomerDialog";
 import Delivery from "./Delivery";
@@ -24,6 +26,8 @@ import api from "../../../security/Axios";
 import { hasPermission } from "../../../security/DecodeJWT";
 import Alert from "../../../components/Alert";
 import Notification from '../../../components/Notification';
+import AddressDialog from "./AddCusstomerAddress";
+import UpdateCustomerAddress from "./UpdateCustomerAddress";
 
 const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -53,6 +57,9 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     const [selectedDistrict, setSelectedDistrict] = useState("");
     const [selectedWard, setSelectedWard] = useState("");
     const [customers, setCustomers] = useState([]);
+    const [selectedCustomerId, setSelectedCustomerId] = useState(-1);
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddress, setSelectedAddress] = useState();
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [lastTotal, setLastTotal] = useState(total);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -74,18 +81,28 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     const [originalVouchers, setOriginalVouchers] = useState([]);
     const [voucherSearched, setVoucherSearched] = useState(false);
 
-    // dialog them kh
-    const [openCustomerDialog, setOpenCustomerDialog] = useState(false);
-    const handleOpenCustomerDialog = () => {
-        setOpenCustomerDialog(true);
-    };
-
-    const handleCloseCustomerDialog = () => {
-        setOpenCustomerDialog(false);
-    };
-    // >
-
     const [openPayAlert, setOpenPayAlert] = useState(false);
+
+    // dialog add address
+    const [openAddAddressDialog, setOpenAddAddressDialog] = useState(false);
+    const handleCloseAddressDialog = (confirm) => {
+        setOpenAddAddressDialog(false);
+        if (confirm) {
+            Notification("Thêm địa chỉ thành công!", "success")
+            reload()
+        }
+    }
+
+    // dialog update address
+    const [openUpdateAddressDialog, setOpenUpdateAddressDialog] = useState(false);
+    const handleCloseUpdateAddressDialog = (confirm) => {
+        setOpenUpdateAddressDialog(false);
+        if (confirm) {
+            Notification("Sửa địa chỉ thành công!", "success")
+            reload()
+        }
+    }
+
     const getConfirm = async (confirm) => {
         setOpenPayAlert(false);
         if (confirm) {
@@ -104,7 +121,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     const handleOpenPayAlert = () => {
         setOpenPayAlert(true);
     };
-
 
     useEffect(() => {
         if (localStorage.getItem("token")) {
@@ -151,10 +167,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
     }, [total]);
 
 
-    const [vnpayUrl, setVnpayUrl] = useState(null);
-
     const onSubmit = async () => {
-
         const thanhToanHoaDon = [];
         if (paymentMethod === "tienmat") {
             thanhToanHoaDon.push({ hinhThucThanhToan: "tienmat", soTien: lastTotal });
@@ -168,7 +181,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
         const requestData = {
             idHoaDon: invoiceId.idHoaDon,
             maHoaDon: invoiceId.maHoaDon,
-            khachHang: selectedCustomer?.idKhachHang ?? -1,
+            khachHang: selectedCustomerId,
             tongTien: lastTotal,
             phiVanChuyen: deliveryMethod === "giaohang" ? amount : 0,
             trangThai: "Đã thanh toán",
@@ -181,7 +194,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             soDienThoai: deliveryMethod === "giaohang" ? (deliveryData?.soDienThoai || null) : null,
             email: deliveryMethod === "giaohang" ? (deliveryData?.email || null) : null,
             ghiChu: deliveryMethod === "giaohang" ? (deliveryData?.ghiChu || "") : "",
-            diaChi: selectedCustomer?.diaChi || deliveryData?.diaChi || "",
+            diaChi: selectedCustomerId !== -1 ? customers.find(c => c.idKhachHang === selectedCustomerId)?.diaChi || "" : deliveryData?.diaChi || "",
             idPhieuGiamGia: selectedVoucher || null,
         };
 
@@ -189,8 +202,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             navigate("/admin/orders", { state: { message: "Chưa chọn sản phẩm", type: "error" } });
             return;
         }
-
-
 
         try {
             const response = await api.post('/admin/hoa-don/thanh-toan', requestData);
@@ -213,7 +224,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                 fetchOrders();
                 reloadTab();
                 navigate("/admin/orders", { state: { message: "Thanh toán thành công", type: "success" } });
-                handlePrint(requestData, totalItem, selectedCustomer.hoTen);
+                handlePrint(requestData, totalItem, customers.find(c => c.idKhachHang === selectedCustomerId)?.hoTen);
             }
         } catch (error) {
             console.error("Error processing payment:", error);
@@ -228,63 +239,69 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             handleSubmit(onSubmit)();
         }
     }, []);
+    const fetchPublicVouchers = async () => {
+        try {
+            const response = await api.get('/admin/phieu-giam-gia/hien-thi-voucher', {
+                params: { khachHangId: selectedCustomerId },
+            });
 
-    useEffect(() => {
-        const fetchPublicVouchers = async () => {
-            try {
-                const response = await api.get('/admin/phieu-giam-gia/hien-thi-voucher', {
-                    params: { khachHangId: null },
-                });
+            const validVouchers = total > 0
+                ? response.data.filter(v => total >= v.dieuKien) : response.data;
 
-                const validVouchers = total > 0
-                    ? response.data.filter(v => total >= v.dieuKien)
-                    : response.data;
+            setOriginalVouchers(validVouchers);
+            setFilteredVouchers(validVouchers);
 
-                setOriginalVouchers(validVouchers);
-                setFilteredVouchers(validVouchers);
-
-                const { bestVoucher, maxDiscount } = calculateBestVoucher(total + Number(amount), validVouchers);
+            // Chỉ áp dụng voucher tốt nhất khi chưa có voucher được chọn thủ công
+            if (!manualVoucherSelected) {
+                const { bestVoucher, maxDiscount } = calculateBestVoucher(total, validVouchers);
                 if (bestVoucher) {
                     setSelectedVoucher(bestVoucher.id);
                     setDiscountAmount(maxDiscount);
                     setLastTotal(calculateLastTotal(total, amount, maxDiscount));
                     setBestVoucherApplied(true);
+                } else {
+                    // Nếu không có voucher phù hợp thì reset giảm giá
+                    setSelectedVoucher('');
+                    setDiscountAmount(0);
+                    setLastTotal(calculateLastTotal(total, amount, 0));
+                    setBestVoucherApplied(false);
                 }
-            } catch (error) {
-                console.error("Lỗi khi lấy phiếu giảm giá công khai:", error);
             }
-        };
-
+        } catch (error) {
+            console.error("Lỗi khi lấy phiếu giảm giá công khai:", error);
+        }
+    };
+    useEffect(() => {
+        if (deliveryMethod === "giaohang") {
+            calculateShippingFee()
+        }
+    }, [totalItem, selectedDistrict, selectedWard]);
+    useEffect(() => {
         fetchPublicVouchers();
-    }, []);
+    }, [selectedCustomerId, total]);
 
     useEffect(() => {
         // Nếu chưa chọn khách hàng thì tự động tính lại PGG tốt nhất
-        if (total === 0) return;
-        const selectedCustomer = getSelectedCustomer();
+        if (total <= 0) return;
+        const selectedCustomer = customers.find(c => c.idKhachHang === selectedCustomerId);
         if (!manualVoucherSelected && (!selectedCustomer || selectedCustomer?.idKhachHang === 0)) {
             const validVouchers = total > 0
                 ? originalVouchers.filter(v => total >= v.dieuKien)
                 : originalVouchers;
 
             setFilteredVouchers(validVouchers);
-
-            const { bestVoucher, maxDiscount } = calculateBestVoucher(total + Number(amount), validVouchers);
+            const { bestVoucher, maxDiscount } = calculateBestVoucher(total, validVouchers);
             setSelectedVoucher(bestVoucher?.id || '');
             setDiscountAmount(maxDiscount);
             setLastTotal(calculateLastTotal(total, amount, maxDiscount));
             setBestVoucherApplied(true);
         }
-    }, [total, amount]);
-
-
-
+    }, [total, selectedCustomerId]);
 
     //tính toán lại khi có sự thay đổi tổng tiền
     const calculateBestVoucher = (total, vouchers) => {
         let bestVoucher = null;
         let maxDiscount = 0;
-
         vouchers.forEach(voucher => {
             if (total >= voucher.dieuKien) {
                 let discount = 0;
@@ -301,7 +318,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                 }
             }
         });
-
         return { bestVoucher, maxDiscount };
     };
 
@@ -310,7 +326,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
 
         if (manualVoucherSelected && currentVoucher) {
             // Đã chọn tay, kiểm tra xem voucher có còn hợp lệ với tổng tiền mới không
-            if (total + Number(amount) < currentVoucher.dieuKien) {
+            if (total < currentVoucher.dieuKien) {
                 // Không còn hợp lệ => bỏ chọn và reset
                 setSelectedVoucher('');
                 setDiscountAmount(0);
@@ -328,131 +344,36 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                     discount = currentVoucher.giaTri;
                 }
                 setDiscountAmount(discount);
-                setLastTotal(total + Number(amount) - discount);
+                setLastTotal(calculateLastTotal(total, amount, discount));
                 setBestVoucherApplied(false); // Không phải tốt nhất do chọn tay
                 return;
             }
         }
 
         // Nếu không chọn tay hoặc phiếu tay không hợp lệ, chọn lại phiếu tốt nhất
-        const { bestVoucher, maxDiscount } = calculateBestVoucher(total + Number(amount), filteredVouchers);
+        const { bestVoucher, maxDiscount } = calculateBestVoucher(total, filteredVouchers);
         setSelectedVoucher(bestVoucher?.id || '');
         setDiscountAmount(maxDiscount);
-        setLastTotal(total + Number(amount) - maxDiscount);
+        setLastTotal(calculateLastTotal(total, amount, maxDiscount));
         setBestVoucherApplied(true);
-    }, [total, amount, filteredVouchers]);
-
-
-
-    const getProvinceName = async (provinceId) => {
-        try {
-            const response = await axios.get("https://online-gateway.ghn.vn/shiip/public-api/master-data/province", { headers: headersGHN });
-            const provinces = response.data.data || [];  // Nếu null thì trả về mảng rỗng
-            const province = provinces.find(p => p.ProvinceID === Number(provinceId));  // Ép kiểu số
-            return province ? province.ProvinceName : 'Không tìm thấy';
-        } catch (error) {
-            console.error("Lỗi khi lấy tỉnh:", error);
-            return 'Lỗi API';
-        }
-    };
-
-
-    const getDistrictName = async (districtId, provinceId) => {
-        try {
-            const response = await axios.get("https://online-gateway.ghn.vn/shiip/public-api/master-data/district", {
-                headers: headersGHN,
-                params: { province_id: Number(provinceId) }  // Ép kiểu số
-            });
-            const districts = response.data.data || [];
-            const district = districts.find(d => d.DistrictID === Number(districtId));
-            return district ? district.DistrictName : 'Không tìm thấy';
-        } catch (error) {
-            console.error("Lỗi khi lấy quận/huyện:", error);
-            return 'Lỗi API';
-        }
-    };
-
-
-    const getWardName = async (wardId, districtId) => {
-        try {
-            const response = await axios.get("https://online-gateway.ghn.vn/shiip/public-api/master-data/ward", {
-                headers: headersGHN,
-                params: { district_id: Number(districtId) }  // Ép kiểu số
-            });
-
-            const wards = response.data.data || [];
-
-            const ward = wards.find(w => w.WardCode == wardId);
-
-            return ward ? ward.WardName : 'Không tìm thấy';
-        } catch (error) {
-            console.error("Lỗi khi lấy xã:", error);
-            return 'Lỗi API';
-        }
-    };
+    }, [total, filteredVouchers]);
 
     const calculateShippingFee = async () => {
         if (!selectedWard || !selectedDistrict) return;
 
-        // Tính toán kích thước và cân nặng tổng
-        let totalLength = 0;
-        let totalWidth = 0;
-        let totalHeight = 0;
-        let totalWeight = 0;
-
-        const items = totalItem.map(item => {
-            const itemLength = 20;
-            const itemWidth = 20;
-            const itemHeight = 12;
-            const itemWeight = 1000;
-
-            totalLength += itemLength;
-            totalWidth += itemWidth;
-            totalHeight += itemHeight * item.soLuong;
-            totalWeight += itemWeight * item.soLuong;
-
-            return {
-                name: item.name,
-                quantity: item.soLuong,
-                length: itemLength,
-                width: itemWidth,
-                height: itemHeight,
-                weight: itemWeight
-            };
-        });
-
-        const requestData = {
-            "service_type_id": 2,
-            "from_district_id": 1542,
-            "from_ward_code": "1A0607",
-            "to_district_id": Number(selectedDistrict),
-            "to_ward_code": selectedWard,
-            "length": totalLength,
-            "width": totalWidth,
-            "height": totalHeight,
-            "weight": totalWeight,
-            "insurance_value": 0,
-            "coupon": null,
-            "items": items
-        }
-
         try {
-            const response = await axios.post(
-                "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee",
-                requestData,
+            const response = await api.get(
+                "/admin/dia-chi/shipping-fee",
                 {
-                    headers: {
-                        "token": "a9cd42d9-f28a-11ef-a268-9e63d516feb9",
-                        "shop_id": 5652920,
-                        "Content-Type": "application/json",
+                    params: {
+                        districtID: selectedDistrict,
+                        wardCode: selectedWard,
+                        idHoaDon: invoiceId.idHoaDon
                     }
                 }
             );
             if (response.status === 200) {
-                setAmount(response.data.data.total);
-                // Cập nhật tổng tiền sau khi có phí ship
-            } else {
-                setAmount(31000);
+                setAmount(response.data);
             }
         } catch (error) {
             if (error.response) {
@@ -462,73 +383,35 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
         }
     };
 
-    useEffect(() => {
-        if (customers.length > 0) {
-            handleSelectCustomer(customers[0]);
+    const fetchOrders = async () => {
+        try {
+            const response = await api.get('/admin/hoa-don/hd-ban-hang');
+            const ordersData = response.data;
+            setOrders(ordersData);
+            const newTabs = ordersData.map(order => ({
+                id: order.idHoaDon,
+                label: `Order ${order.maHoaDon}`,
+            }));
+            setTabs(newTabs);
+            if (newTabs.length > 0) {
+                setActiveTab(newTabs[0].id);
+            }
+        } catch (error) {
+            console.error('Error fetching orders:', error);
         }
-    }, [customers]);
-
+    };
+    const fetchCustomers = async () => {
+        try {
+            const response = await api.get("/admin/khach-hang/hien-thi-customer");
+            setCustomers(response.data);
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        }
+    };
     useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await api.get('/admin/hoa-don/hd-ban-hang');
-                const ordersData = response.data;
-                setOrders(ordersData);
-                const newTabs = ordersData.map(order => ({
-                    id: order.idHoaDon,
-                    label: `Order ${order.maHoaDon}`,
-                }));
-                setTabs(newTabs);
-                if (newTabs.length > 0) {
-                    setActiveTab(newTabs[0].id);
-                }
-            } catch (error) {
-                console.error('Error fetching orders:', error);
-            }
-        };
-
-        const fetchCustomers = async () => {
-            try {
-                const response = await api.get('/admin/khach-hang/hien-thi-customer');
-                const customersData = response.data;
-
-                // Định nghĩa khách hàng mặc định
-                const defaultCustomer = {
-                    idKhachHang: -1,
-                    hoTen: 'Khách Lẻ',
-                    soDienThoai: 'N/A',
-                    diaChi: 'Không xác định'
-                };
-
-                const updatedCustomers = await Promise.all(customersData
-                    .filter(c => c.idKhachHang !== 0)
-                    .map(async (customer) => {
-                        if (customer.diaChi && customer.diaChi.includes(',')) {
-                            const [provinceId, districtId, wardId] = customer.diaChi.split(',').map(id => id.trim());
-                            const provinceName = await getProvinceName(provinceId);
-                            const districtName = await getDistrictName(districtId, provinceId);
-                            const wardName = await getWardName(wardId, districtId);
-                            return {
-                                ...customer,
-                                diaChi: `${wardName}, ${districtName}, ${provinceName}`,
-                                idDiaChi: customer.diaChi
-                            };
-                        } else {
-                            // Nếu diaChi bị null hoặc không hợp lệ, đặt giá trị mặc định
-                            return { ...customer, diaChi: "Không xác định" };
-                        }
-                    })
-                );
-
-                setCustomers([defaultCustomer, ...updatedCustomers]);
-            } catch (error) {
-                console.error('Lỗi khi lấy danh sách khách hàng:', error);
-            }
-        };
         fetchCustomers();
         fetchOrders();
     }, []);
-
 
     useEffect(() => {
         const activeOrder = orders.find(o => o.idHoaDon === activeTab);
@@ -555,13 +438,12 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             }
 
             const activeTabData = tabs.find(tab => tab.id === activeTab);
-            const selectedCustomer = getSelectedCustomer();
+            const selectedCustomer = customers.find(c => c.idKhachHang === selectedCustomerId);
 
             if (activeTabData && activeTabData.vouchers && selectedCustomer && selectedCustomer?.idKhachHang !== 0) {
                 const filtered = activeTabData.vouchers.filter(v => tongTien >= v.dieuKien);
                 setFilteredVouchers(filtered);
             }
-
 
             const finalTotal = Math.max(tongTien + Number(amount) - discount, 0);
             setLastTotal(finalTotal);
@@ -572,103 +454,17 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             setSelectedVoucher('');
             setFilteredVouchers([]);
         }
-    }, [activeTab, orders, total, amount]);
+    }, [activeTab, orders, total]);
 
 
-    const handleSelectCustomer = async (customer) => {
-        const updatedTabs = tabs.map(tab =>
-            tab.id === activeTab ? { ...tab, khachHang: customer } : tab
-        );
-        setTabs(updatedTabs);
-
-        // Lấy thông tin khách hàng được chọn hoặc mặc định là khách lẻ
-        const selected = customer || customers.find(c => c.idKhachHang === 0);
-
-        // Kiểm tra xem khách hàng có địa chỉ hợp lệ hay không
-        if (customer.idKhachHang !== -1 && selected.idDiaChi && selected.idDiaChi.includes(',')) {
-            const [province, district, ward] = selected.idDiaChi.split(',').map(id => id.trim());
-            setSelectedDistrict(district);
-            setSelectedWard(ward);
-        } else {
-            setSelectedDistrict(null);
-            setSelectedWard(null);
-        }
-        setDiscountAmount(0);
-        setSelectedVoucher('');
-        setFilteredVouchers([]);
-        setBestVoucherApplied(false);
-        setManualVoucherSelected(false);
-        setVoucherSearched(false);
-
-        try {
-            const khachHangId = selected.idKhachHang !== 0 ? selected.idKhachHang : null;
-            const response = await api.get('/admin/phieu-giam-gia/hien-thi-voucher', {
-                params: { khachHangId }
-            });
-
-            // Lọc phiếu giảm giá hợp lệ theo tổng tiền đơn hàng
-            const validVouchers = total > 0 ? response.data.filter(v => total >= v.dieuKien) : response.data;
-
-            setOriginalVouchers(validVouchers);
-            setFilteredVouchers(validVouchers);
-
-            const updatedTabsWithVouchers = updatedTabs.map(tab =>
-                tab.id === activeTab ? { ...tab, vouchers: response.data } : tab
-            );
-            setTabs(updatedTabsWithVouchers);
-
-            const activeOrder = orders.find(o => o.idHoaDon === activeTab);
-            applyBestVoucher(activeOrder, response.data).then((bestDiscount) => {
-                setLastTotal(calculateLastTotal(total, amount, bestDiscount));
-            });
-
-        } catch (error) {
-            console.error('Lỗi khi lấy phiếu giảm giá:', error);
-            setLastTotal(calculateLastTotal(total, amount, 0));
-        }
-    };
-
-    const reload = async (newCustomer = null) => {
-        try {
-            const response = await api.get('/admin/khach-hang/hien-thi-customer');
-            const customersData = response.data;
-
-            const defaultCustomer = {
-                idKhachHang: 0,
-                hoTen: 'Khách Lẻ',
-                soDienThoai: 'N/A',
-                diaChi: 'Không xác định'
-            };
-
-            const updatedCustomers = await Promise.all(customersData
-                .filter(c => c.idKhachHang !== 0)
-                .map(async (customer) => {
-                    if (customer.diaChi && customer.diaChi.includes(',')) {
-                        const [provinceId, districtId, wardId] = customer.diaChi.split(',').map(id => Number(id.trim()));
-                        const provinceName = await getProvinceName(provinceId);
-                        const districtName = await getDistrictName(districtId, provinceId);
-                        const wardName = await getWardName(wardId, districtId);
-                        return {
-                            ...customer,
-                            diaChi: `${wardName}, ${districtName}, ${provinceName}`
-                        };
-                    } else {
-                        return { ...customer, diaChi: "Không xác định" };
-                    }
-                })
-            );
-
-            setCustomers([defaultCustomer, ...updatedCustomers]);
-        } catch (error) {
-            console.error('Lỗi khi lấy danh sách khách hàng:', error);
-        }
-    };
+    const reload = () => {
+        // fetchCustomers();
+        fetchCusAddress(selectedCustomerId);
+    }
 
     const calculateLastTotal = (totalAmount, deliveryFee, discount) => {
         return Math.max(totalAmount + Number(deliveryFee) - discount, 0);
     };
-
-
 
     const applyBestVoucher = async (order, vouchers) => {
         if (!order || !vouchers?.length || total <= 0) return 0;
@@ -724,10 +520,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
         }
     };
 
-
-
     //Tìm pgg
-
     const searchVoucher = (keyword) => {
         const cleanedKeyword = keyword.trim().toLowerCase().replace(/\s+/g, '');
 
@@ -755,18 +548,71 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
         }
     };
 
-
-    const getSelectedCustomer = () => {
-        const activeTabData = tabs.find(tab => tab.id === activeTab);
-        return activeTabData ? activeTabData.khachHang : { hoTen: "Khách lẻ" };
-    };
-
-
     const getTabVouchers = () => {
         return filteredVouchers;
     };
 
-    const selectedCustomer = getSelectedCustomer();
+    const handleChangeCustomer = (customerId) => {
+        setSelectedCustomerId(customerId)
+        fetchCusAddress(customerId)
+        if (customerId === -1) {
+            setDeliveryMethod("taiquay")
+            setAmount(0);
+        } else {
+            if (deliveryMethod === "giaohang") {
+                calculateShippingFee();
+            }
+        }
+    }
+
+    const fetchCusAddress = async (idKhachHang) => {
+        if (idKhachHang) {
+            try {
+                await api.get(`/admin/dia-chi/get-address/${idKhachHang}`).then(res => {
+                    if (res.status === 200) {
+                        setAddresses(res.data);
+                        setSelectedDistrict(res.data.quanHuyen);
+                        setSelectedWard(res.data.xaPhuong);
+                    }
+                })
+            } catch (error) {
+                console.error("Error fetching customer address:", error);
+                setAddresses([]);
+                setSelectedAddress('');
+            }
+        }
+    }
+    useEffect(() => {
+        if (addresses.length > 0) {
+            addresses.find(address => {
+                if (address.macDinh) {
+                    setSelectedAddress(address.id);
+                    setSelectedDistrict(address.quanHuyen);
+                    setSelectedWard(address.xaPhuong);
+                }
+            })
+        }
+    }, [addresses]);
+
+    // useEffect(() => {
+    //     calculateShippingFee()
+    // }, [totalItem, selectedDistrict, selectedWard]);
+    const handleChangeAddress = async (addressId) => {
+        try {
+            setSelectedAddress(addressId);
+            await api.get(`/admin/dia-chi/set-default-address/${addressId}`).then(res => {
+                if (res.status === 200) {
+                    Notification("Đặt địa chỉ mặc định thành công!", "success")
+                    fetchCusAddress(selectedCustomerId);
+                } else {
+                    Notification("Đặt địa chỉ mặc định thất bại!", "error")
+                }
+            });
+        } catch (error) {
+            console.error("Error setting default address:", error);
+            Notification("Đặt địa chỉ mặc định thất bại!", "error")
+        }
+    }
 
     const handlePrint = (invoiceData, listItems, hoTenKhach) => {
         const printWindow = window.open('', '', 'width=800,height=600');
@@ -842,50 +688,81 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                 }}
             >
                 <h2 className="font-semibold mb-2">Thông tin khách hàng</h2>
-                <div className='p-2 rounded-lg  border border-gray-300 flex-none'>
-                    <div className="flex justify-content-center gap-2 ">
-                        <select className="border p-2 rounded w-full h-8" onChange={(e) => {
-                            const selected = customers.find(c => c.idKhachHang === parseInt(e.target.value));
-                            handleSelectCustomer(selected || customers.find(c => c.idKhachHang === 0));
-                            if (selected?.idKhachHang != -1) {
-                                setDeliveryData(null);
-                                calculateShippingFee();
-                            } else {
-                                setDeliveryMethod("taiquay")
-                                setAmount(0);
-                            }
-                        }}
-                            value={selectedCustomer ? selectedCustomer?.idKhachHang : ''}
-                        >
-                            {customers.map(customer => (
-                                <option key={customer?.idKhachHang} value={customer?.idKhachHang}>
-                                    {customer?.hoTen} - {customer?.soDienThoai}
-                                </option>))}
-                        </select>
-
-                        <div className="relative w-48 h-8">
-                            <AddCircleOutline fontSize="small" className="absolute top-1.5 left-1" />
-                            <button
-                                onClick={handleOpenCustomerDialog}
-                                className="w-full h-8 border border-black rounded-md align-middle ps-4"
+                <Box sx={{ p: 1, borderRadius: 1, border: '1px solid #ccc' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <FormHelperText sx={{ fontSize: 14, color: 'black' }}>
+                            Chọn khách hàng và địa chỉ giao hàng
+                        </FormHelperText>
+                        <FormControl>
+                            <InputLabel
+                                id="customer-select"
+                                sx={{
+                                    fontSize: 12,
+                                    paddingTop: '5px',
+                                    minWidth: 300,
+                                }}
                             >
-                                Thêm khách
-                            </button>
-                        </div>
-                    </div>
-                    {selectedCustomer && selectedCustomer.diaChi && (
-                        <div className="relative">
-                            <input className=" text-gray-600 w-full p-2 border rounded "
-                                readOnly
-                                value={selectedCustomer.diaChi}
-                            />
-                            <button className="absolute right-2 bottom-1.5">
-                                <EditLocationAlt />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                                Khách hàng
+                            </InputLabel>
+                            <Select
+                                labelId="customer-select"
+                                value={selectedCustomerId ?? ""}
+                                label="Khách hàng"
+                                onChange={e => {
+                                    handleChangeCustomer(e.target.value)
+                                }}
+                                size="small"
+                                sx={{ fontSize: 12, width: "100%" }}
+                            >
+                                <MenuItem key={-1} value={-1}>
+                                    Khách lẻ
+                                </MenuItem>
+                                {customers.map((customer) => (
+                                    <MenuItem key={customer.idKhachHang} value={customer.idKhachHang}>
+                                        {customer.hoTen}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        {selectedCustomerId !== -1 && (
+                            <FormControl>
+                                <InputLabel
+                                    id="address-select"
+                                    sx={{
+                                        fontSize: 12,
+                                        paddingTop: '5px',
+                                        minWidth: 300,
+                                    }}
+                                >
+                                    Địa chỉ
+                                </InputLabel>
+                                <Select
+                                    labelId="address-select"
+                                    value={selectedAddress ?? ""}
+                                    label="Địa chỉ"
+                                    onChange={e => handleChangeAddress(e.target.value)}
+                                    size="small"
+                                    sx={{ fontSize: 10, width: "100%" }}
+                                >
+                                    {addresses.map((address) => (
+                                        <MenuItem key={address.id} value={address.id}>
+                                            {address.diaChiChiTiet}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
 
+                        {selectedCustomerId !== -1 && (
+                            <Box sx={{ display: 'flex', justifyContent: "space-evenly", gap: 1 }}>
+                                <Button variant="contained" color="primary" size='small' onClick={e => setOpenUpdateAddressDialog(true)}>Sửa địa chỉ</Button>
+                                <Button variant="contained" color="primary" size='small' onClick={e => setOpenAddAddressDialog(true)}>Thêm địa chỉ</Button>
+                            </Box>
+                        )}
+                    </Box>
+                </Box>
+                <UpdateCustomerAddress open={openUpdateAddressDialog} onClose={handleCloseUpdateAddressDialog} selectedAddress={addresses.find(a => a.id === selectedAddress)} />
+                <AddressDialog idKhachHang={selectedCustomerId} open={openAddAddressDialog} onClose={handleCloseAddressDialog} />
                 <div className="flex justify-content-center gap-x-6 ">
                     <label className="flex justify-content-center gap-x-2">
                         <input
@@ -909,7 +786,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                             readOnly
                             onClick={() => {
                                 setDeliveryMethod("giaohang");
-                                if (selectedCustomer?.idKhachHang != -1) {
+                                if (selectedCustomerId !== -1) {
                                     calculateShippingFee();
                                 } else {
                                     setOpenDeliveryForm(true);
@@ -919,8 +796,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                         <span>Giao Hàng</span>
                     </label>
                 </div>
-
-
 
                 <div className="flex items-center gap-2">
                     <input
@@ -984,7 +859,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                             * Phiếu giảm giá có giá trị tốt nhất.
                         </p>
                     )}
-
                 </div>
                 <div className="flex items-center justify-between w-full">
                     <div>Hình thức thanh toán:</div>
@@ -1047,34 +921,35 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                             <span className="font-medium text-gray-700">Tổng tiền:</span>
                             <span className="font-semibold text-gray-900">{total.toLocaleString()} đ</span>
                         </div>
-                        <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                                <label>Phí vận chuyển:</label>
-                                {deliveryMethod === "giaohang" && (
+                        {deliveryMethod === "giaohang" && (
+                            <div className="flex items-center justify-between w-full">
+
+                                <div className="flex items-center gap-2">
+                                    <label>Phí vận chuyển:</label>
                                     <img
                                         src="https://product.hstatic.net/1000405368/product/giao_hang_nhanh_toan_quoc_color.b7d18fe5_39425b03ee544ab2966d465756a00f89_small.png"
                                         alt="Giao Hàng Nhanh"
                                         className="w-24 h-12"
                                     />
-                                )}
+                                </div>
+                                <div className="text-red-500">
+                                    <span className=""> + </span>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => {
+                                            if (e.target.value >= 0) {
+                                                setAmount(e.target.value)
+                                            } else {
+                                                setAmount(0)
+                                            }
+                                        }}
+                                        className="p-2 h-4 w-20 text-right border border-gray-300 rounded"
+                                    />
+                                    <span className="text-red-500"> đ </span>
+                                </div>
                             </div>
-                            <div className="text-red-500">
-                                <span className=""> + </span>
-                                <input
-                                    type="number"
-                                    value={amount}
-                                    onChange={(e) => {
-                                        if (e.target.value >= 0) {
-                                            setAmount(e.target.value)
-                                        } else {
-                                            setAmount(0)
-                                        }
-                                    }}
-                                    className="p-2 h-4 w-20 text-right border border-gray-300 rounded"
-                                />
-                                <span className="text-red-500"> đ </span>
-                            </div>
-                        </div>
+                        )}
                         <div className="flex justify-between items-center">
                             <span className="font-medium text-gray-700">Số tiền giảm:</span>
                             <span className="text-red-500 font-semibold">-{discountAmount.toLocaleString()} đ</span>
@@ -1105,11 +980,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                     Thanh Toán
                 </button>
             </div>
-            <CustomerDialog
-                open={openCustomerDialog}
-                onClose={() => setOpenCustomerDialog(false)}
-                reload={(newCustomer) => reload(newCustomer)}
-            />
             <Delivery
                 open={openDeliveryForm}
                 onClose={() => setOpenDeliveryForm(false)}

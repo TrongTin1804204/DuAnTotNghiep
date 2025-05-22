@@ -128,6 +128,7 @@ const Checkout = () => {
     useEffect(() => {
         getDataUser()
     }, [selectedCustomerId]);
+
     const getDataUser = async () => {
         if (selectedCustomerId != null) {
             axios.get(`http://localhost:8080/admin/khach-hang/detail-client/${selectedCustomerId}`, {
@@ -138,20 +139,47 @@ const Checkout = () => {
                     const defaultAddress = response.data.find(addr => addr.macDinh === true)
                     setSelectedAddress(defaultAddress.id)
                     setDiaChiChiTiet(defaultAddress.diaChiChiTiet.split(',')[0])
-                    const serviceId = 53321; // ID dịch vụ của GHN (thay đổi nếu cần)
-                    const shopId = 1542; // ID cửa hàng của bạn trên GHN (thay đổi nếu cần)
-                    // Tính tổng khối lượng và giá trị đơn hàng
-                    const totalWeight = selectedItems.reduce((total, item) => total + (item.weight || 0) * item.soLuong, 0);
-                    const totalValue = selectedItems.reduce((total, item) => total + item.gia * item.soLuong, 0);
-                    const validTotalWeight = totalWeight > 0 ? totalWeight : 500; // Đặt giá trị mặc định là 500g nếu totalWeight bằng 0
+                    // Tính toán kích thước và trọng lượng giống như backend
+                    let length = 0;
+                    let width = 0;
+                    let height = 0;
+                    let weight = 0;
+
+                    // Tạo danh sách items tương tự như backend
+                    const items = selectedItems.map(item => {
+                        const itemLength = 20;
+                        const itemWidth = 20;
+                        const itemHeight = 12;
+                        const itemWeight = 1000; // 1kg mỗi sản phẩm
+
+                        length += itemLength;
+                        width += itemWidth;
+                        height += itemHeight * item.soLuong;
+                        weight += itemWeight * item.soLuong;
+
+                        return {
+                            name: item.tenSanPham,
+                            quantity: item.soLuong,
+                            length: itemLength,
+                            width: itemWidth,
+                            height: itemHeight,
+                            weight: itemWeight
+                        };
+                    });
+
+
                     const requestData = {
-                        from_district_id: shopId,
+                        from_district_id: 1542, // Giữ nguyên giá trị shop_id như cũ
+                        from_ward_code: "1A0607",
                         service_type_id: 2,
-                        to_district_id: response.data.find(addr => addr.macDinh === true)?.quanHuyen, // Chuyển đổi districtId sang kiểu số nguyên
+                        to_district_id: parseInt(response.data.find(addr => addr.macDinh === true)?.quanHuyen),
                         to_ward_code: response.data.find(addr => addr.macDinh === true)?.xaPhuong,
-                        weight: validTotalWeight,
-                        insurance_value: totalValue,
-                        coupon: null
+                        weight: weight,
+                        length: length,
+                        width: width,
+                        height: height,
+                        insurance_value: 0,
+                        items: items
                     };
 
                     const res = await axios.post(
@@ -159,6 +187,7 @@ const Checkout = () => {
                         requestData,
                         { headers: GHN_HEADERS }
                     );
+
                     setShippingFee(res.data.data.total);
                 })
                 .catch(err => console.error("Lỗi khi lấy thông tin khách hàng:", err));
@@ -582,7 +611,7 @@ const Checkout = () => {
                     ) : (
                         <div className="mt-4">
                             <p className="text-gray-500 italic"> Vui lòng nhập thông tin để tiếp tục.</p>
-                            <AddAddress onConfirm={handleConfirmCustomerInfo} existingData={customerData} />
+                            <AddAddress onConfirm={handleConfirmCustomerInfo} existingData={customerData} items={selectedItems} />
                         </div>
                     )
 

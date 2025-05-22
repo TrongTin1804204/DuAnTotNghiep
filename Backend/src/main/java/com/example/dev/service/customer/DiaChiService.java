@@ -161,7 +161,14 @@ public class DiaChiService {
             int weight = 0;
 
             for (HoaDonChiTiet item : listItems) {
-                Item i = Item.builder().name(item.getChiTietSanPham().getSanPham().getTen()).quantity(item.getSoLuong()).length(20).width(20).height(12).weight(1000).build();
+                Item i = Item.builder()
+                        .name(item.getChiTietSanPham().getSanPham().getTen())
+                        .quantity(item.getSoLuong())
+                        .length(20)
+                        .width(20)
+                        .height(12)
+                        .weight(1000)
+                        .build();
                 items.add(i);
                 length += i.getLength();
                 width += i.getWidth();
@@ -170,7 +177,17 @@ public class DiaChiService {
             }
 
             // Tạo request body
-            ShipRequest request = ShipRequest.builder().serviceTypeId(SERVICE_TYPE).fromDistrictId(FROM_DISTRICT_ID).fromWardCode(FROM_WARD_CODE).toDistrictId(districtId).toWardCode(wardCode).length(length).width(width).height(height).weight(weight).insuranceValue(insurance_value)
+            ShipRequest request = ShipRequest.builder()
+                    .serviceTypeId(SERVICE_TYPE)
+                    .fromDistrictId(FROM_DISTRICT_ID)
+                    .fromWardCode(FROM_WARD_CODE)
+                    .toDistrictId(districtId)
+                    .toWardCode(wardCode)
+                    .length(length)
+                    .width(width)
+                    .height(height)
+                    .weight(weight)
+                    .insuranceValue(insurance_value)
                     .items(items).build();
 
             String url = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee";

@@ -6,7 +6,7 @@ import api from "../../../security/Axios";
 import moment from "moment";
 import Loading from "../../../components/Loading";
 import Notification from "../../../components/Notification";
-import { formatDateFromArray } from "../../../untils/FormatDate";
+import { formatDateFromArray, formatDateForDisplay, formatDateForComparison } from "../../../untils/FormatDate";
 import { hasPermission } from "../../../security/DecodeJWT";
 export default function Discounts() {
   const navigate = useNavigate();
@@ -323,18 +323,10 @@ export default function Discounts() {
           </thead>
           <tbody>
             {dotGiamGias.map((dotGiamGia, index) => {
-              // Chuyển đổi chuỗi ngày thành đối tượng Date
-              // const parseDate = (dateString) => {
-              //   if (!dateString) return null;
-              //   const [time, date] = dateString.split(" ");
-              //   const [hours, minutes, seconds] = time.split(":").map(Number);
-              //   const [day, month, year] = date.split("/").map(Number);
-              //   return new Date(year, month - 1, day, hours, minutes, seconds);
-              // };
-
               const now = new Date();
-              const startDate = formatDateFromArray(dotGiamGia.ngayBatDau);
-              const endDate = formatDateFromArray(dotGiamGia.ngayKetThuc);
+              const startDate = formatDateForComparison(dotGiamGia.ngayBatDau);
+              const endDate = formatDateForComparison(dotGiamGia.ngayKetThuc);
+
               return (
                 <tr
                   key={dotGiamGia.idDotGiamGia}
@@ -352,16 +344,16 @@ export default function Discounts() {
                   <td className="p-2 ">
                     <span
                       className={`px-2 py-1 rounded w-29 text-center border
-                      ${new Date() < new Date(startDate)
+                      ${now < startDate
                           ? "bg-yellow-300 text-yellow-800 border-yellow-800" // Sắp diễn ra
-                          : new Date() > new Date(endDate)
+                          : now > endDate
                             ? "bg-orange-200 text-orange-800 border-orange-800" // Bị vô hiệu hóa
                             : "bg-green-300 text-green-800 border-green-800"
                         }`} // Đang diễn ra
                     >
-                      {new Date() < new Date(startDate)
+                      {now < startDate
                         ? "Sắp diễn ra"
-                        : new Date() > new Date(endDate)
+                        : now > endDate
                           ? "Bị vô hiệu hóa"
                           : "Đang diễn ra"}
                     </span>

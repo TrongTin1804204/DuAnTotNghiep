@@ -12,17 +12,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Integer> {
     List<ChiTietSanPham> findBySanPham_IdSanPhamAndGiaDuocTinhIsNull(Integer id, Pageable pageable);
     @Query(value = """
     select * from chi_tiet_san_pham\s
-    where id_san_pham = :idSanPham and gia_duoc_tinh is null and trang_thai = 1 and id_mau_sac = :idMauSac
+    where id_san_pham = :idSanPham and gia_duoc_tinh is null and trang_thai = 1 and id_mau_sac = :idMauSac and so_luong > 0
 """,nativeQuery = true)
     List<ChiTietSanPham> getAllProductByColor(@Param("idSanPham") Integer idSanPham,@Param("idMauSac") Integer idMauSac);
 
-    List<ChiTietSanPham> findChiTietSanPhamBySanPham_IdSanPhamAndGiaDuocTinhIsNull(Integer id);
+    @Query(value = """
+    select ChiTietSanPham 
+    from ChiTietSanPham ctsp 
+    where 
+    ctsp.sanPham.idSanPham = :idSanPham and 
+    ctsp.giaDuocTinh = null  
+""")
+    List<ChiTietSanPham> productOnline(Integer id);
     @Query(value = """
                 select * from chi_tiet_san_pham 
                 WHERE
@@ -63,7 +69,7 @@ public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Intege
                         @Param("soLuong") Integer soLuong);
 
 
-    @Query(value = "EXEC sp_TinhGiaSauGiam :idChiTietSanPham",nativeQuery = true)
+    @Query(value = "EXEC sp_GetProductById :idChiTietSanPham",nativeQuery = true)
     List<SpGiamGiaRequest> getSanPhamGiamGia(@Param("idChiTietSanPham") Integer idChiTietSanPham);
 
     List<ChiTietSanPham> findAllByTaoBoi(Integer taoBoi);

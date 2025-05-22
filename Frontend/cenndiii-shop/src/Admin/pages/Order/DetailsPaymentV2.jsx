@@ -29,11 +29,6 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
         }
     }
 
-    // coupons 
-    const [couponInput, setCouponInput] = useState("");
-    const [selectedCoupon, setSelectedCoupon] = useState("");
-    const [coupons, setCoupons] = useState([]);
-
 
     const reload = () => {
         fetchCustomers();
@@ -48,18 +43,22 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
             console.error("Error fetching customers:", error);
         }
     };
-
+    useEffect(() => {
+        if (addresses.length > 0) {
+            addresses.find(address => {
+                if (address.macDinh) {
+                    setSelectedAddress(address.id);
+                }
+            })
+        }
+    }, [addresses]);
     const fetchCusAddress = async (idKhachHang) => {
         if (idKhachHang) {
             try {
                 await api.get(`/admin/dia-chi/get-address/${idKhachHang}`).then(res => {
                     if (res.status === 200) {
                         setAddresses(res.data);
-                        res.data.find(address => {
-                            if (address.macDinh) {
-                                setSelectedAddress(address.id);
-                            }
-                        })
+                        console.log(res.data);
                     }
                 })
             } catch (error) {
@@ -69,21 +68,6 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
             }
         }
     }
-
-
-    const fetchCoupons = async (khachHangId) => {
-        try {
-            const response = await api.get("/admin/phieu-giam-gia/hien-thi-voucher", {
-                params: {
-                    khachHangId: khachHangId
-                }
-            });
-            setCoupons(response.data);
-            setSelectedCoupon(response.data[0].id);
-        } catch (error) {
-            console.error("Error fetching coupons:", error);
-        }
-    };
 
 
     const handleChangeAddress = async (addressId) => {
@@ -111,7 +95,6 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
     const handleChangeCustomer = (customerId) => {
         setSelectedCustomer(customerId)
         fetchCusAddress(customerId)
-        fetchCoupons(customerId);
     }
 
     return (
@@ -165,7 +148,7 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
                         </InputLabel>
                         <Select
                             labelId="address-select"
-                            value={selectedAddress}
+                            value={selectedAddress ?? ""}
                             label="Địa chỉ"
                             onChange={e => handleChangeAddress(e.target.value)}
                             size="small"
@@ -188,43 +171,7 @@ export default function DetailPaymentsV2({ invoiceId, reloadTab }) {
                         <Button variant="contained" color="primary" size='small' onClick={e => setOpenAddAddressDialog(true)}>Thêm địa chỉ</Button>
                     </Box>
                 )}
-                {/* Tìm kiếm mã giảm giá */}
-                <TextField
-                    label="Nhập mã giảm giá"
-                    variant="outlined"
-                    size="small"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value)}
-                    sx={{ fontSize: 12, width: "100%" }}
-                />
 
-                {/* Select mã giảm giá có sẵn */}
-                <FormControl>
-                    <InputLabel
-                        id="coupon-select"
-                        sx={{
-                            fontSize: 12,
-                            paddingTop: '5px', // đẩy xuống để label không bị chạm
-                            minWidth: 300,       // hoặc set chiều rộng để chữ không bị tràn
-                        }}
-                    >
-                        Chọn mã giảm giá
-                    </InputLabel>
-                    <Select
-                        labelId="coupon-select"
-                        value={selectedCoupon}
-                        label="Chọn mã giảm giá"
-                        onChange={(e) => setSelectedCoupon(e.target.value)}
-                        size="small"
-                        sx={{ fontSize: 12, width: "100%" }}
-                    >
-                        {coupons.map((coupon) => (
-                            <MenuItem key={coupon.id} value={coupon.id}>
-                                {coupon.tenKhuyenMai}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
             </Box>
             <UpdateCustomerAddress open={openUpdateAddressDialog} onClose={handleCloseUpdateAddressDialog} selectedAddress={addresses.find(a => a.id === selectedAddress)} />
             <AddressDialog idKhachHang={selectedCustomer} open={openAddAddressDialog} onClose={handleCloseAddressDialog} />

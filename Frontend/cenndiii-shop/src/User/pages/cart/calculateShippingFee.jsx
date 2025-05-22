@@ -6,7 +6,7 @@ const GHN_HEADERS = {
 };
 
 const validateAddressCodes = async (provinceId, districtId, wardCode) => {
-    console.log(provinceId,districtId,wardCode)
+    console.log(provinceId, districtId, wardCode)
     try {
         const [provinceRes, districtRes, wardRes] = await Promise.all([
             axios.get("https://online-gateway.ghn.vn/shiip/public-api/master-data/province", { headers: GHN_HEADERS }),
@@ -31,29 +31,54 @@ const validateAddressCodes = async (provinceId, districtId, wardCode) => {
 
 export const calculateShippingFee = async (addressCode, cartItems) => {
     const [provinceId, districtId, wardCode] = addressCode.split(", ").map(code => code.trim());
-    const serviceId = 53321; // ID dịch vụ của GHN (thay đổi nếu cần)
+    console.log(cartItems);
     const shopId = 1542; // ID cửa hàng của bạn trên GHN (thay đổi nếu cần)
-  
 
-    // Tính tổng khối lượng và giá trị đơn hàng
-    const totalWeight = cartItems.reduce((total, item) => total + (item.weight || 0) * item.soLuong, 0);
-    const totalValue = cartItems.reduce((total, item) => total + item.gia * item.soLuong, 0);
+    // Tính toán kích thước và trọng lượng giống như backend
+    let length = 0;
+    let width = 0;
+    let height = 0;
+    let weight = 0;
 
-    // Kiểm tra nếu totalWeight bằng 0 và đặt giá trị mặc định nếu cần thiết
-    const validTotalWeight = totalWeight > 0 ? totalWeight : 500; // Đặt giá trị mặc định là 500g nếu totalWeight bằng 0
+    // Tạo danh sách items tương tự như backend
+    const items = cartItems.map(item => {
+        const itemLength = 20;
+        const itemWidth = 20;
+        const itemHeight = 12;
+        const itemWeight = 1000; // 1kg mỗi sản phẩm
 
+        length += itemLength;
+        width += itemWidth;
+        height += itemHeight * item.soLuong;
+        weight += itemWeight * item.soLuong;
+
+        return {
+            name: item.tenSanPham,
+            quantity: item.soLuong,
+            length: itemLength,
+            width: itemWidth,
+            height: itemHeight,
+            weight: itemWeight
+        };
+    });
+
+    // Tính tổng giá trị đơn hàng
 
     try {
         await validateAddressCodes(provinceId, districtId, wardCode); // Xác minh mã địa chỉ
 
         const requestData = {
             from_district_id: shopId,
-            service_id: serviceId,
-            to_district_id: Number(districtId, 10), // Chuyển đổi districtId sang kiểu số nguyên
+            from_ward_code: "1A0607", // Mã phường/xã của shop
+            service_type_id: 2,
+            to_district_id: Number(districtId),
             to_ward_code: wardCode,
-            weight: validTotalWeight,
-            insurance_value: totalValue,
-            coupon: null
+            weight: weight,
+            length: length,
+            width: width,
+            height: height,
+            insurance_value: 0,
+            items: items
         };
 
         const response = await axios.post(
@@ -65,7 +90,7 @@ export const calculateShippingFee = async (addressCode, cartItems) => {
         console.log("API response:", response.data);
         return response.data.data.total;
     } catch (error) {
-        console.error("Lỗi khi tính phí vận chuyển:", error.message);
+        console.error("Lỗi khi tính phí vận chuyển:", error);
         return 34000; // Thiết lập phí vận chuyển mặc định là 34,000 VND khi xảy ra lỗi
     }
 };

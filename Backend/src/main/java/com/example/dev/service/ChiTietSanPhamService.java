@@ -268,7 +268,7 @@ public class ChiTietSanPhamService {
     }
 
     public List<ChiTietSanPhamRequest> showProductOnline(Integer idSanPham) {
-        List<ChiTietSanPham> list = chiTietSanPhamRepo.findChiTietSanPhamBySanPham_IdSanPhamAndGiaDuocTinhIsNull(idSanPham);
+        List<ChiTietSanPham> list = chiTietSanPhamRepo.productOnline(idSanPham);
         List<ChiTietSanPhamRequest> request = new ArrayList<>();
         return getChiTietSanPhamRequests(request, list);
     }
