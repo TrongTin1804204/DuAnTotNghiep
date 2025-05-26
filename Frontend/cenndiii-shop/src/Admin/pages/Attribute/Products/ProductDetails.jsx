@@ -12,6 +12,8 @@ import Loading from "../../../../components/Loading";
 import Alert from "../../../../components/Alert";
 import api from "../../../../security/Axios";
 import { hasPermission, logout } from "../../../../security/DecodeJWT";
+import { QRCode } from 'qrcode';
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 const removeDiacritics = (str) => {
   return str
@@ -43,6 +45,8 @@ const customFilterOption = (option, rawInput) => {
 };
 
 export default function ProductDetails() {
+  const [qrData, setQrData] = useState("");
+  const [qrCodeContent, setQrCodeContent] = useState(""); // Mã QR
   const navigate = useNavigate();
   // Dữ liệu tải về từ backend
   const [products, setProducts] = useState([]);

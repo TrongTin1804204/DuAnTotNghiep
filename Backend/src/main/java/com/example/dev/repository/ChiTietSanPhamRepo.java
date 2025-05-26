@@ -15,6 +15,8 @@ import java.util.List;
 
 public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Integer> {
     List<ChiTietSanPham> findBySanPham_IdSanPhamAndGiaDuocTinhIsNull(Integer id, Pageable pageable);
+    Optional<ChiTietSanPham> findByMa(String ma);
+
     @Query(value = """
     select * from chi_tiet_san_pham\s
     where id_san_pham = :idSanPham and gia_duoc_tinh is null and trang_thai = 1 and id_mau_sac = :idMauSac and so_luong > 0

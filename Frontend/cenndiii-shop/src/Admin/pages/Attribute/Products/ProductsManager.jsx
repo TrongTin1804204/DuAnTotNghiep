@@ -14,8 +14,11 @@ import api from "../../../../security/Axios";
 import { hasPermission, logout } from "../../../../security/DecodeJWT";
 import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
+import QRCode from 'qrcode';
 
 export default function ProductDetails() {
+  const [qrData, setQrData] = useState(""); // Trường để lưu mã QR
+  const [qrCodeContent, setQrCodeContent] = useState(""); // Mã QR
   const { id } = useParams(); // Id lấy từ trang khác
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(3);
@@ -174,6 +177,7 @@ export default function ProductDetails() {
         `/admin/chi-tiet-san-pham/total-pages/${id}`
       );
       setChiTietSanPham(response.data);
+      console.log(response.data);
       setTotalItems(response1.data);
     } catch (error) {
       console.error("Lỗi khi lấy sản phẩm:", error);
@@ -371,6 +375,7 @@ export default function ProductDetails() {
       // Mới: set số lượng và giá bán từ dữ liệu
       setQuantity(data.soLuong);
       setPrice(data.gia);
+      setQrCodeContent(data.ma);
     } catch (error) {
       console.error('Error fetching product detail:', error);
     }
@@ -590,7 +595,7 @@ export default function ProductDetails() {
               <div className="mt-4">
                 <div className="space-y-4">
                   {/* Row 1: Product attribute */}
-                  <div>
+                  {/* <div>
                     <div className="font-semibold mb-1">Sản Phẩm</div>
                     <CreatableSelect
                       isClearable
@@ -605,12 +610,12 @@ export default function ProductDetails() {
                       isDisabled={true}
                     />
                     {errors.product && <div className="text-red-600 text-xs">* {errors.product}</div>}
-                  </div>
+                  </div> */}
 
                   {/* Middle Rows: Other attributes, 3 per row */}
                   <div className="grid grid-cols-3 gap-4">
                     {/* Cổ Giày */}
-                    <div>
+                    {/* <div>
                       <div className="font-semibold mb-1">Cổ Giày</div>
                       <CreatableSelect
                         isClearable
@@ -624,10 +629,10 @@ export default function ProductDetails() {
                         filterOption={customFilterOption}
                       />
                       {errors.shoeCollar && <div className="text-red-600 text-xs">* {errors.shoeCollar}</div>}
-                    </div>
+                    </div> */}
 
                     {/* Đế Giày */}
-                    <div>
+                    {/* <div>
                       <div className="font-semibold mb-1">Đế Giày</div>
                       <CreatableSelect
                         isClearable
@@ -641,10 +646,10 @@ export default function ProductDetails() {
                         filterOption={customFilterOption}
                       />
                       {errors.shoeSole && <div className="text-red-600 text-xs">* {errors.shoeSole}</div>}
-                    </div>
+                    </div> */}
 
                     {/* Mũi Giày */}
-                    <div>
+                    {/* <div>
                       <div className="font-semibold mb-1">Mũi Giày</div>
                       <CreatableSelect
                         isClearable
@@ -658,9 +663,28 @@ export default function ProductDetails() {
                         filterOption={customFilterOption}
                       />
                       {errors.shoeToe && <div className="text-red-600 text-xs">* {errors.shoeToe}</div>}
+                    </div> */}
+                  </div>
+                  {/* Mã QR */}
+                  <div>
+                    <div className="font-semibold mb-1">Mã QR</div>
+                    <div id="qrcode" className="flex justify-center">
+                      {/* Tạo mã QR và hiển thị */}
+                      {qrCodeContent && (
+                        <canvas
+                          id="qr-canvas"
+                          ref={(canvas) => {
+                            if (canvas && qrCodeContent) {
+                              QRCode.toCanvas(canvas, qrCodeContent, (error) => {
+                                if (error) console.error(error);
+                                console.log('Mã QR đã được tạo thành công!');
+                              });
+                            }
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
-
                   <div className="grid grid-cols-3 gap-4">
                     {/* Chất Liệu */}
                     <div>

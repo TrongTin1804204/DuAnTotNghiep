@@ -7,6 +7,8 @@ import com.example.dev.DTO.response.ChiTietSanPham.BienTheResponse;
 import com.example.dev.DTO.response.ChiTietSanPham.ChiTietSanPhamResponse;
 import com.example.dev.DTO.response.CloudinaryResponse;
 import com.example.dev.entity.ChiTietSanPham;
+import com.example.dev.entity.DotGiamGia;
+import com.example.dev.entity.DotGiamGiaChiTiet;
 import com.example.dev.entity.HinhAnh;
 import com.example.dev.entity.invoice.HoaDon;
 import com.example.dev.entity.invoice.HoaDonChiTiet;
@@ -24,6 +26,7 @@ import com.example.dev.util.FileUpLoadUtil;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -38,7 +41,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class ChiTietSanPhamService {
-
     private final ChiTietSanPhamRepo chiTietSanPhamRepo;
     private final CloudinaryService cloudinaryService;
     private final HinhAnhRepo hinhAnhRepo;
@@ -51,6 +53,11 @@ public class ChiTietSanPhamService {
     private final ChiTietLichSuRepo chiTietLichSuRepo;
     private final HistoryImpl historyImpl;
     private final HoaDonService hoaDonService;
+    @Autowired
+    DotGiamGiaRepo dotGiamGiaRepo;
+    @Autowired
+    private DotGiamGiaChiTietRepo dotGiamGiaChiTietRepo;
+
     public List<ChiTietSanPham> getListChiTietSanPham() {
         return chiTietSanPhamRepo.findAll();
     }
@@ -65,8 +72,29 @@ public class ChiTietSanPhamService {
     }
 
     public ChiTietSanPham getChiTietSanPham(Integer id) {
-        return chiTietSanPhamRepo.findById(id).orElse(null);
+        ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(id).orElse(null);
+//        ctsp.setMa(getQRCodeContent(id));
+        return ctsp;
     }
+
+        private String generateQRCodeContent(ChiTietSanPham ctsp) {
+        // Chế tạo chuỗi dữ liệu cần mã hóa (có thể bao gồm thông tin như mã sản phẩm, giá trị, mô tả, v.v.)
+        String content = "id=" + ctsp.getIdChiTietSanPham()+ctsp.getKichCo();
+
+        // Tạo mã QR
+    //        return QRCodeUtil.generateQRCode(base64EncodedContent);
+        return QRCodeUtil.generateQRCode(content);
+    }
+
+    public String getQRCodeContent(Integer id) {
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepo.findById(id).orElseThrow(
+                () -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id)
+        );
+
+        // Giả sử generateQRCodeContent là phương thức bạn đã định nghĩa để tạo mã QR
+        return generateQRCodeContent(chiTietSanPham);
+    }
+
 
     public Map<String, List<?>> getProductDetailsByColor(Integer idSanPham, Integer idMauSac) {
         Map<String, List<?>> data = new HashMap<>();
@@ -87,6 +115,43 @@ public class ChiTietSanPhamService {
 //        }
 //        return listRequest;
 //    }
+
+//    public ChiTietSanPham findByMa(String ma) {
+//        ChiTietSanPham ctsp = chiTietSanPhamRepo.findByMa(ma)
+//                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với mã: " + ma));
+//        return ctsp;
+//    }
+
+    public ChiTietSanPham findByMa(String ma) {
+        ChiTietSanPham ctsp = chiTietSanPhamRepo.findByMa(ma)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với mã: " + ma));
+
+        Optional<DotGiamGia> dotGiamGiaOpt = dotGiamGiaRepo.findActiveDotGiamGia();
+//        System.out.println(dotGiamGiaOpt.isPresent());
+        BigDecimal giaSauGiam = ctsp.getGia();
+        if (dotGiamGiaOpt.isPresent()) {
+            DotGiamGia dotGiamGia = dotGiamGiaOpt.get();
+                // Có giảm giá cho sản phẩm này trong đợt này
+                if (dotGiamGia.getHinhThuc().equals("%")) {
+                    giaSauGiam = giaSauGiam.subtract(
+                            giaSauGiam.multiply(dotGiamGia.getGiaTri().divide(new BigDecimal(100)))
+                    );
+                } else if (dotGiamGia.getHinhThuc().equals("VND")) {
+                    giaSauGiam = giaSauGiam.subtract(dotGiamGia.getGiaTri());
+                }
+
+                // Đảm bảo giá không bị âm
+                if (giaSauGiam.compareTo(BigDecimal.ZERO) < 0) {
+                    giaSauGiam = BigDecimal.ZERO;
+                }
+
+                ctsp.setGia(giaSauGiam);
+        }
+
+        return ctsp;
+    }
+
+
     public Integer themChiTietSanPham(ChiTietSanPhamResponse dto, Authentication auth) {
         ChiTietSanPham ctsp = null;
         List<ChiTietSanPham> chiTietSanPhams = getListChiTietSanPham();
@@ -108,7 +173,8 @@ public class ChiTietSanPhamService {
             ctsp.setKichCo(dt.getKichCo());
             ctsp.setGia(dt.getGia());
             ctsp.setSoLuong(dt.getSoLuong());
-            ctsp.setMa(dt.getMauSac().getTen() + dt.getKichCo().getTen());
+            String qrContent = generateQRCodeContent(ctsp);
+            ctsp.setMa(qrContent);
             boolean isUpdate = false;
             if (!chiTietSanPhams.isEmpty()) {
                 for (ChiTietSanPham c : getListChiTietSanPham(ctsp.getSanPham().getIdSanPham())) {

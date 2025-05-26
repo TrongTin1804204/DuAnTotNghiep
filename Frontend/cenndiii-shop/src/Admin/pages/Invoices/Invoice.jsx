@@ -32,6 +32,7 @@ export default function Invoices() {
     const [statistics, setStatistics] = useState({
         totalInvoices: 0,
     });
+    const statuses = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Chờ vận chuyển', 'Vận chuyển', 'Đã hoàn thành', 'Hủy'];
 
     const fetchInvoices = async (filterParams = {}) => {
         try {

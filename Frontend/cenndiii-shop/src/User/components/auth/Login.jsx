@@ -13,7 +13,7 @@ export default function LoginForm() {
   const handleLogin = (e) => {
     e.preventDefault();
     try {
-      axios.post("http://localhost:8080/auth/login", {
+      const res = axios.post("http://localhost:8080/auth/login", {
         username: phoneNum,
         password: password,
         isCustomer: true,

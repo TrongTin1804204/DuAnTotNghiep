@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Alert from "../../../components/Alert";
 import Notification from '../../../components/Notification';
+import { QrReader } from 'react-qr-reader';
+
 import {
     Dialog,
     DialogTitle,
@@ -291,6 +293,22 @@ export default function Orders() {
         }
     }, [orders, isFirstLoad]);
 
+    // quét qr 
+    const [qrData, setQrData] = useState(null);
+    const [showScanner, setShowScanner] = useState(false);
+    const [openQRDialog, setOpenQRDialog] = useState(false);
+
+    // const handleScan = (data) => {
+    //   if (data) {
+    //     setQrData(data);
+    //     setShowScanner(false); // Tắt camera sau khi quét
+    //   }
+    // };
+
+    const handleError = (err) => {
+        console.error(err);
+    };
+
     const getProductFromDetailsInvoice = async (idHoaDon) => {
 
         try {
@@ -405,6 +423,47 @@ export default function Orders() {
         setOpenSelectQuantity(false);
     };
 
+    const handleScan = async (qrData) => {
+        if (qrData) {
+            setQrData(qrData);
+            setShowScanner(false); // tắt camera sau khi quét
+
+            try {
+                // 1. Gọi API để lấy chi tiết sản phẩm theo mã
+                const res = await axios.get(`http://localhost:8080/admin/chi-tiet-san-pham/find-by-ma/${qrData}`);
+                const product = res.data;
+                // 2. Kiểm tra trạng thái sản phẩm
+                if (!product.trangThai || product.soLuong <= 0) {
+                    Notification("Sản phẩm đã ngừng bán hoặc hết hàng", "warning");
+                    return;
+                }
+
+                // 3. Tạo request thêm sản phẩm
+                const requestData = {
+                    idHoaDon: orderId,
+                    idChiTietSanPham: product.idChiTietSanPham,
+                    soLuongMua: 1, // mặc định 1 khi quét QR
+                    giaSauGiam: product.gia
+                };
+
+                // alert(`http://localhost:8080/admin/chi-tiet-san-pham/them-sp/${requestData}`)
+
+                // 4. Gọi API thêm vào giỏ
+                const response = await api.post("/admin/chi-tiet-san-pham/them-sp", requestData);
+                if (response.status === 200) {
+                    Notification(`Đã thêm sản phẩm vào hóa đơn`, "success");
+                    getProductFromDetailsInvoice(orderId); // reload giỏ hàng
+                }
+
+            } catch (error) {
+                Notification("Không tìm thấy sản phẩm phù hợp với mã QR!", "error");
+                console.error("Lỗi khi xử lý mã QR:", error);
+            }
+        }
+    };
+
+
+
     const handleAddProduct = async () => {
         try {
             if (!productDetailSelected) {
@@ -418,11 +477,9 @@ export default function Orders() {
                 soLuongMua: selectedQuantity,
                 giaSauGiam: productDetailSelected.giaSauGiam
             };
-
             const response = await api.post(
                 "/admin/chi-tiet-san-pham/them-sp",
                 requestData
-
             );
 
             if (response.status === 200) {
@@ -882,6 +939,9 @@ export default function Orders() {
                         </TabPanel>
                     ))}
                 </div>
+                <div>
+                    {qrData && <p>Mã QR đã quét: {qrData}</p>}
+                </div>
                 {hasPermission("ADMIN") || hasPermission("STAFF") ? (
 
                     <div className="top-7 right-10 absolute z-3">
@@ -1200,10 +1260,37 @@ export default function Orders() {
                     <Button onClick={handleCloseSelectQuantity}>Hủy</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* dialog quét qr */}
+            <Dialog open={openQRDialog} onClose={() => setOpenQRDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Quét mã QR sản phẩm</DialogTitle>
+                <DialogContent>
+                    <div style={{ width: '100%', height: '400px' }}>
+                        <QrReader
+                            constraints={{ facingMode: 'environment' }} // dùng camera sau nếu mobile
+                            onResult={(result, error) => {
+                                if (!!result) {
+                                    handleScan(result?.text);
+                                    setOpenQRDialog(false); // tắt dialog sau khi quét
+                                }
+                                if (!!error) {
+                                    handleError(error);
+                                }
+                            }}
+                            style={{ width: '100%', height: '100%' }}
+                        />
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenQRDialog(false)}>Đóng</Button>
+                </DialogActions>
+            </Dialog>
+
             <Alert
                 open={openAlert}
                 message={alertMessage}
                 onClose={handleAlertClose} />
+            <ToastContainer />
         </div>
     );
 }
