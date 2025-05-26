@@ -7,11 +7,13 @@ import {
   Paper,
   Chip,
   IconButton,
-  Grid
+  Grid,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { DataGrid } from '@mui/x-data-grid';
-import { Edit } from 'lucide-react';
+import { Edit, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
@@ -43,6 +45,8 @@ export default function Customer() {
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [filteredRows, setFilteredRows] = useState([]);
 
   const openEditModal = (row) => {
     setEditingRow(row);
@@ -67,6 +71,21 @@ export default function Customer() {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  useEffect(() => {
+    if (searchText) {
+      const filtered = rows.filter((row) => {
+        return Object.keys(row).some((field) => {
+          const value = row[field];
+          if (value == null) return false;
+          return value.toString().toLowerCase().includes(searchText.toLowerCase());
+        });
+      });
+      setFilteredRows(filtered);
+    } else {
+      setFilteredRows(rows);
+    }
+  }, [searchText, rows]);
 
   const getStatusColor = (status) => {
     switch (status === 'Còn hoạt động' ? 1 : 0) {
@@ -194,11 +213,29 @@ export default function Customer() {
         </Grid>
       </Box>
 
+      {/* Thêm ô tìm kiếm */}
+      <Box mb={2}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Tìm kiếm theo tất cả thuộc tính..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search size={20} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       {/* DataGrid */}
       <Paper sx={{ height: '66vh', width: '100%', boxShadow: 3, borderRadius: 2 }}>
         <DataGrid
           getRowId={(row) => row.idKhachHang}
-          rows={rows}
+          rows={filteredRows}
           columns={columns}
           pageSizeOptions={[5, 10, 15]}
           disableColumnResize

@@ -25,6 +25,7 @@ import com.example.dev.repository.invoice.HoaDonRepository;
 import com.example.dev.service.history.HistoryImpl;
 import com.example.dev.service.invoice.HoaDonService;
 import com.example.dev.util.FileUpLoadUtil;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,30 +123,33 @@ public class ChiTietSanPhamService {
 //        return ctsp;
 //    }
 
-    public ChiTietSanPham findByMa(String ma) {
+    public ChiTietSanPham findByMa(String ma,Integer idHoaDon) {
         ChiTietSanPham ctsp = chiTietSanPhamRepo.findByMa(ma)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với mã: " + ma));
-        Optional<DotGiamGia> dotGiamGiaOpt = dotGiamGiaRepo.findActiveDotGiamGia();
+        List<SpGiamGiaRequest> c = chiTietSanPhamRepo.getSanPhamGiamGia(ctsp.getIdChiTietSanPham());
+        themSp(idHoaDon,ctsp.getIdChiTietSanPham(),1,c.get(0).getGiaSauGiam());
+//        System.out.println(ctsp.getIdChiTietSanPham());
+//        Optional<DotGiamGia> dotGiamGiaOpt = dotGiamGiaRepo.findActiveDotGiamGia();
 //        System.out.println(dotGiamGiaOpt.isPresent());
-        BigDecimal giaSauGiam = ctsp.getGia();
-        if (dotGiamGiaOpt.isPresent()) {
-            DotGiamGia dotGiamGia = dotGiamGiaOpt.get();
-                // Có giảm giá cho sản phẩm này trong đợt này
-                if (dotGiamGia.getHinhThuc().equals("%")) {
-                    giaSauGiam = giaSauGiam.subtract(
-                            giaSauGiam.multiply(dotGiamGia.getGiaTri().divide(new BigDecimal(100)))
-                    );
-                } else if (dotGiamGia.getHinhThuc().equals("VND")) {
-                    giaSauGiam = giaSauGiam.subtract(dotGiamGia.getGiaTri());
-                }
-
-                // Đảm bảo giá không bị âm
-                if (giaSauGiam.compareTo(BigDecimal.ZERO) < 0) {
-                    giaSauGiam = BigDecimal.ZERO;
-                }
-
-                ctsp.setGia(giaSauGiam);
-        }
+//        BigDecimal giaSauGiam = ctsp.getGia();
+//        if (dotGiamGiaOpt.isPresent()) {
+//            DotGiamGia dotGiamGia = dotGiamGiaOpt.get();
+//                // Có giảm giá cho sản phẩm này trong đợt này
+//                if (dotGiamGia.getHinhThuc().equals("%")) {
+//                    giaSauGiam = giaSauGiam.subtract(
+//                            giaSauGiam.multiply(dotGiamGia.getGiaTri().divide(new BigDecimal(100)))
+//                    );
+//                } else if (dotGiamGia.getHinhThuc().equals("VND")) {
+//                    giaSauGiam = giaSauGiam.subtract(dotGiamGia.getGiaTri());
+//                }
+//
+//                // Đảm bảo giá không bị âm
+//                if (giaSauGiam.compareTo(BigDecimal.ZERO) < 0) {
+//                    giaSauGiam = BigDecimal.ZERO;
+//                }
+//
+//                ctsp.setGia(giaSauGiam);
+//        }
 
         return ctsp;
     }
@@ -258,7 +262,7 @@ public class ChiTietSanPhamService {
 
 
     public List<ChiTietSanPhamRequest> getPage(Integer idSanPham, int page, int pageSize) {
-        Pageable pageable = PageRequest.of(page, pageSize);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("ngayTao"));
         List<ChiTietSanPhamRequest> request = new ArrayList<>();
         List<ChiTietSanPham> list = chiTietSanPhamRepo.findBySanPham_IdSanPhamAndGiaDuocTinhIsNull(idSanPham, pageable);
         return getChiTietSanPhamRequests(request, list);

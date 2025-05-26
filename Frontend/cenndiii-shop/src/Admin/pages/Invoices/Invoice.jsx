@@ -17,7 +17,7 @@ export default function Invoices() {
     const [filter, setFilter] = useState({
         searchQuery: '',
         loaiDon: '',
-        startDate: '',
+        startDate: new Date().toISOString().split('T')[0],
         endDate: '',
     });
     const pageSize = 5;
@@ -104,7 +104,7 @@ export default function Invoices() {
         setFilter({
             searchQuery: '',
             loaiDon: '',
-            startDate: '',
+            startDate: new Date().toISOString().split('T')[0],
             endDate: '',
         });
         fetchInvoices();

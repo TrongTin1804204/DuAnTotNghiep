@@ -429,26 +429,7 @@ export default function Orders() {
             setShowScanner(false); // tắt camera sau khi quét
             try {
                 // 1. Gọi API để lấy chi tiết sản phẩm theo mã
-                const res = await api.get(`/admin/chi-tiet-san-pham/find-by-ma/${qrData}`);
-                const product = res.data;
-                // 2. Kiểm tra trạng thái sản phẩm
-                if (!product.trangThai || product.soLuong <= 0) {
-                    Notification("Sản phẩm đã ngừng bán hoặc hết hàng", "warning");
-                    return;
-                }
-
-                // 3. Tạo request thêm sản phẩm
-                const requestData = {
-                    idHoaDon: orderId,
-                    idChiTietSanPham: product.idChiTietSanPham,
-                    soLuongMua: 1, // mặc định 1 khi quét QR
-                    giaSauGiam: product.gia
-                };
-
-                // alert(`http://localhost:8080/admin/chi-tiet-san-pham/them-sp/${requestData}`)
-
-                // 4. Gọi API thêm vào giỏ
-                const response = await api.post("/admin/chi-tiet-san-pham/them-sp", requestData);
+                const response = await api.get(`/admin/chi-tiet-san-pham/find-by-ma/${qrData}/${orderId}`);
                 if (response.status === 200) {
                     Notification(`Đã thêm sản phẩm vào hóa đơn`, "success");
                     getProductFromDetailsInvoice(orderId); // reload giỏ hàng
@@ -659,6 +640,15 @@ export default function Orders() {
         fetchData();
     }, []);
 
+    const headerMapping = {
+        "sanPham": "Sản phẩm",
+        "soLuong": "Số lượng",
+        "kho": "Kho",
+        "giaHienTai": "Giá hiện tại",
+        "giaDuocTinh": "Giá được tính",
+        "tong": "Tổng"
+    };
+
     return (
         <div className="p-4 text-[10px]">
             <div className="bg-white p-4 rounded-lg shadow-md relative ">
@@ -739,16 +729,9 @@ export default function Orders() {
                                                 <Table stickyHeader>
                                                     <TableHead>
                                                         <TableRow sx={{ height: "40px" }}> {/* Giảm chiều cao của header */}
-                                                            {[
-                                                                "Sản phẩm",
-                                                                "Số lượng",
-                                                                "Kho",
-                                                                "Giá hiện tại",
-                                                                "Giá được tính",
-                                                                "Tổng",
-                                                            ].map((header) => (
+                                                            {Object.entries(headerMapping).map(([key, value]) => (
                                                                 <TableCell
-                                                                    key={header}
+                                                                    key={key}
                                                                     align="center"
                                                                     sx={{
                                                                         position: "sticky",
@@ -759,7 +742,7 @@ export default function Orders() {
                                                                         fontSize: "12px", // Giảm font chữ
                                                                     }}
                                                                 >
-                                                                    {header}
+                                                                    {value}
                                                                 </TableCell>
                                                             ))}
                                                             <TableCell
@@ -799,7 +782,7 @@ export default function Orders() {
                                                                                     *Sản phẩm đã ngừng hoạt động! Chỉ có thể trả lại hoặc thanh toán!
                                                                                 </p>
                                                                             ) : (
-                                                                                item.giaDuocTinh && (
+                                                                                item.giaDuocTinh != null && (
                                                                                     <p className="text-red-500 absolute -bottom-5 left-0 w-[500px] text-left">
                                                                                         *Sản phẩm có sự thay đổi về giá {item.giaDuocTinh.toLocaleString()} đ → {" "}
                                                                                         {item.donGia.toLocaleString()} đ
@@ -938,9 +921,9 @@ export default function Orders() {
                         </TabPanel>
                     ))}
                 </div>
-                <div>
+                {/* <div>
                     {qrData && <p>Mã QR đã quét: {qrData}</p>}
-                </div>
+                </div> */}
                 {hasPermission("ADMIN") || hasPermission("STAFF") ? (
 
                     <div className="top-7 right-10 absolute z-3">

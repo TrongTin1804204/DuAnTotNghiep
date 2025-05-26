@@ -314,18 +314,27 @@ export default function InvoiceDetail() {
         }
     };
 
+    const [openConfirmContinueDialog, setOpenConfirmContinueDialog] = useState(false);
+
     const continues = async () => {
         try {
-            // if (validate()) {
+            setOpenConfirmContinueDialog(true);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleConfirmContinue = async () => {
+        try {
             const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/xac-nhan`)
             console.log(response.data);
 
             if (response.data.code != 500) {
                 reload();
+                setOpenConfirmContinueDialog(false);
             } else {
                 Notification(response.data.message, "error");
             }
-            // }
         } catch (error) {
             console.log(error);
         }
@@ -648,7 +657,7 @@ export default function InvoiceDetail() {
                 <div className="flex justify-around w-full mt-4">
                     <div className="flex justify-between w-[300px]">
                         {invoice?.trangThai != "Đã hoàn thành" &&
-                            invoice?.loaiDon === "Online" && invoice?.trangThai !== "Hủy" && (
+                            invoice?.trangThai !== "Hủy" && (
                                 <>
                                     <Button variant="contained" color="primary" onClick={() => continues()}>
                                         Tiếp tục
@@ -1399,33 +1408,22 @@ export default function InvoiceDetail() {
             {/* ô lịch sử thanh toán */}
             <PaymentHistory idHoaDon={idHoaDon} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
 
-            <Dialog
+            <Alert
                 open={openCancelDialog}
+                message={"Nhập lý do hủy đơn"}
                 onClose={() => setOpenCancelDialog(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Nhập lý do hủy đơn</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Lý do hủy"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={lyDoHuy}
-                        onChange={(e) => setLyDoHuy(e.target.value)}
-                        required
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenCancelDialog(false)}>Hủy</Button>
-                    <Button onClick={handleCancelOrder} variant="contained" color="primary">
-                        Xác nhận
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            />
+
+            <Alert
+                open={openConfirmContinueDialog}
+                message={"Bạn có chắc chắn muốn tiếp tục không?"}
+                onClose={(confirm) => {
+                    setOpenConfirmContinueDialog(false);
+                    if (confirm) {
+                        handleConfirmContinue();
+                    }
+                }}
+            />
         </div >
     )
 }

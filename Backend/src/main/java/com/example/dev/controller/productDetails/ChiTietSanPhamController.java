@@ -92,10 +92,10 @@ public class ChiTietSanPhamController {
 
 
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
-    @GetMapping("/find-by-ma/{ma}")
-    public ResponseEntity<?> getProductByMa(@PathVariable String ma) {
+    @GetMapping("/find-by-ma/{ma}/{idHoaDon}")
+    public ResponseEntity<?> getProductByMa(@PathVariable String ma,@PathVariable Integer idHoaDon) {
         try {
-            ChiTietSanPham ctsp = chiTietSanPhamService.findByMa(ma);
+            ChiTietSanPham ctsp = chiTietSanPhamService.findByMa(ma,idHoaDon);
             return ResponseEntity.ok(ctsp);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

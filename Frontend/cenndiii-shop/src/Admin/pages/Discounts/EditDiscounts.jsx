@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../security/Axios";
 import Notification from '../../../components/Notification';
+import Alert from '../../../components/Alert';
 
 export const formatDateFromArray = (dateArray) => {
   if (!dateArray) return '';
@@ -50,15 +51,15 @@ export default function EditDiscounts() {
   const [errorGiaTri, setErrorGiaTri] = useState(false);
   const [errorNBT, setErrorNBT] = useState(false);
   const [errorNKT, setErrorNKT] = useState(false);
+  const [openAlert, setOpenAlert] = useState(false);
 
   const handleUpdate = async () => {
-    const now = new Date().toISOString().slice(0, 16); // Lấy ngày giờ hiện tại (yyyy-MM-ddTHH:mm)
-    // Kiểm tra nếu tên đợt giảm giá trống
+    const now = new Date().toISOString().slice(0, 16);
     if (!editMaDGG.tenDotGiamGia) {
-      setErrorName(true); // Hiển thị lỗi nếu không có tên
-      return; // Dừng hàm nếu chưa nhập tên
+      setErrorName(true);
+      return;
     } else {
-      setErrorName(false); // Nếu đã có tên thì xóa lỗi
+      setErrorName(false);
     }
     if (!editMaDGG.giaTri) {
       setErrorGiaTri(true);
@@ -66,9 +67,8 @@ export default function EditDiscounts() {
     } else {
       setErrorGiaTri(false);
     }
-    // Kiểm tra nếu ngày bắt đầu chưa được chọn
     if (!editMaDGG.ngayBatDau) {
-      setErrorNBT(true); // Hiển thị lỗi nếu chưa chọn ngày
+      setErrorNBT(true);
       Notification("Ngày bắt đầu không được để trống!", "error");
       return;
     } else if (editMaDGG.ngayBatDau < now) {
@@ -76,7 +76,7 @@ export default function EditDiscounts() {
       Notification("Ngày bắt đầu không được là ngày quá khứ!", "error");
       return;
     } else {
-      setErrorNBT(false); // Nếu đã chọn ngày, xóa lỗi
+      setErrorNBT(false);
     }
     if (!editMaDGG.ngayKetThuc) {
       setErrorNKT(true);
@@ -93,16 +93,22 @@ export default function EditDiscounts() {
     } else {
       setErrorNKT(false);
     }
-    // Nếu có lỗi, dừng việc gọi hàm cập nhật
     if (!editMaDGG.tenDotGiamGia || !editMaDGG.giaTri) {
       return;
     }
-    const result = await editDotGiamGias(); // Gọi hàm cập nhật
-    if (result && result.status === 1) {
-      Notification("Cập nhật thành công!", "success");
-      navigate("/admin/discounts"); // Chuyển hướng sau 1 giây
-    } else {
-      Notification("Cập nhật không thành công, vui lòng thử lại!", "error");
+    setOpenAlert(true);
+  };
+
+  const handleConfirm = async (confirm) => {
+    setOpenAlert(false);
+    if (confirm) {
+      const result = await editDotGiamGias();
+      if (result && result.status === 1) {
+        Notification("Cập nhật thành công!", "success");
+        navigate("/admin/discounts");
+      } else {
+        Notification("Cập nhật không thành công, vui lòng thử lại!", "error");
+      }
     }
   };
 
@@ -744,6 +750,11 @@ export default function EditDiscounts() {
           </div>
         </div>
       ) : null}
+      <Alert
+        message="Xác nhận cập nhật đợt giảm giá?"
+        open={openAlert}
+        onClose={handleConfirm}
+      />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
     MenuItem,
     Box,
     FormHelperText,
+    Autocomplete,
 } from '@mui/material';
 import CustomerDialog from "../Customer/AddCustomerDialog";
 import Delivery from "./Delivery";
@@ -693,37 +694,32 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                         <FormHelperText sx={{ fontSize: 14, color: 'black' }}>
                             Chọn khách hàng và địa chỉ giao hàng
                         </FormHelperText>
-                        <FormControl>
-                            <InputLabel
-                                id="customer-select"
-                                sx={{
-                                    fontSize: 12,
-                                    paddingTop: '5px',
-                                    minWidth: 300,
-                                }}
-                            >
-                                Khách hàng
-                            </InputLabel>
-                            <Select
-                                labelId="customer-select"
-                                value={selectedCustomerId ?? ""}
-                                label="Khách hàng"
-                                onChange={e => {
-                                    handleChangeCustomer(e.target.value)
-                                }}
-                                size="small"
-                                sx={{ fontSize: 12, width: "100%" }}
-                            >
-                                <MenuItem key={-1} value={-1}>
-                                    Khách lẻ
-                                </MenuItem>
-                                {customers.map((customer) => (
-                                    <MenuItem key={customer.idKhachHang} value={customer.idKhachHang}>
-                                        {customer.hoTen}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <Autocomplete
+                            disablePortal
+                            id="customer-select"
+                            options={[
+                                { idKhachHang: -1, hoTen: "Khách lẻ", soDienThoai: "" },
+                                ...customers
+                            ]}
+                            getOptionLabel={(option) =>
+                                option.idKhachHang === -1
+                                    ? option.hoTen
+                                    : `${option.hoTen} - ${option.soDienThoai}`
+                            }
+                            value={customers.find(c => c.idKhachHang === selectedCustomerId) || { idKhachHang: -1, hoTen: "Khách lẻ", soDienThoai: "" }}
+                            onChange={(event, newValue) => {
+                                handleChangeCustomer(newValue?.idKhachHang || -1);
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Tìm kiếm khách hàng"
+                                    size="small"
+                                    sx={{ fontSize: 12, width: "100%" }}
+                                />
+                            )}
+                            sx={{ width: "100%" }}
+                        />
                         {selectedCustomerId !== -1 && (
                             <FormControl>
                                 <InputLabel

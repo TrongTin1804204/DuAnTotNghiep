@@ -126,7 +126,7 @@ public class HoaDonService {
             List<ThanhToanHoaDon> listTt = thanhToanHoaDonRepository.findAllByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
             UserLogin user = (UserLogin) auth.getPrincipal();
 
-            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
+//            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
             if (hoaDon.getTrangThai().equalsIgnoreCase("Đã hoàn thành") || hoaDon.getTrangThai().equalsIgnoreCase("Hủy"))
                 throw new Exception("Không áp dụng cho hóa đơn Đã hoàn thành và Hủy");
             String trangThai = hoaDon.getTrangThai();
@@ -240,7 +240,7 @@ public class HoaDonService {
             List<HoaDonChiTiet> cart = hoaDonChiTietRepository.findByHoaDon_MaHoaDon(maHoaDon);
             String trangThai = hoaDon.getTrangThai();
             List<ThanhToanHoaDon> listTt = thanhToanHoaDonRepository.findAllByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
-            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
+//            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
             if (trangThai.equalsIgnoreCase("Hủy")) throw new Exception("Không áp dụng cho hóa đơn Đã hoàn thành và Hủy");
             if ("Đã xác nhận".equals(trangThai)) {
                 hoaDon.setTrangThai("Chờ xác nhận");

@@ -146,56 +146,56 @@ export default function ProductManagement() {
     { field: 'maSanPham', headerName: 'Mã', flex: 1 },
     { field: 'ten', headerName: 'Tên', flex: 1 },
     { field: 'soLuong', headerName: 'Số lượng', flex: 0.7 },
-    {
-      field: 'ngayTao',
-      headerName: 'Ngày tạo',
-      flex: 1,
-      type: 'dateTime',
-      valueGetter: (params) => {
-        try {
-          if (!params?.row?.ngayTao) return null;
-          // Take first 3 elements for year, month, day
-          const [year, month, day] = params.row.ngayTao.slice(0, 3);
-          const date = new Date(year, month - 1, day);
-          return date;
-        } catch (error) {
-          return null;
-        }
-      },
-      renderCell: (params) => {
-        try {
-          if (!params?.row?.ngayTao) return 'Không';
-          return formatDateFromArray(params.row.ngayTao);
-        } catch (error) {
-          return '';
-        }
-      },
-    },
-    {
-      field: 'ngaySua',
-      headerName: 'Ngày sửa',
-      flex: 1,
-      type: 'dateTime',
-      valueGetter: (params) => {
-        try {
-          if (!params?.row?.ngaySua) return null;
-          // Take first 3 elements for year, month, day
-          const [year, month, day] = params.row.ngaySua.slice(0, 3);
-          const date = new Date(year, month - 1, day);
-          return date;
-        } catch (error) {
-          return null;
-        }
-      },
-      renderCell: (params) => {
-        try {
-          if (!params?.row?.ngaySua) return 'Không';
-          return formatDateFromArray(params.row.ngaySua);
-        } catch (error) {
-          return '';
-        }
-      },
-    },
+    // {
+    //   field: 'ngayTao',
+    //   headerName: 'Ngày tạo',
+    //   flex: 1,
+    //   type: 'dateTime',
+    //   valueGetter: (params) => {
+    //     try {
+    //       if (!params?.row?.ngayTao) return null;
+    //       // Take first 3 elements for year, month, day
+    //       const [year, month, day] = params.row.ngayTao.slice(0, 3);
+    //       const date = new Date(year, month - 1, day);
+    //       return date;
+    //     } catch (error) {
+    //       return null;
+    //     }
+    //   },
+    //   renderCell: (params) => {
+    //     try {
+    //       if (!params?.row?.ngayTao) return 'Không';
+    //       return formatDateFromArray(params.row.ngayTao);
+    //     } catch (error) {
+    //       return '';
+    //     }
+    //   },
+    // },
+    // {
+    //   field: 'ngaySua',
+    //   headerName: 'Ngày sửa',
+    //   flex: 1,
+    //   type: 'dateTime',
+    //   valueGetter: (params) => {
+    //     try {
+    //       if (!params?.row?.ngaySua) return null;
+    //       // Take first 3 elements for year, month, day
+    //       const [year, month, day] = params.row.ngaySua.slice(0, 3);
+    //       const date = new Date(year, month - 1, day);
+    //       return date;
+    //     } catch (error) {
+    //       return null;
+    //     }
+    //   },
+    //   renderCell: (params) => {
+    //     try {
+    //       if (!params?.row?.ngaySua) return 'Không';
+    //       return formatDateFromArray(params.row.ngaySua);
+    //     } catch (error) {
+    //       return '';
+    //     }
+    //   },
+    // },
     {
       field: 'trangThai',
       headerName: 'Trạng thái',

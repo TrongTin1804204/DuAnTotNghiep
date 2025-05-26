@@ -6,9 +6,11 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import Notification from '../../../components/Notification';
+import Alert from '../../../components/Alert';
 
 export default function AddDiscounts() {
   const [filters, setFilters] = useState({ search: "" });
+  const [openAlert, setOpenAlert] = useState(false);
   const [addMaDGG, addDGG] = useState({
     maDotGiamGia: "",
     tenDotGiamGia: "",
@@ -50,13 +52,13 @@ export default function AddDiscounts() {
   };
 
   const handleAdd = async () => {
-    const now = new Date().toISOString().slice(0, 16); // Lấy ngày giờ hiện tại (yyyy-MM-ddTHH:mm)
+    const now = new Date().toISOString().slice(0, 16);
     // Kiểm tra nếu tên đợt giảm giá trống
     if (!addMaDGG.tenDotGiamGia) {
-      setErrorName(true); // Hiển thị lỗi nếu không có tên
-      return; // Dừng hàm nếu chưa nhập tên
+      setErrorName(true);
+      return;
     } else {
-      setErrorName(false); // Nếu đã có tên thì xóa lỗi
+      setErrorName(false);
     }
     if (!addMaDGG.giaTri) {
       setErrorGiaTri(true);
@@ -66,7 +68,7 @@ export default function AddDiscounts() {
     }
     // Kiểm tra nếu ngày bắt đầu chưa được chọn
     if (!addMaDGG.ngayBatDau) {
-      setErrorNBT(true); // Hiển thị lỗi nếu chưa chọn ngày
+      setErrorNBT(true);
       Notification("Ngày bắt đầu không được để trống!", "error");
       return;
     } else if (addMaDGG.ngayBatDau < now) {
@@ -74,7 +76,7 @@ export default function AddDiscounts() {
       Notification("Ngày bắt đầu không được là ngày quá khứ!", "error");
       return;
     } else {
-      setErrorNBT(false); // Nếu đã chọn ngày, xóa lỗi
+      setErrorNBT(false);
     }
     if (!addMaDGG.ngayKetThuc) {
       setErrorNKT(true);
@@ -95,12 +97,19 @@ export default function AddDiscounts() {
     if (!addMaDGG.tenDotGiamGia || !addMaDGG.giaTri) {
       return;
     }
-    const result = await addDotGiamGias(); // Gọi hàm thêm mới
-    if (result && result.status === 1) {
-      Notification("Thêm mới thành công!", "success");
-      navigate("/admin/discounts");
-    } else {
-      Notification("Thêm mới không thành công, vui lòng thử lại!", "error");
+    setOpenAlert(true);
+  };
+
+  const handleConfirm = async (confirm) => {
+    setOpenAlert(false);
+    if (confirm) {
+      const result = await addDotGiamGias();
+      if (result && result.status === 1) {
+        Notification("Thêm mới thành công!", "success");
+        navigate("/admin/discounts");
+      } else {
+        Notification("Thêm mới không thành công, vui lòng thử lại!", "error");
+      }
     }
   };
 
@@ -495,7 +504,6 @@ export default function AddDiscounts() {
               {sanPhamChiTiets.length > 0 ? null : (
                 <button
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition"
-                  // onClick={() => {addDotGiamGias(), to="/discounts/edit"}}
                   onClick={handleAdd}
                 >
                   Tạo mới
@@ -714,6 +722,11 @@ export default function AddDiscounts() {
           </div>
         </div>
       ) : null}
+      <Alert
+        message="Xác nhận thêm mới đợt giảm giá?"
+        open={openAlert}
+        onClose={handleConfirm}
+      />
     </div>
   );
 }
