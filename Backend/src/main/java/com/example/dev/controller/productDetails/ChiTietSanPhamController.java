@@ -90,18 +90,8 @@ public class ChiTietSanPhamController {
         return ResponseEntity.ok("Upload successfully");
     }
 
-    //    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
-    @GetMapping("/find-by-ma/{ma}")
-    public ResponseEntity<?> getProductByMa(@PathVariable String ma) {
-        try {
-            ChiTietSanPham ctsp = chiTietSanPhamService.findByMa(ma);
-            return ResponseEntity.ok(ctsp);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
 
-    //    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @GetMapping("/find-by-ma/{ma}")
     public ResponseEntity<?> getProductByMa(@PathVariable String ma) {
         try {

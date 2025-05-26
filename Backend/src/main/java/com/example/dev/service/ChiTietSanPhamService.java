@@ -13,6 +13,8 @@ import com.example.dev.entity.HinhAnh;
 import com.example.dev.entity.invoice.HoaDon;
 import com.example.dev.entity.invoice.HoaDonChiTiet;
 import com.example.dev.repository.ChiTietSanPhamRepo;
+import com.example.dev.repository.DotGiamGiaChiTietRepo;
+import com.example.dev.repository.DotGiamGiaRepo;
 import com.example.dev.repository.HinhAnhRepo;
 import com.example.dev.repository.attribute.MauSacRepo;
 import com.example.dev.repository.attribute.SanPhamRepo;
@@ -53,10 +55,8 @@ public class ChiTietSanPhamService {
     private final ChiTietLichSuRepo chiTietLichSuRepo;
     private final HistoryImpl historyImpl;
     private final HoaDonService hoaDonService;
-    @Autowired
-    DotGiamGiaRepo dotGiamGiaRepo;
-    @Autowired
-    private DotGiamGiaChiTietRepo dotGiamGiaChiTietRepo;
+    private final DotGiamGiaRepo dotGiamGiaRepo;
+    private final DotGiamGiaChiTietRepo dotGiamGiaChiTietRepo;
 
     public List<ChiTietSanPham> getListChiTietSanPham() {
         return chiTietSanPhamRepo.findAll();
@@ -125,7 +125,6 @@ public class ChiTietSanPhamService {
     public ChiTietSanPham findByMa(String ma) {
         ChiTietSanPham ctsp = chiTietSanPhamRepo.findByMa(ma)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với mã: " + ma));
-
         Optional<DotGiamGia> dotGiamGiaOpt = dotGiamGiaRepo.findActiveDotGiamGia();
 //        System.out.println(dotGiamGiaOpt.isPresent());
         BigDecimal giaSauGiam = ctsp.getGia();

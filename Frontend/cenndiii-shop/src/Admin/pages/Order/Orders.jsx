@@ -427,10 +427,9 @@ export default function Orders() {
         if (qrData) {
             setQrData(qrData);
             setShowScanner(false); // tắt camera sau khi quét
-
             try {
                 // 1. Gọi API để lấy chi tiết sản phẩm theo mã
-                const res = await axios.get(`http://localhost:8080/admin/chi-tiet-san-pham/find-by-ma/${qrData}`);
+                const res = await api.get(`/admin/chi-tiet-san-pham/find-by-ma/${qrData}`);
                 const product = res.data;
                 // 2. Kiểm tra trạng thái sản phẩm
                 if (!product.trangThai || product.soLuong <= 0) {
@@ -723,7 +722,7 @@ export default function Orders() {
                                         <div className="flex justify-between items-center">
                                             <h2 className="text-left">{tab.content}</h2>
                                             <div className="flex gap-2">
-                                                <button className="p-2 bg-green-600 text-white rounded-md">
+                                                <button className="p-2 bg-green-600 text-white rounded-md" onClick={() => setOpenQRDialog(true)}>
                                                     Quét mã QR
                                                 </button>
                                                 <button
@@ -1290,7 +1289,6 @@ export default function Orders() {
                 open={openAlert}
                 message={alertMessage}
                 onClose={handleAlertClose} />
-            <ToastContainer />
         </div>
     );
 }
