@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { AppBar, Toolbar, IconButton, Badge, Avatar } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Badge, Avatar, } from "@mui/material";
 import { ShoppingCart, Search, Token } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../../pages/cart/CartContext"; // Import useCart
 import { Menu, MenuItem } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getPermissions, getUserName, logout } from "../../../security/DecodeJWT";
+import { Person } from "@mui/icons-material";
 const Navbar = () => {
   const { cartCount } = useCart();
   const [scrolling, setScrolling] = useState(false);
@@ -15,9 +16,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const navLinks = [
     { link: "home", name: "Trang chủ" },
-    { link: "shop", name: "Sản phẩm" },
-    { link: "contact", name: "Liên hệ" },
-    { link: "about", name: "Về chúng tôi" }
+    { link: "shop", name: "Sản phẩm" }
   ];
   const [user, setUser] = useState([])
   const [userName, setUserName] = useState("");
@@ -122,7 +121,7 @@ const Navbar = () => {
             </IconButton>
           </Link>
           <IconButton onClick={handleAvatarClick} className="transition-transform duration-300 hover:scale-110">
-            <Avatar src={"#"} alt="User Avatar" />
+            {isLoggedIn ? <Avatar src={"#"} alt={userName} /> : <Person fontSize="medium" />}
           </IconButton>
           <Menu
             anchorEl={anchorEl}

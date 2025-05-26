@@ -353,10 +353,6 @@ function AddCoupon() {
                     </div>
                 </div>
             </Dialog>
-            <div className="flex items-center font-semibold mb-4">
-                <h1>Phiếu Giảm Giá /</h1>
-                <h2 className="ml-1 font-normal">Thêm Phiếu Giảm Giá</h2>
-            </div>
             <div className="flex space-x-4">
                 <div className="bg-white p-4 rounded-lg shadow-md"
                     style={{ width: formData.loai === 'Cá Nhân' ? '60%' : '100%' }}>

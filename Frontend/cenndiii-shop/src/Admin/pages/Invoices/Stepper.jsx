@@ -61,7 +61,7 @@ QontoStepIcon.propTypes = {
     completed: PropTypes.bool,
 };
 
-const OrderStepper = ({ order,showHistory,onClose}) => {
+const OrderStepper = ({ order, showHistory, onClose }) => {
     const [histories, setHistories] = useState([]);
 
     useEffect(() => {
@@ -78,6 +78,17 @@ const OrderStepper = ({ order,showHistory,onClose}) => {
         }
     }
 
+    const vietnameseAction = (action) => {
+        if (action === "CREATE") {
+            return "Tạo hóa đơn";
+        }
+        if (action === "UPDATE") {
+            return "Cập nhật hóa đơn";
+        }
+        if (action === "DELETE") {
+            return "Xóa hóa đơn";
+        }
+    }
     return (
         <div>
             <div
@@ -125,7 +136,7 @@ const OrderStepper = ({ order,showHistory,onClose}) => {
                                 {histories.length > 0 ? histories.map((history, index) => (
                                     <TableRow key={index}>
                                         <TableCell>{index + 1}</TableCell>
-                                        <TableCell>{history.hanhDong}</TableCell>
+                                        <TableCell>{vietnameseAction(history.hanhDong)}</TableCell>
                                         <TableCell>{history.ghiChu}</TableCell>
                                         <TableCell>{formatDateFromArray(history.ngayTao)}</TableCell>
                                         <TableCell>{(history.nguoiTao)}</TableCell>

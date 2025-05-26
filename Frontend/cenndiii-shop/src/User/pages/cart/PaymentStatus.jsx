@@ -41,11 +41,10 @@ export default function PaymentStatus() {
                         await fetch("http://localhost:8080/api/cart/clear", {
                             method: "POST",
                             credentials: "include",
-                            headers: { ...(token && { "Authorization": `Bearer ${token}` }) }
+                            // headers: { ...(token && { "Authorization": `Bearer ${token}` }) }
                         });
 
                         setCartCount(prev => prev === 0);
-                        navigate("/home", { state: { success: true } });
                     }
 
                 } catch (error) {

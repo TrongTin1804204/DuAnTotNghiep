@@ -18,9 +18,9 @@ export default function EmployeeManagement() {
   }, [currentPage]); // Chỉ gọi lại khi currentPage thay đổi
   useEffect(() => {
     if (!hasPermission("ADMIN") && !hasPermission("STAFF")) {
-        navigate("/admin/login");
+      navigate("/admin/login");
     }
-}, [navigate]);
+  }, [navigate]);
 
   const fetchEmployees = async (filtersToUse = filters, pageToUse = currentPage) => {
     try {
@@ -163,7 +163,7 @@ export default function EmployeeManagement() {
         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-2"
       >
         Xuất Excel
-      </button>``
+      </button>
       <div className="bg-white p-4 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-sm font-semibold">Danh Sách Nhân Viên</h2>

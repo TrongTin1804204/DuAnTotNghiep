@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -122,11 +123,14 @@ public class HoaDonService {
             HoaDon hoaDon = findInvoice(maHoaDon);
             List<HoaDonChiTiet> cart = hoaDonChiTietRepository.findByHoaDon_MaHoaDon(maHoaDon);
             BigDecimal total = BigDecimal.ZERO;
-            ThanhToanHoaDon tt = thanhToanHoaDonRepository.findByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
+            List<ThanhToanHoaDon> listTt = thanhToanHoaDonRepository.findAllByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
+            UserLogin user = (UserLogin) auth.getPrincipal();
 
+            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
             if (hoaDon.getTrangThai().equalsIgnoreCase("Đã hoàn thành") || hoaDon.getTrangThai().equalsIgnoreCase("Hủy"))
-                return null;
+                throw new Exception("Không áp dụng cho hóa đơn Đã hoàn thành và Hủy");
             String trangThai = hoaDon.getTrangThai();
+
             if ("Chờ xác nhận".equals(trangThai)) {
                 for (HoaDonChiTiet chiTiet : cart) {
                     total = total.add(chiTiet.getThanhTien());
@@ -139,7 +143,56 @@ public class HoaDonService {
                     }
                 }
                 hoaDon.setTrangThai("Đã xác nhận");
-                tt.setSoTienThanhToan(hoaDon.getTongTien());
+
+                boolean isCodInvoice = true;
+                ThanhToanHoaDon hoaDonVNPay = new ThanhToanHoaDon();
+                for(ThanhToanHoaDon tthd : listTt) {
+                    if (tthd.getHinhThucThanhToan().equalsIgnoreCase("VNpay") ){
+                        isCodInvoice = false;
+                        hoaDonVNPay = tthd;
+                    }
+                }
+
+                ThanhToanHoaDon thanhToanHoaDon = null;
+                if (isCodInvoice) {
+                     thanhToanHoaDon = ThanhToanHoaDon.builder()
+                            .ngayTao(LocalDateTime.now())
+                            .soTienThanhToan(hoaDon.getTongTien())
+                            .hinhThucThanhToan("COD")
+                            .trangThai(0)
+                            .hoaDon(hoaDon)
+                            .nguoiTao(user.getUsername())
+                            .build();
+                } else {
+                    BigDecimal chenhLech = hoaDon.getTongTien().subtract(hoaDonVNPay.getSoTienThanhToan());
+
+                    if (chenhLech.compareTo(BigDecimal.ZERO) > 0) {
+                        // Tổng tiền hóa đơn > VNPay => Khách còn nợ -> Thanh toán COD phần còn lại
+                        thanhToanHoaDon = ThanhToanHoaDon.builder()
+                                .ngayTao(LocalDateTime.now())
+                                .soTienThanhToan(chenhLech)
+                                .hinhThucThanhToan("COD")
+                                .trangThai(0)
+                                .hoaDon(hoaDon)
+                                .nguoiTao(user.getUsername())
+                                .build();
+                    } else if (chenhLech.compareTo(BigDecimal.ZERO) < 0) {
+                        // VNPay đã thanh toán dư -> Tạo khoản hoàn lại (hoặc ghi nhận đã trả dư)
+                        thanhToanHoaDon = ThanhToanHoaDon.builder()
+                                .ngayTao(LocalDateTime.now())
+                                .soTienThanhToan(chenhLech.abs()) // Lấy giá trị dương
+                                .hinhThucThanhToan("VNPay")
+                                .trangThai(3) // 2 là hoàn tiền
+                                .hoaDon(hoaDon)
+                                .nguoiTao(user.getUsername())
+                                .build();
+                    }
+                }
+
+                if (thanhToanHoaDon != null){
+                    thanhToanHoaDonService.thanhToanHoaDon(Collections.singletonList(thanhToanHoaDon));
+                }
+
             }
             if ("Đã xác nhận".equals(trangThai)) {
                 hoaDon.setTrangThai("Chờ vận chuyển");
@@ -149,13 +202,23 @@ public class HoaDonService {
             }
             if ("Đang vận chuyển".equals(trangThai)) {
                 hoaDon.setTrangThai("Đã hoàn thành");
-                tt.setTrangThai(1);
+                ThanhToanHoaDon tt = listTt.get(listTt.size()-1);
+                if(tt.getHinhThucThanhToan().equalsIgnoreCase("COD")){
+                    ThanhToanHoaDon thanhToanHoaDon = ThanhToanHoaDon.builder()
+                            .ngayTao(LocalDateTime.now())
+                            .soTienThanhToan(tt.getSoTienThanhToan())
+                            .hinhThucThanhToan("COD")
+                            .trangThai(1)
+                            .hoaDon(hoaDon)
+                            .nguoiTao(user.getUsername())
+                            .build();
+                    thanhToanHoaDonRepository.save(thanhToanHoaDon);
+                }
+
             }
-            UserLogin user = (UserLogin) auth.getPrincipal();
             hoaDon.setNguoiSua(user.getUsername());
             hoaDon.setNhanVien(nhanVienRepo.findById(user.getId()).orElse(null));
             taoHoaDon(hoaDon, BaseConstant.Action.UPDATE.getValue(), auth);
-            thanhToanHoaDonRepository.save(tt);
             return BaseResponse.builder()
                     .data(hoaDonRepository.save(hoaDon))
                     .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
@@ -176,9 +239,9 @@ public class HoaDonService {
             HoaDon hoaDon = findInvoice(maHoaDon);
             List<HoaDonChiTiet> cart = hoaDonChiTietRepository.findByHoaDon_MaHoaDon(maHoaDon);
             String trangThai = hoaDon.getTrangThai();
-            ThanhToanHoaDon tt = thanhToanHoaDonRepository.findByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
-
-            if (trangThai.equalsIgnoreCase("Hủy")) return null;
+            List<ThanhToanHoaDon> listTt = thanhToanHoaDonRepository.findAllByHoaDon_IdHoaDon(hoaDon.getIdHoaDon());
+            if (!hoaDon.getLoaiDon().equalsIgnoreCase("Online")) throw new Exception("Chỉ áp dụng cho hóa đơn Online");
+            if (trangThai.equalsIgnoreCase("Hủy")) throw new Exception("Không áp dụng cho hóa đơn Đã hoàn thành và Hủy");
             if ("Đã xác nhận".equals(trangThai)) {
                 hoaDon.setTrangThai("Chờ xác nhận");
                 for (HoaDonChiTiet chiTiet : cart) {
@@ -190,18 +253,18 @@ public class HoaDonService {
             }
             if ("Chờ xác nhận".equals(trangThai)) {
                 hoaDon.setTrangThai("Hủy");
-                if (hoaDon.getLoaiDon().equalsIgnoreCase("Online") && tt.getHinhThucThanhToan().equalsIgnoreCase("VNPay")) {
-                    ThanhToanHoaDon thanhToanHoaDon = ThanhToanHoaDon.builder()
-                            .ngayTao(LocalDateTime.now())
-                            .soTienThanhToan(tt.getSoTienThanhToan())
-                            .hinhThucThanhToan(tt.getHinhThucThanhToan())
-                            .trangThai(2)
-                            .hoaDon(hoaDon)
-                            .ghiChu(ghiChu)
-                            .nguoiTao(user.getUsername())
-                            .build();
-                    thanhToanHoaDonService.thanhToanHoaDon(Collections.singletonList(thanhToanHoaDon));
-                }
+//                if (hoaDon.getLoaiDon().equalsIgnoreCase("Online") && tt.getHinhThucThanhToan().equalsIgnoreCase("VNPay")) {
+//                    ThanhToanHoaDon thanhToanHoaDon = ThanhToanHoaDon.builder()
+//                            .ngayTao(LocalDateTime.now())
+//                            .soTienThanhToan(tt.getSoTienThanhToan())
+//                            .hinhThucThanhToan(tt.getHinhThucThanhToan())
+//                            .trangThai(2)
+//                            .hoaDon(hoaDon)
+//                            .ghiChu(ghiChu)
+//                            .nguoiTao(user.getUsername())
+//                            .build();
+//                    thanhToanHoaDonService.thanhToanHoaDon(Collections.singletonList(thanhToanHoaDon));
+//                }
 //                if (!vnPayService.refundToVNPay("02",tt,auth))
 //                    throw new Exception("Hoàn tiền thất bại");
             }
@@ -661,39 +724,44 @@ public class HoaDonService {
             // Trừ giảm giá vào tổng tiền
             total = total.subtract(discount);
 
-            // Đảm bảo total không âm
-            if (total.compareTo(BigDecimal.ZERO) < 0) {
-                total = BigDecimal.ZERO;
-            }
+        }else{
+            invoice.setPhieuGiamGia(null);
+            invoice.setGiaDuocGiam(null);
         }
 
         if (invoice.getHoanPhi() != null) total = total.subtract(invoice.getHoanPhi());
         if (invoice.getPhuPhi() != null) total = total.add(invoice.getPhuPhi());
         if (invoice.getPhiVanChuyen() != null) total = total.add(invoice.getPhiVanChuyen());
 
-
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
         invoice.setTongTien(total);
         hoaDonRepository.save(invoice);
     }
 
     private static BigDecimal getDiscount(PhieuGiamGia pgg, BigDecimal total) {
+        if (pgg.getGiaTri() == null || total == null || total.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
         BigDecimal discount;
 
-        if (pgg.getHinhThuc().equalsIgnoreCase("VNĐ")) {
-            // Giảm giá cố định (VND)
+        if ("VNĐ".equalsIgnoreCase(pgg.getHinhThuc())) {
             discount = pgg.getGiaTri();
         } else {
-            // Giảm theo phần trăm
-            BigDecimal percentage = pgg.getGiaTri().divide(new BigDecimal(100)); // Chuyển về hệ số phần trăm
-            discount = total.multiply(percentage); // Tính số tiền giảm
+            // Chia với scale cao để tránh mất dữ liệu, vẫn giữ đủ thập phân
+            BigDecimal percentage = pgg.getGiaTri().divide(new BigDecimal(100), MathContext.DECIMAL128);
+            discount = total.multiply(percentage);
 
-            // Nếu giảm giá vượt quá mức tối đa, giới hạn lại
-            if (discount.compareTo(pgg.getGiaTriToiDa()) > 0) {
+            if (pgg.getGiaTriToiDa() != null && discount.compareTo(pgg.getGiaTriToiDa()) > 0) {
                 discount = pgg.getGiaTriToiDa();
             }
         }
-        return discount;
+
+        return discount; // Không làm tròn gì hết
     }
+
 
     public List<HoaDon> hienThiHoaDonKhachHang(Integer idKhachHang) {
         return hoaDonRepository.findHoaDonByKhachHangId(idKhachHang);

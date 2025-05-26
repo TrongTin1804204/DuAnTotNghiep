@@ -25,12 +25,18 @@ import {
     FormControl,
     Select,
     InputLabel,
-    MenuItem
+    MenuItem,
+    IconButton,
+    InputAdornment
 } from "@mui/material";
 import { Trash } from "lucide-react";
 import { Add, Remove } from '@mui/icons-material';
 import PaymentHistory from './PaymentHistory';
 import AddressDialog from './AddNewAddress';
+import { DataGrid } from '@mui/x-data-grid';
+import { Search } from "lucide-react";
+import CloseIcon from '@mui/icons-material/Close';
+
 export default function DetailOrdersCustomer() {
     const { idHd } = useParams();
     const [invoice, setInvoice] = useState();
@@ -45,10 +51,34 @@ export default function DetailOrdersCustomer() {
     const [openPaymentHistory, setOpenPaymentHistory] = useState(false)
     const [openAddressDialog, setOpenAddressDialog] = useState(false);
 
-
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [customerAddress, setCustomerAddress] = useState([]);
+    const [diaChiChiTiet, setDiaChiChiTiet] = useState("");
 
+    // State cho dialog thêm sản phẩm
+    const [openDialogProduct, setOpenDialogProduct] = useState(false);
+    const [productDetails, setProductDetails] = useState([]);
+    const [productDetailSelected, setProductDetailSelected] = useState(null);
+    const [selectedQuantity, setSelectedQuantity] = useState(1);
+    const [openSelectQuantity, setOpenSelectQuantity] = useState(false);
+
+    // State cho tìm kiếm và lọc
+    const [searchText, setSearchText] = useState('');
+    const [shoeCollars, setShoeCollars] = useState([]);
+    const [shoeSoles, setShoeSoles] = useState([]);
+    const [shoeToes, setShoeToes] = useState([]);
+    const [materials, setMaterials] = useState([]);
+    const [brands, setBrands] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+    const [categories, setCategories] = useState([]);
+
+    const [selectedShoeCollar, setSelectedShoeCollar] = useState(null);
+    const [selectedShoeSole, setSelectedShoeSole] = useState(null);
+    const [selectedShoeToe, setSelectedShoeToe] = useState(null);
+    const [selectedMaterial, setSelectedMaterial] = useState(null);
+    const [selectedBrand, setSelectedBrand] = useState(null);
+    const [selectedSupplier, setSelectedSupplier] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState(null);
 
     useEffect(() => {
         if (localStorage.getItem("token")) {
@@ -57,8 +87,6 @@ export default function DetailOrdersCustomer() {
             }
         }
     }, [navigate]);
-
-
 
     const fetchInvoice = async () => {
         if (idHd) {
@@ -69,14 +97,11 @@ export default function DetailOrdersCustomer() {
                 setSelectedAddress(response.data.diaChiKhachHang.find(addr => addr.macDinh === true)?.id);
             }
             console.log(response.data.hoaDon);
-
         }
     };
 
-
     const handleRemoveOrderItem = async (idHdct, idCtsp) => {
         try {
-
             const requestData = {
                 idHoaDon: idHd,
                 idHoaDonChiTiet: idHdct,
@@ -91,9 +116,7 @@ export default function DetailOrdersCustomer() {
         }
     };
 
-    // phần chọn sản phẩm
-
-    const [orderItemsByTab, setOrderItemsByTab] = useState({}); // Thêm state này
+    const [orderItemsByTab, setOrderItemsByTab] = useState({});
     const [removeItem, setRemoveItem] = useState([]);
     const [openDeleteProductDialog, setOpenDeleteProductDialog] = useState(false);
     useEffect(() => {
@@ -108,7 +131,6 @@ export default function DetailOrdersCustomer() {
 
         setTotal(total);
     }, [orderItemsByTab]);
-
 
     const getProductFromDetailsInvoice = async () => {
         try {
@@ -139,18 +161,12 @@ export default function DetailOrdersCustomer() {
         setOpenAddressDialog(false);
         if (confirm) {
             Notification("Thêm địa chỉ thành công!", "success")
-            // reload()
         }
     }
     const handleOpenDialog = (idHdct, idCtsp) => {
         setRemoveItem({ idHdct: idHdct, idCtsp: idCtsp });
         setOpenDeleteProductDialog(true);
     }
-    const [openDialogProduct, setOpenDialogProduct] = useState(false);
-    const [productDetails, setProductDetails] = useState([]);
-    const [productDetailSelected, setProductDetailSelected] = useState(null);
-    const [selectedQuantity, setSelectedQuantity] = useState(1);
-    const [openSelectQuantity, setOpenSelectQuantity] = useState(false);
     const handleOpenDialogProduct = () => {
         api
             .get("/admin/chi-tiet-san-pham/dot-giam/hien-thi/-1")
@@ -166,12 +182,22 @@ export default function DetailOrdersCustomer() {
 
     const handleCloseDialogProduct = () => {
         setOpenDialogProduct(false);
+        setSearchText('');
+        setSelectedShoeCollar(null);
+        setSelectedShoeSole(null);
+        setSelectedShoeToe(null);
+        setSelectedMaterial(null);
+        setSelectedBrand(null);
+        setSelectedSupplier(null);
+        setSelectedCategory(null);
     };
     const handleCloseSelectQuantity = () => {
         setOpenSelectQuantity(false);
+        setProductDetailSelected(null);
+        setSelectedQuantity(1);
     };
-    const handleOpenSelectQuantity = (item) => {
-        setProductDetailSelected(item);
+    const handleOpenSelectQuantity = (product) => {
+        setProductDetailSelected(product);
         setSelectedQuantity(1);
         setOpenSelectQuantity(true);
     };
@@ -192,7 +218,6 @@ export default function DetailOrdersCustomer() {
             const response = await api.post(
                 "/admin/chi-tiet-san-pham/them-sp",
                 requestData
-
             );
 
             if (response.status === 200) {
@@ -226,7 +251,6 @@ export default function DetailOrdersCustomer() {
                     soLuongMua: newQuantity == "tru" ? Number(-1) : Number(1),
                     giaDuocTinh: giaDuocTinh
                 };
-                // console.log(newQuantity);
                 await api.post("/admin/chi-tiet-san-pham/cap-nhat-sl", requestData);
                 fetchInvoice();
                 getProductFromDetailsInvoice()
@@ -243,7 +267,6 @@ export default function DetailOrdersCustomer() {
                     soLuongMua: Number(newQuantity),
                     giaDuocTinh: giaDuocTinh
                 };
-                // console.log(newQuantity);
                 await api.post("/admin/chi-tiet-san-pham/sua-sp", requestData);
 
                 getProductFromDetailsInvoice()
@@ -254,7 +277,6 @@ export default function DetailOrdersCustomer() {
                 Notification("Đã có lỗi xảy ra khi cập nhật số lượng sản phẩm, vui lòng thử lại!", "error");
             }
         }
-
     };
 
     const handleAddressChange = (event) => {
@@ -293,6 +315,196 @@ export default function DetailOrdersCustomer() {
         fetchInvoice();
         getProductFromDetailsInvoice();
     }
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [coGiayRes, deGiayRes, muiGiayRes, chatLieuRes, thuongHieuRes, nhaCungCapRes, danhMucRes] = await Promise.all([
+                    api.get("/admin/co-giay/hien-thi/true"),
+                    api.get("/admin/de-giay/hien-thi/true"),
+                    api.get("/admin/mui-giay/hien-thi/true"),
+                    api.get("/admin/chat-lieu/hien-thi/true"),
+                    api.get("/admin/thuong-hieu/hien-thi/true"),
+                    api.get("/admin/nha-cung-cap/hien-thi/true"),
+                    api.get("/admin/danh-muc/hien-thi/true")
+                ]);
+
+                setShoeCollars(coGiayRes.data);
+                setShoeSoles(deGiayRes.data);
+                setShoeToes(muiGiayRes.data);
+                setMaterials(chatLieuRes.data);
+                setBrands(thuongHieuRes.data);
+                setSuppliers(nhaCungCapRes.data);
+                setCategories(danhMucRes.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const getFilteredRows = () => {
+        let filtered = productDetails.filter((item) => {
+            if (!item.trangThai || item.giaDuocTinh || Number(item.soLuong) <= 0) return false;
+            return true;
+        });
+
+        if (searchText) {
+            filtered = filtered.filter((row) => {
+                return Object.keys(row).some((field) => {
+                    const value = row[field];
+                    if (value == null) return false;
+                    return value.toString().toLowerCase().includes(searchText.toLowerCase());
+                });
+            });
+        }
+
+        if (selectedShoeCollar) {
+            filtered = filtered.filter(row => row.coGiay === selectedShoeCollar.ten);
+        }
+        if (selectedShoeSole) {
+            filtered = filtered.filter(row => row.deGiay === selectedShoeSole.ten);
+        }
+        if (selectedShoeToe) {
+            filtered = filtered.filter(row => row.muiGiay === selectedShoeToe.ten);
+        }
+        if (selectedMaterial) {
+            filtered = filtered.filter(row => row.chatLieu === selectedMaterial.ten);
+        }
+        if (selectedBrand) {
+            filtered = filtered.filter(row => row.thuongHieu === selectedBrand.ten);
+        }
+        if (selectedSupplier) {
+            filtered = filtered.filter(row => row.nhaCungCap === selectedSupplier.ten);
+        }
+        if (selectedCategory) {
+            filtered = filtered.filter(row => row.danhMucSanPham === selectedCategory.ten);
+        }
+
+        return filtered;
+    };
+
+    const columns = [
+        {
+            field: 'sanPham',
+            headerName: 'Sản phẩm',
+            flex: 1,
+            minWidth: 250,
+            renderCell: (params) => (
+                <div className='flex items-center gap-2'>
+                    <img
+                        src={params.row.lienKet}
+                        alt={params.row.sanPham}
+                        className='w-10 h-10 object-cover rounded-md'
+                    />
+                    <span className='font-medium text-sm'>{params.row.sanPham}</span>
+                </div>
+            ),
+        },
+        {
+            field: 'sp',
+            headerName: 'Màu sắc/Kích cỡ',
+            flex: 0.8,
+            minWidth: 120,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: params.row.mauSac,
+                            border: '1px solid #ddd'
+                        }}
+                    />
+                    <span className='text-gray-600 text-sm'>
+                        {params.row.mauSac} / {params.row.kichCo}
+                    </span>
+                </Box>
+            ),
+        },
+        {
+            field: 'thongTinSanPham',
+            headerName: 'Thông tin sản phẩm',
+            flex: 2,
+            minWidth: 300,
+            renderCell: (params) => (
+                <span className='text-gray-600 text-sm'>
+                    {`${params.row.coGiay}, ${params.row.muiGiay}, ${params.row.deGiay}, ${params.row.thuongHieu}, ${params.row.chatLieu}, ${params.row.nhaCungCap}, ${params.row.danhMucSanPham}`}
+                </span>
+            ),
+        },
+        {
+            field: 'giaSauGiam',
+            headerName: 'Giá',
+            flex: 0.8,
+            minWidth: 120,
+            renderCell: (params) => (
+                <div className="flex flex-col">
+                    {Number(params.row.giaSauGiam) !== Number(params.row.gia) ? (
+                        <div className="flex flex-col">
+                            <span className='font-medium text-red-500 text-sm'>
+                                {params.row.giaSauGiam.toLocaleString()} đ
+                            </span>
+                            <span className="line-through text-[#929292] text-xs">
+                                {params.row.gia.toLocaleString()} đ
+                            </span>
+                        </div>
+                    ) : (
+                        <span className='font-medium text-sm'>
+                            {params.row.gia.toLocaleString()} đ
+                        </span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            field: 'soLuong',
+            headerName: 'Số lượng',
+            flex: 0.6,
+            minWidth: 100,
+            renderCell: (params) => (
+                <span className='font-medium text-sm'>
+                    {params.row.soLuong}
+                </span>
+            ),
+        },
+        {
+            field: 'actions',
+            headerName: 'Hành động',
+            flex: 0.6,
+            minWidth: 100,
+            renderCell: (params) => (
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleOpenSelectQuantity(params.row)}
+                    className='bg-blue-500 hover:bg-blue-600 text-sm'
+                >
+                    Chọn
+                </Button>
+            ),
+        },
+    ];
+
+    const vietnameseLocaleText = {
+        noRowsLabel: 'Không có dữ liệu',
+        columnMenuLabel: 'Menu',
+        columnMenuShowColumns: 'Hiển thị cột',
+        columnMenuFilter: 'Bộ lọc',
+        columnMenuHideColumn: 'Ẩn cột',
+        columnMenuUnsort: 'Bỏ sắp xếp',
+        columnMenuSortAsc: 'Sắp xếp tăng dần',
+        columnMenuSortDesc: 'Sắp xếp giảm dần',
+        footerRowsPerPage: 'Số hàng mỗi trang:',
+        MuiTablePagination: {
+            labelRowsPerPage: 'Số hàng mỗi trang:',
+            labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
+        }
+    };
+
     return (
         <div className="p-6 space-y-4 mt-[64px]">
             <div className="bg-white p-4 rounded-lg shadow-md ">
@@ -314,13 +526,12 @@ export default function DetailOrdersCustomer() {
                                 </button>
                             )}
                         </div>
-
                     </div>
                     <div className="my-2 ">
                         <TableContainer component={Paper} sx={{ maxHeight: "530px" }}>
                             <Table stickyHeader>
                                 <TableHead>
-                                    <TableRow sx={{ height: "40px" }}> {/* Giảm chiều cao của header */}
+                                    <TableRow sx={{ height: "40px" }}>
                                         {[
                                             "Sản phẩm",
                                             "Số lượng",
@@ -337,8 +548,8 @@ export default function DetailOrdersCustomer() {
                                                     top: 0,
                                                     backgroundColor: "white",
                                                     zIndex: 2,
-                                                    padding: "8px", // Giảm padding
-                                                    fontSize: "12px", // Giảm font chữ
+                                                    padding: "8px",
+                                                    fontSize: "12px",
                                                 }}
                                             >
                                                 {header}
@@ -352,8 +563,8 @@ export default function DetailOrdersCustomer() {
                                                 top: 0,
                                                 backgroundColor: "white",
                                                 zIndex: 2,
-                                                padding: "8px", // Giảm padding
-                                                fontSize: "12px", // Giảm font chữ
+                                                padding: "8px",
+                                                fontSize: "12px",
                                             }}>
                                         </TableCell>
                                     </TableRow>
@@ -405,10 +616,6 @@ export default function DetailOrdersCustomer() {
                                                                                     item.giaDuocTinh
                                                                                 );
                                                                             }
-                                                                            // else {
-                                                                            //     Notification("Đã là số lượng nhỏ nhất !", "warning");
-                                                                            //     return;
-                                                                            // }
                                                                         }}
                                                                     >
                                                                         <Remove sx={{ fontSize: 15 }} />
@@ -435,10 +642,6 @@ export default function DetailOrdersCustomer() {
                                                                                 );
                                                                             }
                                                                         }
-                                                                        // else {
-                                                                        //     Notification("Chọn số lượng hợp lệ", "error");
-                                                                        //     return;
-                                                                        // }
                                                                     }}
                                                                     className="text-center w-8"
                                                                 />
@@ -480,7 +683,6 @@ export default function DetailOrdersCustomer() {
                                                                 )}
                                                         </div>
                                                     </div>
-
                                                 </TableCell>
                                                 <TableCell align="center" sx={{ fontSize: "12px" }}>{item.kho}</TableCell>
                                                 <TableCell align="center" sx={{ fontSize: "12px" }}>{item.donGia.toLocaleString()} đ</TableCell>
@@ -490,14 +692,12 @@ export default function DetailOrdersCustomer() {
                                                 <TableCell align="center" sx={{ fontSize: "12px" }}>{item.thanhTien.toLocaleString()} đ</TableCell>
                                                 <TableCell sx={{ width: "10px", padding: "4px", }}>
                                                     {invoice?.trangThai === "Chờ xác nhận" && (
-
                                                         <button
                                                             disabled={Number(item.soLuongMua) === 1 && Number(orderItemsByTab.length) === 1}
                                                             onClick={() => handleOpenDialog(item.idHoaDonChiTiet, item.idChiTietSanPham)}
                                                         >
                                                             <Trash size={16} className={`${Number(item.soLuongMua) === 1 && Number(orderItemsByTab.length) === 1 ? 'text-[#ADAAAB]' : 'text-red-600'}`} />
                                                         </button>
-
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -518,7 +718,6 @@ export default function DetailOrdersCustomer() {
                     <div className="flex flex-col justify-between bg-white p-4 rounded-lg border col-span-3 h-full">
                         <div>
                             <div className='flex flex-col justify-between text-sm'>
-
                                 <div className='flex-auto'>
                                     <div className='flex justify-between'>
                                         <h1 className="text-lg font-semibold mb-4">Thông tin khách hàng</h1>
@@ -545,7 +744,6 @@ export default function DetailOrdersCustomer() {
                                                     onChange={handleAddressChange}
                                                     labelId="address"
                                                     size="small"
-                                                // sx={{ fontSize: '10px' }}
                                                 >
                                                     {customerAddress.map((address) => (
                                                         <MenuItem key={address.id} value={address.id}>
@@ -554,7 +752,6 @@ export default function DetailOrdersCustomer() {
                                                     ))}
                                                 </Select>
                                             </FormControl>
-
                                         )}
 
                                         <Box display="flex" gap={2}>
@@ -585,7 +782,6 @@ export default function DetailOrdersCustomer() {
                                             />
                                         </Box>
 
-                                        {/* Ô nhập ghi chú */}
                                         <TextField
                                             label="Ghi chú"
                                             variant="outlined"
@@ -606,7 +802,6 @@ export default function DetailOrdersCustomer() {
                             </Button>
                         )}
                     </div>
-                    {/* Bên phải: Hóa đơn */}
                     <div className='col-span-2 h-full bg-white p-4 rounded-lg border h-full text-sm'>
                         <h1 className="text-lg font-semibold mb-4">Hóa đơn</h1>
 
@@ -651,111 +846,225 @@ export default function DetailOrdersCustomer() {
                 onClose={handleCloseDialogProduct}
                 maxWidth="xl"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        maxHeight: '90vh',
+                        height: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }
+                }}
             >
-                <DialogTitle>Danh sách sản phẩm</DialogTitle>
-                <DialogContent>
-                    <TableContainer component={Paper}>
-                        <Table >
-                            <TableHead >
-                                <TableRow>
-                                    {/* <TableCell>Ảnh</TableCell> */}
-                                    <TableCell sx={{ width: "400px" }}>Sản phẩm</TableCell>
-                                    <TableCell>Màu sắc</TableCell>
-                                    <TableCell>Kích cỡ</TableCell>
-                                    {/* <TableCell>Cổ giày</TableCell>
-                                                <TableCell>Mũi giày</TableCell>
-                                                <TableCell>Thương hiệu</TableCell>
-                                                <TableCell>Chất liệu</TableCell>
-                                                <TableCell>Nhà cung cấp</TableCell>
-                                                <TableCell>Danh mục sản phẩm</TableCell> */}
-                                    <TableCell sx={{ width: "150px", textAlign: "center" }}>Giá</TableCell>
-                                    <TableCell sx={{ width: "50px", textAlign: "center" }}>Số lượng</TableCell>
-                                    <TableCell sx={{ width: "10px", textAlign: "center" }}>Hành động</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {productDetails && productDetails.length > 0 ? (
-                                    productDetails.map((item) => (
-                                        item.trangThai && (
-                                            !item.giaDuocTinh && (
-                                                Number(item.soLuong) > 0 && (
-                                                    <TableRow key={item.idChiTietSanPham} >
-                                                        <TableCell sx={{ width: "400px" }}>
-                                                            <div className='flex justify-content-center gap-x-2'>
-                                                                <img
-                                                                    src={item.lienKet}
-                                                                    alt={item.sanPham.ten}
-                                                                    className={`w-12 h-12 object-cover inset-0 rounded-md inline-block`}
-                                                                />
-                                                                {item.sanPham}
-                                                                {/* <span className="flex items-center space-x-2">
-                                                                                <span>{item.sanPham} &#91;</span>
-                                                                                <span
-                                                                                    className="w-4 h-4 rounded-full"
-                                                                                    style={{ backgroundColor: item.mauSac }}
-                                                                                ></span>
-                                                                                <span>{item.kichCo} &#93;</span>
-                                                                            </span> */}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <span className="flex items-center space-x-2">
-                                                                <span
-                                                                    className="w-4 h-4 rounded-full"
-                                                                    style={{ backgroundColor: item.mauSac }}
-                                                                ></span>
-                                                                <span className=''> {item.mauSac}</span>
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell>{item.kichCo}</TableCell>
-                                                        {/* <TableCell>{item.coGiay}</TableCell>
-                                                                    <TableCell>{item.muiGiay}</TableCell>
-                                                                    <TableCell>{item.deGiay}</TableCell>
-                                                                    <TableCell>{item.thuongHieu}</TableCell>
-                                                                    <TableCell>{item.chatLieu}</TableCell>
-                                                                    <TableCell>{item.nhaCungCap}</TableCell>
-                                                                    <TableCell>{item.danhMucSanPham}</TableCell> */}
-                                                        <TableCell sx={{ textAlign: "center" }}>{item.giaSauGiam.toLocaleString()} đ</TableCell>
-                                                        <TableCell sx={{ textAlign: "center" }}>{item.soLuong}</TableCell>
-                                                        <TableCell sx={{ width: "10px", textAlign: "center" }}>
-                                                            <Button
-                                                                variant="contained"
-                                                                onClick={() => {
-                                                                    // if (item.soLuong <= 0) {
-                                                                    // Notification(
-                                                                    // "Hàng đã hết! Xin vui lòng chọn sản phẩm khác !",
-                                                                    // "warning"
-                                                                    // );
-                                                                    // } else {
-                                                                    handleOpenSelectQuantity(item);
-                                                                    // }
-                                                                }}
-                                                            >
-                                                                Chọn
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )
-                                            )
-                                        )
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={12} align="center">
-                                            Không có dữ liệu
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                <DialogTitle sx={{
+                    p: 2,
+                    borderBottom: '1px solid #e0e0e0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <h2 className='text-xl font-semibold'>Danh sách sản phẩm</h2>
+                    <IconButton
+                        onClick={handleCloseDialogProduct}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: 'gray',
+                            '&:hover': {
+                                color: 'black',
+                            },
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, flex: 1, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <div className="p-2 border-b">
+                            <div className="grid grid-cols-4 gap-2 mb-2">
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Tìm kiếm sản phẩm..."
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search size={16} />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: searchText && (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => setSearchText('')}
+                                                >
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Cổ giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeCollar || ''}
+                                        onChange={(e) => setSelectedShoeCollar(e.target.value)}
+                                        label="Cổ giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeCollars.map((item) => (
+                                            <MenuItem key={item.idCoGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Đế giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeSole || ''}
+                                        onChange={(e) => setSelectedShoeSole(e.target.value)}
+                                        label="Đế giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeSoles.map((item) => (
+                                            <MenuItem key={item.idDeGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Mũi giày</InputLabel>
+                                    <Select
+                                        value={selectedShoeToe || ''}
+                                        onChange={(e) => setSelectedShoeToe(e.target.value)}
+                                        label="Mũi giày"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {shoeToes.map((item) => (
+                                            <MenuItem key={item.idMuiGiay} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Chất liệu</InputLabel>
+                                    <Select
+                                        value={selectedMaterial || ''}
+                                        onChange={(e) => setSelectedMaterial(e.target.value)}
+                                        label="Chất liệu"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {materials.map((item) => (
+                                            <MenuItem key={item.idChatLieu} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Thương hiệu</InputLabel>
+                                    <Select
+                                        value={selectedBrand || ''}
+                                        onChange={(e) => setSelectedBrand(e.target.value)}
+                                        label="Thương hiệu"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {brands.map((item) => (
+                                            <MenuItem key={item.idThuongHieu} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Nhà cung cấp</InputLabel>
+                                    <Select
+                                        value={selectedSupplier || ''}
+                                        onChange={(e) => setSelectedSupplier(e.target.value)}
+                                        label="Nhà cung cấp"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {suppliers.map((item) => (
+                                            <MenuItem key={item.idNhaCungCap} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel>Danh mục</InputLabel>
+                                    <Select
+                                        value={selectedCategory || ''}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                        label="Danh mục"
+                                    >
+                                        <MenuItem value={null}>Tất cả</MenuItem>
+                                        {categories.map((item) => (
+                                            <MenuItem key={item.idDanhMuc} value={item}>
+                                                {item.ten}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                        </div>
+                        <DataGrid
+                            getRowId={(row) => row.idChiTietSanPham}
+                            rows={getFilteredRows()}
+                            columns={columns}
+                            pageSize={10}
+                            rowsPerPageOptions={[10, 25, 50]}
+                            checkboxSelection={false}
+                            disableSelectionOnClick
+                            disableColumnSelector
+                            disableColumnMenu
+                            hideFooterSelectedRowCount
+                            sx={{
+                                '& .MuiDataGrid-cell:focus': {
+                                    outline: 'none',
+                                },
+                                '& .MuiDataGrid-columnHeaders': {
+                                    backgroundColor: '#f5f5f5',
+                                    fontWeight: 'bold',
+                                },
+                                '& .MuiDataGrid-virtualScroller': {
+                                    overflow: 'auto',
+                                },
+                                '& .MuiDataGrid-footerContainer': {
+                                    borderTop: '1px solid #e0e0e0',
+                                },
+                                '& .MuiDataGrid-cell': {
+                                    whiteSpace: 'normal',
+                                    lineHeight: 'normal',
+                                    padding: '8px',
+                                },
+                                '& .MuiDataGrid-columnHeader': {
+                                    whiteSpace: 'normal',
+                                    lineHeight: 'normal',
+                                    padding: '8px',
+                                },
+                                '& .MuiDataGrid-main': {
+                                    overflow: 'hidden',
+                                },
+                                '& .MuiDataGrid-virtualScrollerContent': {
+                                    height: '100% !important',
+                                    overflow: 'auto !important'
+                                }
+                            }}
+                            localeText={vietnameseLocaleText}
+                            style={{ height: 'calc(100vh - 250px)' }}
+                        />
+                    </div>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialogProduct}>Đóng</Button>
-                </DialogActions>
             </Dialog>
 
-            {/* Dialog chọn số lượng sản phẩm */}
             <Dialog
                 open={openSelectQuantity}
                 onClose={handleCloseSelectQuantity}
@@ -770,9 +1079,7 @@ export default function DetailOrdersCustomer() {
                                 <div className="w-2/3 grid grid-cols-2">
                                     <div>
                                         <img
-                                            src={
-                                                productDetailSelected.lienKet
-                                            }
+                                            src={productDetailSelected.lienKet}
                                             alt={productDetailSelected.sanPham}
                                             className="size-60 object-cover rounded-md"
                                         />
@@ -801,7 +1108,6 @@ export default function DetailOrdersCustomer() {
                                             <span>{productDetailSelected.gia} <span className='ordinal'>đ</span> </span>
                                         )}
                                     </p>
-
                                     <p>Số lượng còn lại: {productDetailSelected.soLuong}</p>
                                 </div>
                             </div>
@@ -836,8 +1142,7 @@ export default function DetailOrdersCustomer() {
             </Dialog>
 
             <AddressDialog hoaDon={invoice} reload={reload} open={openAddressDialog} onClose={handleCloseAddressDialog} />
-            {/* ô lịch sử thanh toán */}
             <PaymentHistory idHoaDon={idHd} open={openPaymentHistory} onClose={() => setOpenPaymentHistory(false)} />
-        </div >
-    )
+        </div>
+    );
 }

@@ -46,7 +46,7 @@ export default function PaymentHistoryDialog({ idHoaDon, open, onClose }) {
                                         <TableCell className="px-4 py-2">{payment.ghiChu}</TableCell>
                                         <TableCell className="px-4 py-2">{payment.hinhThucThanhToan}</TableCell>
                                         <TableCell className="px-4 py-2">{formatDateFromArray(payment.ngayTao)}</TableCell>
-                                        <TableCell className="px-4 py-2">{payment.soTienThanhToan}</TableCell>
+                                        <TableCell className="px-4 py-2">{payment.soTienThanhToan.toLocaleString()} đ</TableCell>
                                         <TableCell className="px-4 py-2">{getStatus(payment.trangThai)}</TableCell>
                                     </TableRow>
                                 ))

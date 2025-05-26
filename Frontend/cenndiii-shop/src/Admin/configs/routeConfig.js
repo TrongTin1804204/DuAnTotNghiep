@@ -12,6 +12,10 @@ export const adminRouteNames = {
     // Giảm giá
     '/admin/discounts': 'Đợt giảm giá',
     '/admin/coupons': 'Phiếu giảm giá',
+    '/admin/discounts/add': 'Thêm đợt giảm giá',
+    '/admin/discounts/edit': 'Chi tiết đợt giảm giá',
+    '/admin/add-coupon': 'Thêm phiếu giảm giá',
+    '/admin/coupons/edit': 'Chi tiết phiếu giảm giá',
 
     // Quản lý sản phẩm
     '/admin/products': 'Sản phẩm',
@@ -30,6 +34,10 @@ export const adminRouteNames = {
     // Quản lý tài khoản
     '/admin/customers': 'Khách hàng',
     '/admin/employees': 'Nhân viên',
+    '/admin/add-customer': 'Thêm khách hàng',
+    '/admin/employees/add': 'Thêm nhân viên',
+    '/admin/edit-customer': 'Chi tiết khách hàng',
+    '/admin/employees/edit/': 'Chi tiết nhân viên',
 };
 
 // Cấu hình các route không hiển thị trong breadcrumb
