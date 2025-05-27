@@ -107,6 +107,9 @@ public class HoaDonService {
         return hoaDonRepository.findByMaHoaDon(maHoaDon);
     }
 
+    public HoaDon findInvoice2(Integer idHoaDon) {
+        return hoaDonRepository.findByIdHoaDon(idHoaDon);
+    }
     public HoaDon huy(String maHoaDon, Authentication auth) {
         HoaDon hoaDon = findInvoice(maHoaDon);
         hoaDon.setTrangThai("Hủy");

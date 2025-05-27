@@ -30,7 +30,7 @@ import Notification from '../../../components/Notification';
 import AddressDialog from "./AddCusstomerAddress";
 import UpdateCustomerAddress from "./UpdateCustomerAddress";
 
-const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
+const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId }) => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -84,6 +84,11 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
 
     const [openPayAlert, setOpenPayAlert] = useState(false);
 
+    ///////////////////////
+
+    const [waitingTransferConfirm, setWaitingTransferConfirm] = useState(false);
+
+    //////////////////////
     // dialog add address
     const [openAddAddressDialog, setOpenAddAddressDialog] = useState(false);
     const handleCloseAddressDialog = (confirm) => {
@@ -103,6 +108,29 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
             reload()
         }
     }
+
+    ///////////
+    const resendQrToApp = () => {
+        if (window.stompClient?.connected) {
+            const soTienCanChuyenKhoan =
+                paymentMethod === "chuyenkhoan" ? lastTotal : transferAmount;
+            window.stompClient.publish({
+                destination: "/app/switch-invoice",
+                body: JSON.stringify({
+                    idHoaDon: invoiceId.idHoaDon,
+                    tongTienSauCung: lastTotal,
+                    soTienChuyenKhoan: soTienCanChuyenKhoan,
+                    soTienGiam: discountAmount,
+                    paymentType: "chuyenkhoan"
+                }),
+            });
+            toast.success("Đã gửi lại mã QR cho khách!");
+        } else {
+            toast.error("Không kết nối được tới app!");
+        }
+    };
+
+    ////////////////
 
     const getConfirm = async (confirm) => {
         setOpenPayAlert(false);
@@ -169,6 +197,31 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
 
 
     const onSubmit = async () => {
+
+        //Chặn xử lý ngay nếu chọn chuyển khoản
+        if ((paymentMethod === "chuyenkhoan" || paymentMethod === "cahai") && !waitingTransferConfirm) {
+            const soTienCanChuyenKhoan =
+                paymentMethod === "chuyenkhoan" ? lastTotal : transferAmount;
+
+            if (window.stompClient?.connected) {
+                window.stompClient.publish({
+                    destination: "/app/switch-invoice",
+                    body: JSON.stringify({
+                        idHoaDon: invoiceId.idHoaDon,
+                        tongTienSauCung: lastTotal,
+                        soTienChuyenKhoan: soTienCanChuyenKhoan,
+                        soTienGiam: discountAmount,
+                        paymentType: "chuyenkhoan",
+                    }),
+                });
+                toast.info("Đang chờ khách quét mã QR và thanh toán...");
+                setWaitingTransferConfirm(true);
+            } else {
+                toast.error("Không kết nối được tới app để gửi dữ liệu hóa đơn!");
+            }
+            return;
+        }
+        // Phần xử lý như cũ nếu là tiền mặt 
         const thanhToanHoaDon = [];
         if (paymentMethod === "tienmat") {
             thanhToanHoaDon.push({ hinhThucThanhToan: "tienmat", soTien: lastTotal });
@@ -226,6 +279,15 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                 reloadTab();
                 navigate("/admin/orders", { state: { message: "Thanh toán thành công", type: "success" } });
                 handlePrint(requestData, totalItem, customers.find(c => c.idKhachHang === selectedCustomerId)?.hoTen);
+                // gửi đi
+                window.stompClient?.publish({
+                    destination: "/app/invoice-paid",
+                    body: JSON.stringify({
+                        message: "Đã xác nhận chuyển khoản!",
+                        idHoaDon: invoiceId.idHoaDon
+                    })
+                });
+                setWaitingTransferConfirm(false);
             }
         } catch (error) {
             console.error("Error processing payment:", error);
@@ -676,6 +738,46 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
         printWindow.print();
     };
 
+    ///////----
+    useEffect(() => {
+        if (!invoiceId || !invoiceId.idHoaDon) return;
+
+        //  Hủy hoàn toàn nếu hóa đơn không còn active (tránh setTimeout luôn)
+        if (invoiceId.idHoaDon !== activeOrderId) {
+            console.log(" [Hủy trước timeout] Hóa đơn không còn active, bỏ gửi:", invoiceId.idHoaDon);
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            if (!window.stompClient?.connected) {
+                console.warn(" Không gửi được socket - chưa kết nối?");
+                return;
+            }
+
+            const tabStillExists = tabs.some(tab => tab.id === invoiceId.idHoaDon);
+            if (!tabStillExists) {
+                console.log(" Hóa đơn không còn trong danh sách tab:", invoiceId.idHoaDon);
+                return;
+            }
+
+            const payload = {
+                idHoaDon: invoiceId.idHoaDon,
+                tongTienSauCung: lastTotal,
+                soTienGiam: discountAmount,
+            };
+
+            console.log(" Gửi socket (sau timeout):", payload);
+            window.stompClient.publish({
+                destination: "/app/switch-invoice",
+                body: JSON.stringify(payload),
+            });
+        }, 200);
+
+        return () => clearTimeout(timeout);
+    }, [lastTotal, discountAmount, invoiceId?.idHoaDon, activeOrderId, tabs]);
+
+    ///////////---------
+
     return (
         <div>
             <div
@@ -959,8 +1061,57 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                         </div>
                     </div>
                 </div>
+                {(paymentMethod === "chuyenkhoan" || paymentMethod === "cahai") && waitingTransferConfirm ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <button
+                            onClick={() => handleSubmit(onSubmit)()}
+                            style={{
+                                padding: "10px 20px",
+                                backgroundColor: "#43A047",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "8px",
+                                cursor: "pointer",
+                                width: "100%",
+                            }}
+                        >
+                            Xác nhận đã chuyển khoản
+                        </button>
 
-                <button
+                        <button
+                            onClick={resendQrToApp}
+                            style={{
+                                padding: "8px 20px",
+                                backgroundColor: "#FFC107",
+                                color: "#333",
+                                border: "none",
+                                borderRadius: "8px",
+                                cursor: "pointer",
+                                width: "100%",
+                            }}
+                        >
+                            Gửi lại mã QR
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleOpenPayAlert}
+                        style={{
+                            padding: "10px 20px",
+                            backgroundColor: "#4CAF50",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            width: "100%",
+                        }}
+                    >
+                        Thanh Toán
+                    </button>
+                )}
+
+                {/* <button
                     type="button"
                     onClick={handleOpenPayAlert}
                     style={{
@@ -974,7 +1125,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab }) => {
                     }}
                 >
                     Thanh Toán
-                </button>
+                </button> */}
             </div>
             <Delivery
                 open={openDeliveryForm}

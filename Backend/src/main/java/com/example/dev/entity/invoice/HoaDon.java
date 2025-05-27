@@ -44,6 +44,7 @@ public class HoaDon {
     private BigDecimal phiVanChuyen;
     private BigDecimal phuPhi;
     private BigDecimal hoanPhi;
+    @Column(name = "trang_thai")
     private String trangThai;
     private LocalDateTime ngayTao;
     private LocalDateTime ngaySua;

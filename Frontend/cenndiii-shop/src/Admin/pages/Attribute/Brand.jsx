@@ -19,6 +19,7 @@ import EditModal, { AddModal } from './UpdateAttribute';
 import { hasPermission, logout } from "../../../security/DecodeJWT";
 import Notification from '../../../components/Notification';
 
+
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
   columnMenuLabel: 'Menu',

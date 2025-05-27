@@ -10,6 +10,8 @@ export default function PaymentStatus() {
     const navigate = useNavigate();
     const location = useLocation();
     const { cartCount, setCartCount } = useCart();
+    const token = localStorage.getItem("token");
+
 
     const queryParams = new URLSearchParams(location.search);
     const responseCode = queryParams.get("vnp_ResponseCode");

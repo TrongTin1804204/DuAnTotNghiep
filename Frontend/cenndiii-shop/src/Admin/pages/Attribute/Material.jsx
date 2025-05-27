@@ -22,6 +22,7 @@ import api from "../../../security/Axios";
 import { hasPermission, logout } from "../../../security/DecodeJWT";
 import Notification from '../../../components/Notification';
 
+
 const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
   const [ten, setTen] = useState('');
   const [trangThai, setTrangThai] = useState(false);
