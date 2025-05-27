@@ -1,6 +1,7 @@
 package com.example.dev.repository.attribute;
 
 import com.example.dev.entity.attribute.ThuongHieu;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ThuongHieuRepo extends JpaRepository<ThuongHieu,Integer> {
     List<ThuongHieu> findAllByTrangThaiIsTrue();
@@ -22,4 +24,5 @@ public interface ThuongHieuRepo extends JpaRepository<ThuongHieu,Integer> {
 """)
     Page<ThuongHieu> searchByBrand(@Param("search") String search, Pageable pageable);
 
+    Optional<ThuongHieu> findByTen(@NotEmpty String ten);
 }

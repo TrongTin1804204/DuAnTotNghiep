@@ -7,107 +7,18 @@ import {
   Paper,
   Chip,
   IconButton,
-  Modal,
-  TextField,
-  FormControlLabel,
-  Checkbox,
   Button,
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { DataGrid } from '@mui/x-data-grid';
-import { Edit } from 'lucide-react';
+import { Edit, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
+import EditModal, { AddModal } from './UpdateAttribute';
+import Notification from '../../../components/Notification';
+import { hasPermission, logout } from "../../../security/DecodeJWT";
 
-const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
-  const [ten, setTen] = useState('');
-  const [trangThai, setTrangThai] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (data) {
-      setTen(data.ten);
-      setTrangThai(data.trangThai);
-      setError('');
-    }
-  }, [open]);
-
-  const handleSave = () => {
-    const trimmedTen = ten.trim().toLowerCase();
-    const currentTen = data?.ten?.toLowerCase();
-
-    if (!trimmedTen) {
-      setError(`Tên ${type} không được để trống`);
-      return;
-    }
-
-    if (
-      existingNames
-        .map((data) => data.ten.toLowerCase())
-        .includes(trimmedTen) &&
-      trimmedTen !== currentTen
-    ) {
-      setError(`Tên ${type} đã tồn tại`);
-      return;
-    }
-
-    setError('');
-    onSave({ ...data, ten: ten.trim(), trangThai });
-  };
-
-  return (
-    <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          bgcolor: '#fff',
-          color: '#000',
-          p: 4,
-          borderRadius: 2,
-          boxShadow: 24,
-          width: 400,
-        }}
-      >
-        <Typography variant="h6" mb={2}>
-          Sửa {type}
-        </Typography>
-
-        <TextField
-          fullWidth
-          label={`Tên ${type}`}
-          value={ten}
-          onChange={(e) => setTen(e.target.value)}
-          error={!!error}
-          helperText={error}
-          sx={{ mb: 2 }}
-        />
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={trangThai}
-              onChange={(e) => setTrangThai(e.target.checked)}
-            />
-          }
-          label="Đang hợp tác"
-        />
-
-        <Box mt={3} display="flex" justifyContent="flex-end" gap={1}>
-          <Button variant="outlined" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button variant="contained" onClick={handleSave}>
-            Xác nhận
-          </Button>
-        </Box>
-      </Box>
-    </Modal>
-  );
-}
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
   columnMenuLabel: 'Menu',
@@ -123,8 +34,7 @@ const vietnameseLocaleText = {
     labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
   }
 };
-import Notification from '../../../components/Notification';
-import { hasPermission, logout } from "../../../security/DecodeJWT";
+
 export default function Supplier() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -133,8 +43,10 @@ export default function Supplier() {
       logout();
     }
   }, [navigate]);
+
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
 
   const openEditModal = (row) => {
@@ -152,6 +64,25 @@ export default function Supplier() {
       Notification("Sửa nhà cung cấp thành công", "success");
       fetchSuppliers();
       setEditModalOpen(false);
+    }
+  };
+
+  const handleAdd = async (ten) => {
+    try {
+      const response = await api.post("/admin/nha-cung-cap/them", {
+        ten: ten,
+        trangThai: true,
+      });
+      if (response.status === 200) {
+        Notification("Thêm nhà cung cấp thành công", "success");
+        fetchSuppliers();
+        setAddModalOpen(false);
+      } else {
+        Notification(response.data.message, "error");
+      }
+    } catch (error) {
+      console.error("Lỗi khi thêm nhà cung cấp:", error);
+      Notification("Có lỗi xảy ra khi thêm nhà cung cấp", "error");
     }
   };
 
@@ -213,12 +144,19 @@ export default function Supplier() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          Quản lý Nhà cung cấp
+        </Typography>
 
-
-      {/* Tiêu đề */}
-      <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
-        Quản lý Nhà cung cấp
-      </Typography>
+        <Button
+          variant="contained"
+          startIcon={<Plus size={18} />}
+          onClick={() => setAddModalOpen(true)}
+        >
+          Thêm nhà cung cấp
+        </Button>
+      </Box>
 
       {/* DataGrid */}
       <Paper sx={{ height: '66vh', width: '100%' }}>
@@ -250,11 +188,20 @@ export default function Supplier() {
           localeText={vietnameseLocaleText}
         />
       </Paper>
+
       <EditModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         onSave={handleSaveEdit}
         data={editingRow}
+        existingNames={rows}
+        type={"nhà cung cấp"}
+      />
+
+      <AddModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onAdd={handleAdd}
         existingNames={rows}
         type={"nhà cung cấp"}
       />

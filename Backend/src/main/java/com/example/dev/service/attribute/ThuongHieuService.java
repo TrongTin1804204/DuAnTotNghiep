@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ThuongHieuService {
@@ -25,10 +26,22 @@ public class ThuongHieuService {
     public List<ThuongHieu> getThuongHieuBan(){
         return thuongHieuRepo.findAllByTrangThaiIsTrue();
     }
-    public ThuongHieu themThuongHieu(ThuongHieu thuongHieu){
+    public ThuongHieu themThuongHieu(ThuongHieu thuongHieu) throws Exception {
+        String ten = thuongHieu.getTen().trim();
+        Optional<ThuongHieu> existing = thuongHieuRepo.findByTen(ten);
+
+        if (ten.isEmpty()) {
+            throw new Exception("Không được để trống");
+        }
+
+        if (existing.isPresent()) {
+            throw new Exception("Thương hiệu đã tồn tại");
+        }
+
         thuongHieuRepo.save(thuongHieu);
         return thuongHieu;
     }
+
 
     public void suaThuongHieu(ThuongHieu thuongHieu){
         thuongHieuRepo.save(thuongHieu);

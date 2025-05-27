@@ -1,7 +1,9 @@
 package com.example.dev.controller.attribute;
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.CoGiay;
 import com.example.dev.service.attribute.CoGiayService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,9 +27,21 @@ public class CoGiayController{
     }
 
     @PostMapping("/them")
-    public ResponseEntity<?> themCoGiay(@RequestBody CoGiay cg){
-        return ResponseEntity.ok(coGiayService.themCoGiay(cg));
+    public BaseResponse<?> themCoGiay(@RequestBody CoGiay cg) {
+        try {
+            return BaseResponse.builder()
+                    .data(coGiayService.themCoGiay(cg))
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message(BaseConstant.CustomResponseCode.SUCCESS.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
+
 
     @PostMapping("/sua")
     public ResponseEntity<?> suaCoGiay(@RequestBody CoGiay cg){

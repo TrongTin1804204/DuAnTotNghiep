@@ -122,9 +122,8 @@ public class HoaDonController {
     }
 
     @GetMapping("/export-excel")
-    public ResponseEntity<Resource> exportExcel(HttpServletResponse response) {
+    public ResponseEntity<Resource> exportExcel() {
         Resource file = hoaDonService.xuatExcel();
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=FileExcel.xlsx")
                 .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

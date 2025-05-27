@@ -1,4 +1,4 @@
-package com.example.dev.repository.atriibute;
+package com.example.dev.repository.attribute;
 
 import com.example.dev.entity.attribute.CoGiay;
 import org.springframework.data.jpa.repository.JpaRepository;

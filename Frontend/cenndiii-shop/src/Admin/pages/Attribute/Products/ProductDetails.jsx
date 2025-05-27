@@ -95,6 +95,9 @@ export default function ProductDetails() {
   const [alertOpen, setAlertOpen] = useState(false); // mở alert
   const [alertMessage, setAlertMessage] = useState(''); // thông báo alert
 
+  const [isAddingMaterial, setIsAddingMaterial] = useState(false);
+  const [newMaterial, setNewMaterial] = useState("");
+
   useEffect(() => {
     if (!hasPermission("ADMIN")) {
       navigate("/admin/login");
@@ -172,8 +175,6 @@ export default function ProductDetails() {
     description: ""
   });
   useEffect(() => {
-  }, []);
-  useEffect(() => {
     fetchData("/admin/san-pham/hien-thi/true", setProducts);
     fetchData("/admin/co-giay/hien-thi/true", setShoeCollars);
     fetchData("/admin/de-giay/hien-thi/true", setShoeSoles);
@@ -184,6 +185,7 @@ export default function ProductDetails() {
     fetchData("/admin/danh-muc/hien-thi/true", setCategories);
     fetchData("/admin/mau-sac/hien-thi/true", setColors);
     fetchData("/admin/kich-co/hien-thi/true", setSizes);
+    setDefault();
   }, []);
 
 
@@ -206,32 +208,33 @@ export default function ProductDetails() {
     }
   };
 
-
-
   useEffect(() => {
-    // Automatically select the first option for these fields on initial load
-    if (shoeCollars.length > 0) {
+    setDefault();
+  }, [shoeCollars, shoeSoles, shoeToes, materials, brands, suppliers, categories]);
+
+  const setDefault = () => {
+    if (shoeCollars.length > 0 && !shoeCollarSelected) {
       setShoeCollarSelected({ value: shoeCollars[0].idCoGiay, label: shoeCollars[0].ten });
     }
-    if (shoeSoles.length > 0) {
+    if (shoeSoles.length > 0 && !shoeSoleSelected) {
       setShoeSoleSelected({ value: shoeSoles[0].idDeGiay, label: shoeSoles[0].ten });
     }
-    if (shoeToes.length > 0) {
+    if (shoeToes.length > 0 && !shoeToeSelected) {
       setShoeToeSelected({ value: shoeToes[0].idMuiGiay, label: shoeToes[0].ten });
     }
-    if (materials.length > 0) {
+    if (materials.length > 0 && !materialSelected) {
       setMaterialSelected({ value: materials[0].idChatLieu, label: materials[0].ten });
     }
-    if (brands.length > 0) {
+    if (brands.length > 0 && !brandSelected) {
       setBrandSelected({ value: brands[0].idThuongHieu, label: brands[0].ten });
     }
-    if (suppliers.length > 0) {
+    if (suppliers.length > 0 && !supplierSelected) {
       setSupplierSelected({ value: suppliers[0].idNhaCungCap, label: suppliers[0].ten });
     }
-    if (categories.length > 0) {
+    if (categories.length > 0 && !categorySelected) {
       setCategorySelected({ value: categories[0].idDanhMuc, label: categories[0].ten });
     }
-  }, [shoeCollars, shoeSoles, shoeToes, materials, brands, suppliers, categories]);
+  }
 
   const handleAddColor = async () => {
     if (!newColor.trim()) return;
@@ -239,14 +242,18 @@ export default function ProductDetails() {
       const response = await api.post("/admin/mau-sac/them", {
         ten: newColor,
       });
-      const newOption = { value: response.data.idMauSac, label: response.data.ten };
-      setSelectedColors((prevSelected) => [...prevSelected, newOption]);
-      setIsAddingColor(false);
-      setNewColor("");
-      Notification("Thêm kích cỡ thành công", "success");
-      await fetchData("/admin/mau-sac/hien-thi/true", setColors);
+      if (response.data.code === 200) {
+        const newOption = { value: response.data.data.idMauSac, label: response.data.data.ten };
+        setSelectedColors((prevSelected) => [...prevSelected, newOption]);
+        setIsAddingColor(false);
+        setNewColor("");
+        Notification(response.data.message, "success");
+        await fetchData("/admin/mau-sac/hien-thi/true", setColors);
+      } else {
+        Notification(response.data.message, "error");
+      }
     } catch (error) {
-      Notification("Lỗi khi thêm mau-sac!", "error");
+      Notification(error.response.data.message, "error");
     }
   };
 
@@ -256,14 +263,18 @@ export default function ProductDetails() {
       const response = await api.post("/admin/kich-co/them", {
         ten: newSize,
       });
-      const newOption = { value: response.data.idKichCo, label: response.data.ten };
-      setSelectedSizes((prevSelected) => [...prevSelected, newOption]);
-      setIsAddingSize(false);
-      setNewSize("");
-      Notification("Thêm kích cỡ thành công", "success");
-      await fetchData("/admin/kich-co/hien-thi/true", setSizes);
+      if (response.data.code === 200) {
+        const newOption = { value: response.data.data.idKichCo, label: response.data.data.ten };
+        setSelectedSizes((prevSelected) => [...prevSelected, newOption]);
+        setIsAddingSize(false);
+        setNewSize("");
+        Notification(response.data.message, "success");
+        await fetchData("/admin/kich-co/hien-thi/true", setSizes);
+      } else {
+        Notification(response.data.message, "error");
+      }
     } catch (error) {
-      Notification("Lỗi khi thêm kích cỡ!", "error");
+      Notification(error.response.data.message, "error");
     }
   };
   const handleCreateOption = async (type, inputValue) => {
@@ -601,7 +612,7 @@ export default function ProductDetails() {
         );
         await handleUploadImages(productResponse.data);
         Notification("Thêm chi tiết sản phẩm thành công", "success");
-        navigate(`/admin/product-details-manager/${productSelected.value}`);
+        navigate(`/admin/products`);
       } catch (error) {
         Notification("Lỗi khi thêm chi tiết sản phẩm", "error");
       } finally {
@@ -1110,6 +1121,38 @@ export default function ProductDetails() {
             <button
               className="p-2 bg-black text-white rounded-md w-1/2"
               onClick={handleAddSize}
+            >
+              Lưu
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Modal thêm chất liệu */}
+      <Dialog
+        open={isAddingMaterial}
+        onClose={() => setIsAddingMaterial(false)}
+        className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+      >
+        <div className="bg-white p-6 rounded-lg shadow-lg w-96 flex flex-col items-center">
+          <h2 className="text-lg font-semibold mb-4 text-center">Thêm Chất Liệu</h2>
+          <input
+            type="text"
+            className="border p-2 rounded-md w-full"
+            placeholder="Nhập chất liệu mới..."
+            value={newMaterial}
+            onChange={(e) => setNewMaterial(e.target.value)}
+          />
+          <div className="flex justify-center space-x-2 mt-4 w-full">
+            <button
+              className="p-2 border border-gray-400 text-gray-600 rounded-md w-1/2"
+              onClick={() => setIsAddingMaterial(false)}
+            >
+              Hủy
+            </button>
+            <button
+              className="p-2 bg-black text-white rounded-md w-1/2"
+              onClick={() => handleCreateOption("chat-lieu", newMaterial)}
             >
               Lưu
             </button>

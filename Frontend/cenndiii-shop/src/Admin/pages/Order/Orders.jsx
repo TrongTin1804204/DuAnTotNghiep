@@ -1255,9 +1255,9 @@ export default function Orders() {
                                     handleScan(result?.text);
                                     setOpenQRDialog(false); // tắt dialog sau khi quét
                                 }
-                                if (!!error) {
-                                    handleError(error);
-                                }
+                                // if (!!error) {
+                                //     handleError(error);
+                                // }
                             }}
                             style={{ width: '100%', height: '100%' }}
                         />

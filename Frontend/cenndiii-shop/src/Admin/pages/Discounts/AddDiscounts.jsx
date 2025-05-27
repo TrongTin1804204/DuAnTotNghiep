@@ -93,6 +93,13 @@ export default function AddDiscounts() {
     } else {
       setErrorNKT(false);
     }
+
+    // Kiểm tra xem đã chọn ít nhất 1 biến thể sản phẩm chưa
+    if (selectedIdsCt.length === 0) {
+      Notification("Vui lòng chọn ít nhất 1 biến thể sản phẩm!", "error");
+      return;
+    }
+
     // Nếu có lỗi, dừng việc gọi hàm thêm mới
     if (!addMaDGG.tenDotGiamGia || !addMaDGG.giaTri) {
       return;

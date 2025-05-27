@@ -504,13 +504,14 @@ export default function ProductDetails() {
               <th className="p-2">STT</th>
               <th className="p-2">Ảnh</th>
               <th className="p-2">Tên sản phẩm</th>
-              <th className="p-2">Cổ giày</th>
+              {/* <th className="p-2">Cổ giày</th>
               <th className="p-2">Đế giày</th>
               <th className="p-2">Mũi giày</th>
               <th className="p-2">Thương hiệu</th>
               <th className="p-2">Chất liệu</th>
               <th className="p-2">Nhà cung cấp</th>
-              <th className="p-2">Danh mục</th>
+              <th className="p-2">Danh mục</th> */}
+              <th className="p-2">Thông tin chi tiết</th>
               <th className="p-2">Số Lượng</th>
               <th className="p-2">Giá bán</th>
               {/* <th className="p-2">Trạng Thái</th> */}
@@ -547,13 +548,7 @@ export default function ProductDetails() {
                   </span>
                 </td>
 
-                <td className="p-2">{c.coGiay.ten}</td>
-                <td className="p-2">{c.muiGiay.ten}</td>
-                <td className="p-2">{c.deGiay.ten}</td>
-                <td className="p-2">{c.thuongHieu.ten}</td>
-                <td className="p-2">{c.chatLieu.ten}</td>
-                <td className="p-2">{c.nhaCungCap.ten}</td>
-                <td className="p-2">{c.danhMucSanPham.ten}</td>
+                <td className="p-2">{c.coGiay.ten}, {c.muiGiay.ten}, {c.deGiay.ten}, {c.thuongHieu.ten}, {c.chatLieu.ten}, {c.nhaCungCap.ten}, {c.danhMucSanPham.ten}</td>
                 <td className="p-2">{c.soLuong ?? 0}</td>
                 <td className="p-2">{c.gia}</td>
                 {/* <td className="p-2">
@@ -669,13 +664,16 @@ export default function ProductDetails() {
                   <div>
                     <div className="font-semibold mb-1">Mã QR</div>
                     <div id="qrcode" className="flex justify-center">
-                      {/* Tạo mã QR và hiển thị */}
                       {qrCodeContent && (
                         <canvas
                           id="qr-canvas"
                           ref={(canvas) => {
                             if (canvas && qrCodeContent) {
-                              QRCode.toCanvas(canvas, qrCodeContent, (error) => {
+                              QRCode.toCanvas(canvas, qrCodeContent, {
+                                width: 100,
+                                margin: 1,
+                                scale: 3
+                              }, (error) => {
                                 if (error) console.error(error);
                                 console.log('Mã QR đã được tạo thành công!');
                               });
@@ -699,6 +697,7 @@ export default function ProductDetails() {
                         formatCreateLabel={(input) => `Thêm mới "${(input || "").trim()}"`}
                         isValidNewOption={isValidNewOption}
                         filterOption={customFilterOption}
+                        isDisabled={true}
                       />
                       {errors.material && <div className="text-red-600 text-xs">* {errors.material}</div>}
                     </div>
@@ -716,6 +715,7 @@ export default function ProductDetails() {
                         formatCreateLabel={(input) => `Thêm mới "${(input || "").trim()}"`}
                         isValidNewOption={isValidNewOption}
                         filterOption={customFilterOption}
+                        isDisabled={true}
                       />
                       {errors.brand && <div className="text-red-600 text-xs">* {errors.brand}</div>}
                     </div>
@@ -733,6 +733,7 @@ export default function ProductDetails() {
                         formatCreateLabel={(input) => `Thêm mới "${(input || "").trim()}"`}
                         isValidNewOption={isValidNewOption}
                         filterOption={customFilterOption}
+                        isDisabled={true}
                       />
                       {errors.supplier && <div className="text-red-600 text-xs">* {errors.supplier}</div>}
                     </div>
@@ -752,6 +753,7 @@ export default function ProductDetails() {
                         formatCreateLabel={(input) => `Thêm mới "${(input || "").trim()}"`}
                         isValidNewOption={isValidNewOption}
                         filterOption={customFilterOption}
+                        isDisabled={true}
                       />
                       {errors.category && <div className="text-red-600 text-xs">* {errors.category}</div>}
                     </div>

@@ -1,7 +1,9 @@
 package com.example.dev.controller.attribute;
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.KichCo;
 import com.example.dev.service.attribute.KichCoService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +27,20 @@ public class KichCoController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/them")
-    public ResponseEntity<?> themKichCo(@RequestBody KichCo kc) {
-        return ResponseEntity.ok(kichCoService.themKichCo(kc));
+    public BaseResponse<?> themKichCo(@RequestBody KichCo kc) {
+        try {
+            KichCo m = kichCoService.themKichCo(kc);
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message("Thêm kích cỡ thành công")
+                    .data(m)
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/sua")

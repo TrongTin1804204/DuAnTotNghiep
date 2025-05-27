@@ -1,8 +1,10 @@
 package com.example.dev.controller.attribute;
 
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.DanhMucSanPham;
 import com.example.dev.service.attribute.DanhMucService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,9 +28,21 @@ public class DanhMucSanPhamController {
     }
 
     @PostMapping("/them")
-    public ResponseEntity<?> themDanhMucSanPham(@RequestBody DanhMucSanPham dmsp){
-        return ResponseEntity.ok(danhMucService.themDanhMucSanPham(dmsp));
+    public BaseResponse<?> themDanhMucSanPham(@RequestBody DanhMucSanPham dmsp) {
+        try {
+            return BaseResponse.builder()
+                    .data(danhMucService.themDanhMucSanPham(dmsp))
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message(BaseConstant.CustomResponseCode.SUCCESS.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
+
 
     @PostMapping("/sua")
     public ResponseEntity<?> suaDanhMucSanPham(@RequestBody DanhMucSanPham dmsp){

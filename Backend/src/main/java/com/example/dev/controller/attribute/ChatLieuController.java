@@ -1,7 +1,9 @@
 package com.example.dev.controller.attribute;
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.ChatLieu;
 import com.example.dev.service.attribute.ChatLieuService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,8 +28,19 @@ public class ChatLieuController {
     }
 
     @PostMapping("/them")
-    public ResponseEntity<?> themChatLieu(@RequestBody ChatLieu cl){
-        return ResponseEntity.ok(chatLieuService.themChatLieu(cl));
+    public BaseResponse<?> themChatLieu(@RequestBody ChatLieu cl){
+        try {
+            return BaseResponse.builder()
+                    .data(chatLieuService.themChatLieu(cl))
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message(BaseConstant.CustomResponseCode.SUCCESS.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
 
     @PostMapping("/sua")

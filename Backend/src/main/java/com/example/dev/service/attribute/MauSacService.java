@@ -19,13 +19,14 @@ public class MauSacService {
         return mauSacRepo.findAllByTrangThaiIsTrue();
     }
 
-    public MauSac themMauSac(MauSac ms){
+    public MauSac themMauSac(MauSac ms) throws Exception {
         MauSac check =  mauSacRepo.findMauSacByTenEqualsIgnoreCase(ms.getTen());
         if(check == null){
             mauSacRepo.save(ms);
             return ms;
+        }else{
+            throw new Exception("Màu sắc đã tồn tại");
         }
-        return null;
     }
 
     public void suaMauSac(MauSac ms){

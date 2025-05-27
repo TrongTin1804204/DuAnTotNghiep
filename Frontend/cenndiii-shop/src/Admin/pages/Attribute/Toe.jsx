@@ -7,14 +7,16 @@ import {
   Paper,
   Chip,
   IconButton,
+  Button,
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { DataGrid } from '@mui/x-data-grid';
-import { Edit } from 'lucide-react';
+import { Edit, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
-import EditModal from './UpdateAttribute';
+import EditModal, { AddModal } from './UpdateAttribute';
+import Notification from '../../../components/Notification';
 import { hasPermission, logout } from "../../../security/DecodeJWT";
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
@@ -31,13 +33,13 @@ const vietnameseLocaleText = {
     labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
   }
 };
-import Notification from '../../../components/Notification';
 
 export default function ShoeToe() {
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   useEffect(() => {
     if (!hasPermission("ADMIN")) {
@@ -60,6 +62,25 @@ export default function ShoeToe() {
       Notification("Sửa mũi giày thành công", "success");
       fetchShoeToes();
       setEditModalOpen(false);
+    }
+  };
+
+  const handleAdd = async (ten) => {
+    try {
+      const response = await api.post("/admin/mui-giay/them", {
+        ten: ten,
+        trangThai: true,
+      });
+      if (response.status === 200) {
+        Notification("Thêm mũi giày thành công", "success");
+        fetchShoeToes();
+        setAddModalOpen(false);
+      } else {
+        Notification(response.data.message, "error");
+      }
+    } catch (error) {
+      console.error("Lỗi khi thêm mũi giày:", error);
+      Notification("Có lỗi xảy ra khi thêm mũi giày", "error");
     }
   };
 
@@ -121,11 +142,19 @@ export default function ShoeToe() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          Quản lý Mũi giày
+        </Typography>
 
-      {/* Tiêu đề */}
-      <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
-        Quản lý Mũi giày
-      </Typography>
+        <Button
+          variant="contained"
+          startIcon={<Plus size={18} />}
+          onClick={() => setAddModalOpen(true)}
+        >
+          Thêm mũi giày
+        </Button>
+      </Box>
 
       {/* DataGrid */}
       <Paper sx={{ height: '66vh', width: '100%' }}>
@@ -162,6 +191,13 @@ export default function ShoeToe() {
         onClose={() => setEditModalOpen(false)}
         onSave={handleSaveEdit}
         data={editingRow}
+        existingNames={rows}
+        type={"mũi giày"}
+      />
+      <AddModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onAdd={handleAdd}
         existingNames={rows}
         type={"mũi giày"}
       />

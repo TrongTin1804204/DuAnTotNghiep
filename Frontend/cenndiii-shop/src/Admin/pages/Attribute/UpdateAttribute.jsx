@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
     Modal,
     TextField,
@@ -10,7 +11,80 @@ import {
 import { useState, useEffect } from 'react';
 import { hasPermission, logout } from "../../../security/DecodeJWT";
 import { useNavigate } from 'react-router-dom';
-export default function EditModal({ open, onClose, onSave, data, existingNames = [], type }) {
+
+export const AddModal = ({ open, onClose, onAdd, existingNames = [], type }) => {
+    const [ten, setTen] = useState('');
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (open) {
+            setTen('');
+            setError('');
+        }
+    }, [open]);
+
+    const handleAdd = () => {
+        const trimmedTen = ten.trim().toLowerCase();
+
+        if (!trimmedTen) {
+            setError(`Tên ${type} không được để trống`);
+            return;
+        }
+
+        if (existingNames.map((data) => data.ten.toLowerCase()).includes(trimmedTen)) {
+            setError(`Tên ${type} đã tồn tại`);
+            return;
+        }
+
+        setError('');
+        onAdd(ten.trim());
+        setTen('');
+    };
+
+    return (
+        <Modal open={open} onClose={onClose}>
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: '#fff',
+                    color: '#000',
+                    p: 4,
+                    borderRadius: 2,
+                    boxShadow: 24,
+                    width: 400,
+                }}
+            >
+                <Typography variant="h6" mb={2}>
+                    Thêm {type}
+                </Typography>
+
+                <TextField
+                    fullWidth
+                    label={`Tên ${type}`}
+                    value={ten}
+                    onChange={(e) => setTen(e.target.value)}
+                    error={!!error}
+                    helperText={error}
+                    sx={{ mb: 2 }}
+                />
+
+                <Box mt={3} display="flex" justifyContent="flex-end" gap={1}>
+                    <Button variant="outlined" onClick={onClose}>
+                        Hủy
+                    </Button>
+                    <Button variant="contained" onClick={handleAdd}>
+                        Thêm
+                    </Button>
+                </Box>
+            </Box>
+        </Modal>
+    );
+};
+
+const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
     const [ten, setTen] = useState('');
     const [trangThai, setTrangThai] = useState(false);
     const [error, setError] = useState('');
@@ -105,3 +179,5 @@ export default function EditModal({ open, onClose, onSave, data, existingNames =
         </Modal>
     );
 }
+
+export default EditModal;

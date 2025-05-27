@@ -1,7 +1,9 @@
 package com.example.dev.controller.attribute;
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.MuiGiay;
 import com.example.dev.service.attribute.MuiGiayService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,9 +27,21 @@ public class MuiGiayController {
     }
 
     @PostMapping("/them")
-    public ResponseEntity<?> themMuiGiay(@RequestBody MuiGiay mg) {
-        return ResponseEntity.ok(muiGiayService.themMuiGiay(mg));
+    public BaseResponse<?> themMuiGiay(@RequestBody MuiGiay mg) {
+        try {
+            return BaseResponse.builder()
+                    .data(muiGiayService.themMuiGiay(mg))
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message(BaseConstant.CustomResponseCode.SUCCESS.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
+
     @PostMapping("/sua")
     public ResponseEntity<?> suaMuiGiay(@RequestBody MuiGiay mg) {
         try {

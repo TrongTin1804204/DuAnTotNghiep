@@ -1,7 +1,9 @@
 package com.example.dev.controller.attribute;
 
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.attribute.MauSac;
 import com.example.dev.service.attribute.MauSacService;
+import com.example.dev.util.baseModel.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +27,20 @@ public class MauSacController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/them")
-    public ResponseEntity<?> themMauSac(@RequestBody MauSac ms) {
-        return ResponseEntity.ok(mauSacService.themMauSac(ms));
+    public BaseResponse<?> themMauSac(@RequestBody MauSac ms) {
+        try {
+            MauSac m = mauSacService.themMauSac(ms);
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message("Thêm màu sắc thành công")
+                    .data(m)
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping("/sua")

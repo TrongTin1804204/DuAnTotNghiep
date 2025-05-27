@@ -29,9 +29,21 @@ public class ThuongHieuController {
     }
 
     @PostMapping("/them")
-    public ResponseEntity<?> themThuongHieu(@RequestBody ThuongHieu thuongHieu) {
-        return ResponseEntity.ok(thuongHieuService.themThuongHieu(thuongHieu));
+    public BaseResponse<?> themThuongHieu(@RequestBody ThuongHieu thuongHieu) {
+        try {
+            return BaseResponse.builder()
+                    .data(thuongHieuService.themThuongHieu(thuongHieu))
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message(BaseConstant.CustomResponseCode.SUCCESS.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
+
 
     @PostMapping("/sua")
     public ResponseEntity<?> suaThuongHieu(@RequestBody ThuongHieu thuongHieu) {

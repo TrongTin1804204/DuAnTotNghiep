@@ -259,7 +259,8 @@ function AddCoupon() {
 
         try {
             await api.post("/admin/phieu-giam-gia/them", requestData);
-            navigate("/admin/coupons", { state: { message: "Thêm phiếu giảm giá thành công" } });
+            navigate("/admin/coupons");
+            Notification("Thêm phiếu giảm giá thành công", "success");
         } catch (error) {
             if (error.response && error.response.data) {
                 setErrors(error.response.data);
