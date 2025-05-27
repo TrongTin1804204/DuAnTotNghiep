@@ -18,7 +18,7 @@ import api from "../../../security/Axios";
 import EditModal, { AddModal } from './UpdateAttribute';
 import Notification from '../../../components/Notification';
 import { hasPermission, logout } from "../../../security/DecodeJWT";
-import Notification from '../../../components/Notification';
+
 
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
