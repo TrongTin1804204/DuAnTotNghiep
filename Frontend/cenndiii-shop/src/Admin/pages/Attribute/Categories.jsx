@@ -16,6 +16,8 @@ import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
 import EditModal from './UpdateAttribute';
 import { hasPermission, logout } from "../../../security/DecodeJWT";
+import Notification from '../../../components/Notification';
+
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
   columnMenuLabel: 'Menu',
@@ -31,7 +33,6 @@ const vietnameseLocaleText = {
     labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
   }
 };
-import Notification from '../../../components/Notification';
 export default function Category() {
   const navigate = useNavigate();
 

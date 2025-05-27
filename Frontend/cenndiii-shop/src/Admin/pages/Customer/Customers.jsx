@@ -20,6 +20,8 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Notification from '../../../components/Notification';
 import { Avatar } from '@mui/material';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import * as XLSX from 'xlsx';
+
 const vietnameseLocaleText = {
   noRowsLabel: 'Không có dữ liệu',
   columnMenuLabel: 'Menu',
@@ -43,6 +45,8 @@ export default function Customer() {
   const [rows, setRows] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
+  const [loadingState, setLoadingState] = useState(false);
+
 
   const openEditModal = (row) => {
     setEditingRow(row);

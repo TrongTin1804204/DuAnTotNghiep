@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Alert from "../../../components/Alert";
 import Notification from '../../../components/Notification';
@@ -37,6 +37,9 @@ import { hasPermission } from '../../../security/DecodeJWT';
 import api from '../../../security/Axios';
 import DetailPaymentsV2 from './DetailsPaymentV2';
 import { DataGrid } from '@mui/x-data-grid';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+
 
 const vietnameseLocaleText = {
     noRowsLabel: 'Không có dữ liệu',
@@ -74,6 +77,43 @@ export default function Orders() {
     const navigate = useNavigate();
     const location = useLocation();
     const token = localStorage.getItem("token") || "";
+
+    //////
+
+    let stompClient = null;
+    let isConnected = false; // 🆕 biến flag
+    const stompClientRef = useRef(null); // dùng để lưu đối tượng stompClient
+    const isConnectedRef = useRef(false); // trạng thái kết nối
+
+    useEffect(() => {
+        const SockJS = require("sockjs-client/dist/sockjs");
+        const { Client } = require("@stomp/stompjs");
+
+        const socket = new SockJS("http://localhost:8080/ws");
+
+        const client = new Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 5000,
+            debug: (str) => console.log(str),
+            onConnect: () => {
+                console.log("✅ Web đã kết nối WebSocket");
+                isConnectedRef.current = true;
+                stompClientRef.current = client;
+                window.stompClient = client; // ✅ CHIA SẺ GLOBAL cho file khác dùng
+            },
+        });
+
+        stompClientRef.current = client;
+        client.activate();
+
+        return () => {
+            client.deactivate();
+        };
+    }, []);
+
+
+    //////
+
 
     useEffect(() => {
         if (localStorage.getItem("token")) {
@@ -317,6 +357,8 @@ export default function Orders() {
             setOrderId(newTabId);
             setInvoiceId(createdOrder);
             getProductFromDetailsInvoice(createdOrder.idHoaDon);
+            //Gửi WebSocket để app biết hóa đơn mới
+            notifyInvoiceChange(newTabId);
 
         } catch (error) {
             console.error("Error creating new order:", error);
@@ -358,7 +400,7 @@ export default function Orders() {
             setActiveTab(0);
             setOrderId(updatedOrders[0].idHoaDon);
             getProductFromDetailsInvoice(updatedOrders[0].idHoaDon);
-
+            notifyInvoiceChange(updatedOrders[0].idHoaDon);
             Notification(`Bạn đã xóa thành công Hóa đơn chờ có mã ${tabToRemove.maHoaDon}`, "success");
         } catch (error) {
             Notification("Xóa hóa đơn thất bại! Vui lòng thử lại.", "error");
@@ -366,12 +408,38 @@ export default function Orders() {
     };
 
 
+    ////////////////---------------------------------------------------------------------
     const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue)
-        setOrderId(orders[newValue].idHoaDon)
-        getProductFromDetailsInvoice(orders[newValue].idHoaDon)
-        setInvoiceId(orders[newValue])
+        setActiveTab(newValue);
+        const selectedOrder = orders[newValue];
+        setOrderId(selectedOrder.idHoaDon);
+        setInvoiceId(selectedOrder);
+        getProductFromDetailsInvoice(selectedOrder.idHoaDon);
+
+        // Gửi chỉ ID hóa đơn (không có tổng tiền)
+        if (isConnectedRef.current && stompClientRef.current) {
+            stompClientRef.current.publish({
+                destination: "/app/only-switch-invoice",  // Sử dụng endpoint chỉ gửi ID
+                body: JSON.stringify({ idHoaDon: selectedOrder.idHoaDon })
+            });
+        } else {
+            console.warn("❌ WebSocket chưa sẵn sàng để gửi dữ liệu");
+        }
     };
+
+
+    const notifyInvoiceChange = (idHoaDon) => {
+        if (isConnectedRef.current && stompClientRef.current) {
+            stompClientRef.current.publish({
+                destination: "/app/only-switch-invoice",  // Gửi chỉ ID hóa đơn
+                body: JSON.stringify({ idHoaDon })
+            });
+        }
+    };
+
+
+    /////////////------------------------------------------------------------------------
+
 
     const handleOpenDialog = () => {
         if (!token) {
@@ -427,6 +495,7 @@ export default function Orders() {
 
             if (response.status === 200) {
                 getProductFromDetailsInvoice(orderId);
+                notifyInvoiceChange(orderId); // thêm dòng này
                 Notification(`Sản phẩm ${productDetailSelected.sanPham} đã được thêm thành công!`, "success");
 
                 api
@@ -459,8 +528,8 @@ export default function Orders() {
 
             await api.post("/admin/chi-tiet-san-pham/xoa-sp", requestData);
 
-
             getProductFromDetailsInvoice(orderId)
+            notifyInvoiceChange(orderId); //  thêm dòng này
         } catch (error) {
             console.log(error);
         }
@@ -496,7 +565,7 @@ export default function Orders() {
             }
         }
         getProductFromDetailsInvoice(orderId);
-
+        notifyInvoiceChange(orderId); //  thêm dòng này
     };
 
     useEffect(() => {
@@ -508,30 +577,80 @@ export default function Orders() {
         }
     }, [orderItemsByTab]);
 
+    /////
+
     const reloadTab = async () => {
-        if (!token) {
-            console.error("Token không tồn tại.");
-            window.location.href = "/login"; // Điều hướng về trang đăng nhập
-            return;
-        }
+        if (!token) return;
+
         try {
             const response = await api.get('/admin/hoa-don/hd-ban-hang');
             const ordersData = response.data;
             setOrders(ordersData);
 
-            const newTabs = ordersData.map((order) => ({
+            const newTabs = ordersData.map(order => ({
                 id: order.idHoaDon,
                 label: `${order.maHoaDon}`,
                 maHoaDon: order.maHoaDon,
-                content: `Hóa đơn ${order.maHoaDon}` // Mỗi tab sẽ có một nội dung riêng
+                content: `Hóa đơn ${order.maHoaDon}`
             }));
             setTabs(newTabs);
-            getProductFromDetailsInvoice(ordersData[0].idHoaDon);
+
+            const newActiveOrder = ordersData[0];
             setActiveTab(0);
+            setInvoiceId(newActiveOrder);
+            setOrderId(newActiveOrder.idHoaDon);
+            getProductFromDetailsInvoice(newActiveOrder.idHoaDon);
+
+            //  Gửi socket tổng tiền + thông báo cảm ơn
+            if (isConnectedRef.current && stompClientRef.current) {
+                const voucher = newActiveOrder.voucher;
+                let soTienGiam = 0;
+                let tongTien = 0;
+
+                const responseDetails = await api.get(`/admin/hdct/get-cart/${newActiveOrder.idHoaDon}`);
+                if (Array.isArray(responseDetails.data)) {
+                    tongTien = responseDetails.data.reduce((sum, item) => sum + item.thanhTien, 0);
+                }
+
+                if (voucher) {
+                    if (voucher.hinhThuc === '%') {
+                        soTienGiam = (tongTien * voucher.giaTri) / 100;
+                        if (soTienGiam > voucher.giaTriToiDa) {
+                            soTienGiam = voucher.giaTriToiDa;
+                        }
+                    } else {
+                        soTienGiam = voucher.giaTri;
+                    }
+                }
+
+                const tongTienSauCung = Math.max(tongTien - soTienGiam, 0);
+
+                //  Gửi dữ liệu hóa đơn như cũ
+                stompClientRef.current.publish({
+                    destination: "/app/switch-invoice",
+                    body: JSON.stringify({
+                        idHoaDon: newActiveOrder.idHoaDon,
+                        tongTienSauCung,
+                        soTienGiam
+                    })
+                });
+
+                //  Gửi thêm thông báo thanh toán thành công
+                stompClientRef.current.publish({
+                    destination: "/app/invoice-paid",
+                    body: JSON.stringify({
+                        message: "🎉 Thanh toán thành công! Cảm ơn quý khách!",
+                        idHoaDon: newActiveOrder.idHoaDon
+                    })
+                });
+            }
         } catch (error) {
             console.error('Error fetching orders:', error);
         }
     };
+
+
+    //////
 
     // Thêm hàm filter
     const getFilteredRows = () => {
@@ -870,6 +989,7 @@ export default function Orders() {
                                     <DetailsPayment
                                         total={total}
                                         invoiceId={invoiceId}
+                                        activeOrderId={orderId}
                                         reloadTab={reloadTab}
                                         totalItem={orderItemsByTab}
                                     />

@@ -16,19 +16,20 @@ import java.util.List;
 public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Integer> {
     List<ChiTietSanPham> findBySanPham_IdSanPhamAndGiaDuocTinhIsNull(Integer id, Pageable pageable);
     @Query(value = """
-    select * from chi_tiet_san_pham\s
-    where id_san_pham = :idSanPham and gia_duoc_tinh is null and trang_thai = 1 and id_mau_sac = :idMauSac and so_luong > 0
-""",nativeQuery = true)
-    List<ChiTietSanPham> getAllProductByColor(@Param("idSanPham") Integer idSanPham,@Param("idMauSac") Integer idMauSac);
+                select * from chi_tiet_san_pham\s
+                where id_san_pham = :idSanPham and gia_duoc_tinh is null and trang_thai = 1 and id_mau_sac = :idMauSac and so_luong > 0
+            """, nativeQuery = true)
+    List<ChiTietSanPham> getAllProductByColor(@Param("idSanPham") Integer idSanPham, @Param("idMauSac") Integer idMauSac);
 
     @Query(value = """
-    select ChiTietSanPham 
-    from ChiTietSanPham ctsp 
-    where 
-    ctsp.sanPham.idSanPham = :idSanPham and 
-    ctsp.giaDuocTinh = null  
-""")
+                select ChiTietSanPham 
+                from ChiTietSanPham ctsp 
+                where 
+                ctsp.sanPham.idSanPham = :idSanPham and 
+                ctsp.giaDuocTinh = null  
+            """)
     List<ChiTietSanPham> productOnline(Integer id);
+
     @Query(value = """
                 select * from chi_tiet_san_pham 
                 WHERE
@@ -63,15 +64,34 @@ public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Intege
     @Modifying
     @Transactional
     @Query(value = """
-    update chi_tiet_san_pham set so_luong = :soLuong where id_chi_tiet_san_pham = :idChiTietSanPham or tao_boi = :idChiTietSanPham
-""", nativeQuery = true)
+                update chi_tiet_san_pham set so_luong = :soLuong where id_chi_tiet_san_pham = :idChiTietSanPham or tao_boi = :idChiTietSanPham
+            """, nativeQuery = true)
     void updateQuantity(@Param("idChiTietSanPham") Integer idChiTietSanPham,
                         @Param("soLuong") Integer soLuong);
 
 
-    @Query(value = "EXEC sp_GetProductById :idChiTietSanPham",nativeQuery = true)
+    @Query(value = "EXEC sp_GetProductById :idChiTietSanPham", nativeQuery = true)
     List<SpGiamGiaRequest> getSanPhamGiamGia(@Param("idChiTietSanPham") Integer idChiTietSanPham);
 
     List<ChiTietSanPham> findAllByTaoBoi(Integer taoBoi);
+
+
+
+
+    // thống kee
+    @Query("""
+    SELECT ctsp
+    FROM ChiTietSanPham ctsp
+    WHERE ctsp.soLuong < :threshold
+      AND ctsp.trangThai = true
+      AND ctsp.taoBoi IS NULL
+""")
+    List<ChiTietSanPham> findLowStockChiTietSanPham(@Param("threshold") int threshold);
+
+
+    @Query("SELECT COUNT(ctsp) FROM ChiTietSanPham ctsp WHERE ctsp.trangThai = true AND ctsp.taoBoi IS NULL")
+    long countActiveOriginalProducts();
+
+
 
 }

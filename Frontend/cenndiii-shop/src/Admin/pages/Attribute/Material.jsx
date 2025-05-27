@@ -20,6 +20,8 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
 import { hasPermission, logout } from "../../../security/DecodeJWT";
+import Notification from '../../../components/Notification';
+
 
 const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
   const [ten, setTen] = useState('');
@@ -130,7 +132,6 @@ const vietnameseLocaleText = {
     labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
   }
 };
-import Notification from '../../../components/Notification';
 
 export default function ChatLieu() {
   const navigate = useNavigate();

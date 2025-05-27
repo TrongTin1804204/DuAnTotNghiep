@@ -19,6 +19,8 @@ import { Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from "../../../security/Axios";
+import Notification from '../../../components/Notification';
+import { hasPermission, logout } from "../../../security/DecodeJWT";
 
 const EditModal = ({ open, onClose, onSave, data, existingNames = [], type }) => {
   const [ten, setTen] = useState('');
@@ -123,8 +125,7 @@ const vietnameseLocaleText = {
     labelDisplayedRows: ({ from, to, count }) => `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
   }
 };
-import Notification from '../../../components/Notification';
-import { hasPermission, logout } from "../../../security/DecodeJWT";
+
 export default function Supplier() {
   const navigate = useNavigate();
   useEffect(() => {
