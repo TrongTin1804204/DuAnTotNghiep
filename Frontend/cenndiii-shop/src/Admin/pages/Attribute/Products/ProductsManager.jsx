@@ -15,8 +15,10 @@ import { hasPermission, logout } from "../../../../security/DecodeJWT";
 import DeleteIcon from '@mui/icons-material/Delete';
 import IconButton from '@mui/material/IconButton';
 import QRCode from 'qrcode';
+import Loading from "../../../../components/Loading";
 
 export default function ProductDetails() {
+  const [loading, setLoading] = useState(false);
   const [qrData, setQrData] = useState(""); // Trường để lưu mã QR
   const [qrCodeContent, setQrCodeContent] = useState(""); // Mã QR
   const { id } = useParams(); // Id lấy từ trang khác
@@ -410,6 +412,8 @@ export default function ProductDetails() {
   };
 
   const handleSave = async () => {
+    closeModal();
+    setLoading(true);
     // Tạo payload gồm các dữ liệu từ các combobox và các trường số lượng, giá bán
     const payload = {
       sanPham: { idSanPham: productSelected.value },
@@ -427,7 +431,6 @@ export default function ProductDetails() {
       gia: price,
     };
 
-
     try {
       await api.post(
         `/admin/chi-tiet-san-pham/sua/${selectedProductDetail.idChiTietSanPham}`,
@@ -435,16 +438,18 @@ export default function ProductDetails() {
       );
       await handleUploadImages(productSelected.value);
       Notification("Cập nhật thành công", "success");
-      closeModal();
       fetchChiTietSanPham();
       setSelectedImages([]);
     } catch (error) {
       Notification("Cập nhật thất bại", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="p-6 space-y-4 text-sm">
+      {loading && <Loading />}
       {/* Card 1 - Bộ Lọc */}
       <div className="bg-white p-4 rounded-lg shadow-md">
         <h2 className="text-sm font-semibold mb-4">Bộ Lọc</h2>

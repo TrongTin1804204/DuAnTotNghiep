@@ -207,6 +207,7 @@ public class ChiTietSanPhamService {
             List<SpGiamGiaRequest> giaGiam =  chiTietSanPhamRepo.getSanPhamGiamGia(id);
 
             if (isEqual(newProduct, oldProduct)) {
+                newProduct.setMa(oldProduct.getMa());
                 newProduct.setIdChiTietSanPham(id);
                 newProduct.setNgaySua(LocalDateTime.now());
                 UserLogin userLogin = (UserLogin) auth.getPrincipal();
@@ -223,7 +224,8 @@ public class ChiTietSanPhamService {
                     newProduct.setNguoiTao(userLogin.getUsername());
                     newProduct.setNgayTao(LocalDateTime.now());
                     newProduct.setTaoBoi(oldProduct.getIdChiTietSanPham());
-
+                    String qrContent = generateQRCodeContent(newProduct);
+                    newProduct.setMa(qrContent);
                     ChiTietSanPham c = chiTietSanPhamRepo.save(newProduct);
 
                     // sửa giá sản phẩm cũ
