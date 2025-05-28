@@ -40,7 +40,7 @@ public class PostConstructConfig {
             kh1.setHoTen("Nguyễn Văn A");
             kh1.setGioiTinh(true);
             kh1.setTrangThai(true);
-            kh1.setEmail("abc@gmail.com");
+            kh1.setEmail("nguyentrongtin1804204@gmail.com");
             kh1.setMatKhau(passwordEncoder.encode("1234"));
             khachHangRepo.save(kh1);
         }

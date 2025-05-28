@@ -60,21 +60,12 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Integer> {
 
 
 
-    @Query("""
-    SELECT SUM(h.tongTien) FROM HoaDon h
-    WHERE YEAR(h.ngayTao) = :year
-   AND h.trangThai NOT LIKE '%Hủy%'
-    AND h.trangThai NOT LIKE '%Hóa đơn trống%'
+@Query("""
+    SELECT h FROM HoaDon h
+    WHERE CAST(h.ngayTao AS date) = :date
+    AND h.trangThai = :trangThai
 """)
-    Long sumRevenueByYear(@Param("year") int year);
-
-    @Query("""
-    SELECT COUNT(h) FROM HoaDon h
-    WHERE LOWER(h.trangThai) NOT LIKE '%hủy%'
-    AND LOWER(h.trangThai) NOT LIKE '%hóa đơn trống%'
-""")
-    long countValidOrders();
-
+List<HoaDon> findByNgayTaoAndTrangThai(@Param("date") LocalDate date, @Param("trangThai") String trangThai);
 
 
 }

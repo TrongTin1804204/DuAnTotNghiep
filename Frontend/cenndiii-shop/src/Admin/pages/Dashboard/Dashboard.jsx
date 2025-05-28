@@ -61,6 +61,8 @@ export const Dashboard = () => {
     const [revenue, setRevenue] = useState({});
     const [dailyData, setDailyData] = useState({});
     const [trendingProducts, setTrendingProducts] = useState([]);
+    const [showRangeRevenue, setShowRangeRevenue] = useState(false);
+    const [rangeRevenue, setRangeRevenue] = useState(0);
 
     const [startDate, setStartDate] = useState(moment().subtract(1, "months"));
     const [endDate, setEndDate] = useState(moment().add(1, "days"));
@@ -92,11 +94,19 @@ export const Dashboard = () => {
                 `/admin/dashboard/revenue/daily?start=${formatDate(startDate)}&end=${formatDate(endDate)}`
             );
             setDailyData(res.data);
+
+            // Tránh null bằng cách kiểm tra giá trị trước khi set
+            const total = res.data.totalRevenue ?? 0; // fallback về 0 nếu null hoặc undefined
+            setRangeRevenue(total);
+            setShowRangeRevenue(true);
+
+            console.log("Tổng doanh thu:", total);
         } catch (error) {
             console.error("Lỗi khi tính doanh thu", error);
             message.error("Lỗi khi tính doanh thu");
         }
     };
+
 
     const columns = [
         {
@@ -209,63 +219,62 @@ export const Dashboard = () => {
                         <Col xs={24} sm={24} md={24} lg={24} xl={8}>
                             <StatisticWidget
                                 title={"Tổng số sản phẩm đang bán"}
-                                value={`${revenue?.totalProducts} sản phẩm`}
+                                value={`${revenue?.totalProducts ?? 0} sản phẩm`}
                                 imgSrc={Product}
                             />
                         </Col>
                         <Col xs={24} sm={24} md={24} lg={24} xl={8}>
                             <StatisticWidget
                                 title={"Đơn hàng đã hoàn thành"}
-                                value={`${revenue?.totalOrders} đơn hàng`}
+                                value={`${revenue?.totalOrders ?? 0} đơn hàng`}
                                 imgSrc={Order}
                             />
                         </Col>
                         <Col xs={24} sm={24} md={24} lg={24} xl={8}>
                             <StatisticWidget
                                 title={"Tổng số người dùng"}
-                                value={`${revenue?.totalUsers} người dùng`}
+                                value={`${revenue?.totalUsers ?? 0} người dùng`}
                                 imgSrc={User}
                             />
                         </Col>
                     </Row>
                     <Row gutter={16}>
-                        {/* Displaying Revenue Widgets */}
-                        <Col xs={24} sm={24} md={24} lg={24} xl={8}>
-                            <StatisticWidget
-                                title={"Doanh thu hôm nay"}
-                                value={
-                                    formatCurrency(revenue?.todayRevenue) ?? formatCurrency(0)
-                                }
-                                status={revenue?.todayIncreasePercentage}
-                                subtitle={`So với hôm qua (${formatCurrency(
-                                    revenue?.yesterdayRevenue
-                                )})`}
-                            />
-                        </Col>
-                        <Col xs={24} sm={24} md={24} lg={24} xl={8}>
-                            <StatisticWidget
-                                title={"Doanh thu tháng này"}
-                                value={
-                                    formatCurrency(revenue?.monthlyRevenue) ?? formatCurrency(0)
-                                }
-                                status={revenue?.monthlyIncreasePercentage}
-                                subtitle={`So với tháng trước (${formatCurrency(
-                                    revenue?.lastMonthRevenue
-                                )})`}
-                            />
-                        </Col>
-                        <Col xs={24} sm={24} md={24} lg={24} xl={8}>
-                            <StatisticWidget
-                                title={"Doanh thu năm"}
-                                value={
-                                    formatCurrency(revenue?.yearlyRevenue) ?? formatCurrency(0)
-                                }
-                                status={revenue?.yearlyIncreasePercentage}
-                                subtitle={`So với năm ngoái (${formatCurrency(
-                                    revenue?.lastYearRevenue
-                                )})`}
-                            />
-                        </Col>
+                        {showRangeRevenue ? (
+                            <Col span={24}>
+                                <StatisticWidget
+                                    title={`Tổng doanh thu từ ${moment(startDate).format("DD/MM/YYYY")} đến ${moment(endDate).format("DD/MM/YYYY")}`}
+                                    value={formatCurrency(rangeRevenue)}
+                                    imgSrc={COD}
+                                />
+                            </Col>
+                        ) : (
+                            <>
+                                <Col xs={24} sm={24} md={24} lg={24} xl={8}>
+                                    <StatisticWidget
+                                        title={"Doanh thu hôm nay"}
+                                        value={formatCurrency(revenue?.todayRevenue) ?? formatCurrency(0)}
+                                        status={revenue?.todayIncreasePercentage}
+                                        subtitle={`So với hôm qua (${formatCurrency(revenue?.yesterdayRevenue)})`}
+                                    />
+                                </Col>
+                                <Col xs={24} sm={24} md={24} lg={24} xl={8}>
+                                    <StatisticWidget
+                                        title={"Doanh thu tháng này"}
+                                        value={formatCurrency(revenue?.monthlyRevenue) ?? formatCurrency(0)}
+                                        status={revenue?.monthlyIncreasePercentage}
+                                        subtitle={`So với tháng trước (${formatCurrency(revenue?.lastMonthRevenue)})`}
+                                    />
+                                </Col>
+                                <Col xs={24} sm={24} md={24} lg={24} xl={8}>
+                                    <StatisticWidget
+                                        title={"Doanh thu năm"}
+                                        value={formatCurrency(revenue?.yearlyRevenue) ?? formatCurrency(0)}
+                                        status={revenue?.yearlyIncreasePercentage}
+                                        subtitle={`So với năm ngoái (${formatCurrency(revenue?.lastYearRevenue)})`}
+                                    />
+                                </Col>
+                            </>
+                        )}
                     </Row>
 
                     {/* Date pickers and button for calculating revenue */}
@@ -318,10 +327,15 @@ export const Dashboard = () => {
                             />
                         </Col>
 
-                        <Col xs={24} sm={24} md={8}>
+                        <Col xs={24} sm={24} md={8} style={{ display: "flex", gap: 8 }}>
                             <Button type="primary" onClick={handleFetchRevenue}>
                                 Tính doanh thu
                             </Button>
+                            {showRangeRevenue && (
+                                <Button onClick={() => setShowRangeRevenue(false)}>
+                                    Quay lại
+                                </Button>
+                            )}
                         </Col>
                     </Row>
 

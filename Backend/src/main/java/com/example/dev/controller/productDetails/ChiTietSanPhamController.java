@@ -2,8 +2,10 @@ package com.example.dev.controller.productDetails;
 
 import com.example.dev.DTO.response.ChiTietSanPham.ChiTietSanPhamResponse;
 import com.example.dev.DTO.response.HoaDonChiTiet.SanPhamCartResponse;
+import com.example.dev.constant.BaseConstant;
 import com.example.dev.entity.ChiTietSanPham;
 import com.example.dev.service.ChiTietSanPhamService;
+import com.example.dev.util.baseModel.BaseResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -85,9 +87,19 @@ public class ChiTietSanPhamController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','STAFF')")
     @PostMapping(value = "/them-anh/{idSanPham}")
-    public ResponseEntity<?> themAnh(@RequestPart final List<MultipartFile> file, @RequestParam("tenMau") List<String> tenMau, @PathVariable Integer idSanPham, Authentication auth) {
-        chiTietSanPhamService.uploadImage(file, tenMau, idSanPham, auth);
-        return ResponseEntity.ok("Upload successfully");
+    public BaseResponse<?> themAnh(@RequestPart final List<MultipartFile> file, @RequestParam("tenMau") List<String> tenMau, @PathVariable Integer idSanPham, Authentication auth) {
+        try {
+            chiTietSanPhamService.uploadImage(file, tenMau, idSanPham, auth);
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.SUCCESS.getCode())
+                    .message("Thêm ảnh thành công")
+                    .build();
+        } catch (Exception e){
+            return BaseResponse.builder()
+                    .code(BaseConstant.CustomResponseCode.ERROR.getCode())
+                    .message(e.getMessage())
+                    .build();
+        }
     }
 
 

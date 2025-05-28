@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 import api from '../../../security/Axios';
 import { useNavigate } from 'react-router-dom';
-export default function AddressDialog({ idKhachHang, reload, open, onClose }) {
+export default function AddressDialog({ hoaDon, reload, open, onClose }) {
     const [selectedProvince, setSelectedProvince] = useState(null);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [selectedWard, setSelectedWard] = useState(null);
@@ -119,7 +119,8 @@ export default function AddressDialog({ idKhachHang, reload, open, onClose }) {
             xaPhuong: selectedWard,
         };
 
-        api.post(`/admin/dia-chi/add-address-customer/${idKhachHang}`, data)
+        
+        api.post(`/admin/dia-chi/add-address-customer/${hoaDon.khachHang.idKhachHang}`, data)
             .then(response => {
                 if (response.status === 200) {
                     onClose(true);

@@ -170,9 +170,22 @@ public class DashboardService {
 
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             categories.add(date.toString());
-            orderCounts.add(hoaDonRepository.countByDate(date));
-            Long dailyRevenue = hoaDonRepository.sumRevenueByDate(date);
-            revenues.add(dailyRevenue != null ? dailyRevenue : 0L);
+
+            // Lấy danh sách hóa đơn "Đã hoàn thành" trong ngày
+            List<HoaDon> hoaDons = hoaDonRepository.findByNgayTaoAndTrangThai(date, "Đã hoàn thành");
+
+            orderCounts.add((long) hoaDons.size());
+
+            // Tính tổng doanh thu đã trừ phí vận chuyển
+            long dailyRevenue = hoaDons.stream()
+                .mapToLong(hd -> {
+                    long tongTien = hd.getTongTien() != null ? hd.getTongTien().longValue() : 0L;
+                    long phiVanChuyen = hd.getPhiVanChuyen() != null ? hd.getPhiVanChuyen().longValue() : 0L;
+                    return tongTien - phiVanChuyen;
+                })
+                .sum();
+
+            revenues.add(dailyRevenue);
         }
 
         List<ChartDataResponse.SeriesData> series = List.of(
@@ -180,7 +193,9 @@ public class DashboardService {
                 new ChartDataResponse.SeriesData("Doanh thu", revenues)
         );
 
-        return new ChartDataResponse(categories, series);
+        Long totalRevenue = revenues.stream().mapToLong(Long::longValue).sum();
+
+        return new ChartDataResponse(categories, series, totalRevenue);
     }
 
     public List<TrendingProductResponse> getLowStockProducts() {

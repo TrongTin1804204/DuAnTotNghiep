@@ -293,51 +293,51 @@ export default function ProductDetails() {
       } else if (type === "co-giay") {
         setShoeCollars((prev) => [
           ...prev,
-          { idCoGiay: response.data.idCoGiay, ten: inputValue },
+          { idCoGiay: response.data.data.idCoGiay, ten: inputValue },
         ]);
-        setShoeCollarSelected({ value: response.data.idCoGiay, label: inputValue });
+        setShoeCollarSelected({ value: response.data.data.idCoGiay, label: inputValue });
         Notification("Thêm cổ giày thành công", "success");
       } else if (type === "de-giay") {
         setShoeSoles((prev) => [
           ...prev,
-          { idDeGiay: response.data.idDeGiay, ten: inputValue },
+          { idDeGiay: response.data.data.idDeGiay, ten: inputValue },
         ]);
-        setShoeSoleSelected({ value: response.data.idDeGiay, label: inputValue });
+        setShoeSoleSelected({ value: response.data.data.idDeGiay, label: inputValue });
         Notification("Thêm đế giày thành công", "success");
       } else if (type === "mui-giay") {
         setShoeToes((prev) => [
           ...prev,
-          { idMuiGiay: response.data.idMuiGiay, ten: inputValue },
+          { idMuiGiay: response.data.data.idMuiGiay, ten: inputValue },
         ]);
-        setShoeToeSelected({ value: response.data.idMuiGiay, label: inputValue });
+        setShoeToeSelected({ value: response.data.data.idMuiGiay, label: inputValue });
         Notification("Thêm mũi giày thành công", "success");
       } else if (type === "chat-lieu") {
         setMaterials((prev) => [
           ...prev,
-          { idChatLieu: response.data.idChatLieu, ten: inputValue },
+          { idChatLieu: response.data.data.idChatLieu, ten: inputValue },
         ]);
-        setMaterialSelected({ value: response.data.idChatLieu, label: inputValue });
+        setMaterialSelected({ value: response.data.data.idChatLieu, label: inputValue });
         Notification("Thêm chất liệu thành công", "success");
       } else if (type === "thuong-hieu") {
         setBrands((prev) => [
           ...prev,
-          { idThuongHieu: response.data.idThuongHieu, ten: inputValue },
+          { idThuongHieu: response.data.data.idThuongHieu, ten: inputValue },
         ]);
-        setBrandSelected({ value: response.data.idThuongHieu, label: inputValue });
+        setBrandSelected({ value: response.data.data.idThuongHieu, label: inputValue });
         Notification("Thêm thương hiệu thành công", "success");
       } else if (type === "nha-cung-cap") {
         setSuppliers((prev) => [
           ...prev,
-          { idNhaCungCap: response.data.idNhaCungCap, ten: inputValue },
+          { idNhaCungCap: response.data.data.idNhaCungCap, ten: inputValue },
         ]);
-        setSupplierSelected({ value: response.data.idNhaCungCap, label: inputValue });
+        setSupplierSelected({ value: response.data.data.idNhaCungCap, label: inputValue });
         Notification("Thêm nhà cung cấp thành công", "success");
       } else if (type === "danh-muc") {
         setCategories((prev) => [
           ...prev,
-          { idDanhMuc: response.data.idDanhMuc, ten: inputValue },
+          { idDanhMuc: response.data.data.idDanhMuc, ten: inputValue },
         ]);
-        setCategorySelected({ value: response.data.idDanhMuc, label: inputValue });
+        setCategorySelected({ value: response.data.data.idDanhMuc, label: inputValue });
         Notification("Thêm danh mục thành công", "success");
       }
     } catch (error) {
@@ -603,7 +603,8 @@ export default function ProductDetails() {
           gia: variant.price ?? 0,
         })),
       };
-
+      // console.log(payload);
+      
       setLoading(true);
       try {
         const productResponse = await api.post(

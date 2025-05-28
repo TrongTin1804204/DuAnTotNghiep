@@ -260,7 +260,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
         try {
             const response = await api.post('/admin/hoa-don/thanh-toan', requestData);
             if (response.status === 200) {
-                if (selectedVoucher) {
+                if (selectedVoucher && selectedVoucher !== null) {
                     try {
                         await api.patch(`/admin/phieu-giam-gia/tru-so-luong-pgg/${selectedVoucher}`);
                     } catch (voucherError) {
@@ -277,7 +277,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
                 };
                 fetchOrders();
                 reloadTab();
-                navigate("/admin/orders", { state: { message: "Thanh toán thành công", type: "success" } });
+                Notification("Thanh toán thành công!", "success")
                 handlePrint(requestData, totalItem, customers.find(c => c.idKhachHang === selectedCustomerId)?.hoTen);
                 // gửi đi
                 window.stompClient?.publish({
@@ -291,7 +291,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
             }
         } catch (error) {
             console.error("Error processing payment:", error);
-            navigate("/admin/orders", { state: { message: "Lỗi khi thanh toán", type: "error" } });
+            Notification("Lỗi khi thanh toán", "error")
         }
     };
 

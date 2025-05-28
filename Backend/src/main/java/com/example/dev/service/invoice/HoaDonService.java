@@ -448,9 +448,11 @@ public class HoaDonService {
 
     public void pay(HoaDonResponse hoaDonResponse, Authentication auth) {
         HoaDon find = hoaDonRepository.findById(hoaDonResponse.getIdHoaDon()).orElseThrow();
-        PhieuGiamGia pgg = phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElseThrow();
+        if (hoaDonResponse.getIdPhieuGiamGia() != null){
+            PhieuGiamGia pgg = phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElseThrow();
+            find.setPhieuGiamGia(pgg);
+        }
 
-        find.setPhieuGiamGia(pgg);
         find.setTongTien(hoaDonResponse.getTongTien());
         find.setLoaiDon(hoaDonResponse.getLoaiDon());
         find.setPhuongThucNhanHang(hoaDonResponse.getPhuongThucNhanHang());
@@ -490,9 +492,10 @@ public class HoaDonService {
         if (hoaDonResponse == null || hoaDonResponse.getTongTien() == null) {
             throw new RuntimeException("Dữ liệu đơn hàng không hợp lệ");
         }
-        PhieuGiamGia pgg = phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElseThrow();
-
-        hoaDon.setPhieuGiamGia(pgg);
+        if (hoaDonResponse.getIdPhieuGiamGia() != null){
+            PhieuGiamGia pgg = phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElseThrow();
+            hoaDon.setPhieuGiamGia(pgg);
+        }
         hoaDon.setMaHoaDon(generateMaHoaDon());
         hoaDon.setTongTien(hoaDonResponse.getTongTien());
         hoaDon.setLoaiDon("Online");
@@ -776,7 +779,6 @@ public class HoaDonService {
             if (hoaDonResponse == null || hoaDonResponse.getTongTien() == null) {
                 throw new RuntimeException("Dữ liệu đơn hàng không hợp lệ");
             }
-
             // Bước 1: Tạo hóa đơn mới
             HoaDon hoaDon = new HoaDon();
             hoaDon.setMaHoaDon(generateMaHoaDon());
