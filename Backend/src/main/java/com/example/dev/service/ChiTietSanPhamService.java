@@ -247,6 +247,7 @@ public class ChiTietSanPhamService {
                     log.info("Create new ProductDetails > {}", newProduct);
 //                historyImpl.saveHistory(null,ctsp, BaseConstant.Action.CREATE.getValue(), id, userLogin.getUsername());
                 }else{
+                    newProduct.setMa(oldProduct.getMa());
                     newProduct.setIdChiTietSanPham(id);
                     newProduct.setNgaySua(LocalDateTime.now());
                     UserLogin userLogin = (UserLogin) auth.getPrincipal();
@@ -498,9 +499,12 @@ public class ChiTietSanPhamService {
     public void capNhatSl(Integer idHoaDon, Integer idHdct, Integer idCtsp, int slThem, BigDecimal giaDuocTinh) {
 
         HoaDonChiTiet hoaDonChitiet = hoaDonChiTietRepository.findById(idHdct).orElseThrow();
-        hoaDonChitiet.setSoLuong(hoaDonChitiet.getSoLuong() + slThem);
-        hoaDonChitiet.setThanhTien(hoaDonChitiet.getDonGia().multiply(BigDecimal.valueOf(hoaDonChitiet.getSoLuong())));
-        hoaDonChiTietRepository.save(hoaDonChitiet);
+        int soLuongCuoi = hoaDonChitiet.getSoLuong() + slThem;
+        if (soLuongCuoi > 0){
+            hoaDonChitiet.setSoLuong(soLuongCuoi);
+            hoaDonChitiet.setThanhTien(hoaDonChitiet.getDonGia().multiply(BigDecimal.valueOf(hoaDonChitiet.getSoLuong())));
+            hoaDonChiTietRepository.save(hoaDonChitiet);
+        }
 
         if (idHoaDon == null) {
             ChiTietSanPham ctsp = chiTietSanPhamRepo.findById(idCtsp).orElseThrow();
