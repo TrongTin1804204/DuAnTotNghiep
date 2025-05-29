@@ -233,15 +233,7 @@ public class DotGiamGiaService {
     public Page<ChiTietSanPham> getSanPhamChiTiet(List<Integer> idSanPham, int skip, int limit) {
         int page = skip / limit;
         PageRequest pageable = PageRequest.of(page, limit);
-
-//        Page<ChiTietSanPham> chiTietSanPhamPage = chiTietSanPhamRepo.findBySanPhamIdSanPhamIn(idSanPham, pageable);
-//        return chiTietSanPhamPage.getContent();
-        return chiTietSanPhamRepo.findBySanPhamIdSanPhamIn(idSanPham, pageable);
-//        return (List<ChiTietSanPham>) chiTietSanPhamRepo.findByIdSanPhamIn(idSanPham, pageable);
-
-        // Lấy danh sách chi tiết sản phẩm theo ID sản phẩm
-//        Page<ChiTietSanPham> chiTietPage = chiTietSanPhamRepo.findBySanPhamIdSanPham(idSanPham, pageable);
-//        return new GetSanPhamChiTietDTO(chiTietPage.getContent(), chiTietPage.getTotalElements());
+        return chiTietSanPhamRepo.findBySanPhamIdSanPhamInAndTaoBoiIsNull(idSanPham, pageable);
     }
 
 }

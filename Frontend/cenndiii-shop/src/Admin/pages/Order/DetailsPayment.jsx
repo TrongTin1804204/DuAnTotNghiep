@@ -135,12 +135,12 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
     const getConfirm = async (confirm) => {
         setOpenPayAlert(false);
         if (confirm) {
-            if (!invoiceId) {
-                navigate("/admin/orders", { state: { message: "Chưa chọn sản phẩm", type: "error" } });
+            if (totalItem.length === 0) {
+                Notification("Chưa chọn sản phẩm abc", "error")
                 return;
             }
             if (paymentMethod === "cahai" && (Number(cashAmount) + Number(transferAmount) !== lastTotal)) {
-                navigate("/admin/orders", { state: { message: "Tổng tiền chưa đủ hoặc đang lớn hơn", type: "error" } });
+                Notification("Tổng tiền chưa đủ hoặc đang lớn hơn", "error")
                 return;
             }
             handleSubmit(onSubmit)();
@@ -192,7 +192,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
     }, [total, amount, discountAmount]);
 
     useEffect(() => {
-        setFilteredVouchers(total > 0 ? originalVouchers.filter(v => total >= v.dieuKien) : originalVouchers);
+        setFilteredVouchers(total >= 0 ? originalVouchers.filter(v => total >= v.dieuKien) : originalVouchers);
     }, [total]);
 
 
@@ -252,11 +252,6 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
             idPhieuGiamGia: selectedVoucher || null,
         };
 
-        if (lastTotal <= 0) {
-            navigate("/admin/orders", { state: { message: "Chưa chọn sản phẩm", type: "error" } });
-            return;
-        }
-
         try {
             const response = await api.post('/admin/hoa-don/thanh-toan', requestData);
             if (response.status === 200) {
@@ -308,7 +303,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
                 params: { khachHangId: selectedCustomerId },
             });
 
-            const validVouchers = total > 0
+            const validVouchers = total >= 0
                 ? response.data.filter(v => total >= v.dieuKien) : response.data;
 
             setOriginalVouchers(validVouchers);
@@ -348,7 +343,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
         if (total <= 0) return;
         const selectedCustomer = customers.find(c => c.idKhachHang === selectedCustomerId);
         if (!manualVoucherSelected && (!selectedCustomer || selectedCustomer?.idKhachHang === 0)) {
-            const validVouchers = total > 0
+            const validVouchers = total >= 0
                 ? originalVouchers.filter(v => total >= v.dieuKien)
                 : originalVouchers;
 
@@ -952,7 +947,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
                             ))
                         }
                     </select>) : (<p className="text-red-500">Không có phiếu giảm giá phù hợp.</p>)}
-                    {getTabVouchers().length > 0 && bestVoucherApplied && !voucherSearched && total > 0 && (
+                    {getTabVouchers().length > 0 && bestVoucherApplied && !voucherSearched && total >= 0 && (
                         <p className="text-red-500 italic text-sm mt-2">
                             * Phiếu giảm giá có giá trị tốt nhất.
                         </p>

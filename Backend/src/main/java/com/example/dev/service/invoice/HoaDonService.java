@@ -24,6 +24,7 @@ import com.example.dev.repository.invoice.HoaDonRepository;
 import com.example.dev.repository.invoice.LichSuHoaDonRepository;
 import com.example.dev.repository.invoice.ThanhToanHoaDonRepository;
 import com.example.dev.repository.voucher.PhieuGiamGiaRepository;
+import com.example.dev.service.PhieuGiamGiaService;
 import com.example.dev.service.customer.DiaChiService;
 import com.example.dev.service.EmailService;
 import com.example.dev.service.payments.VNPayService;
@@ -72,6 +73,7 @@ public class HoaDonService {
     private final DiaChiService diaChiService;
     private final DiaChiRepo diaChiRepo;
     private final EmailService emailService;
+    private final PhieuGiamGiaService phieuGiamGiaService;
 
     public List<HoaDon> findInvoices(String loaiDon, Optional<LocalDate> startDate, Optional<LocalDate> endDate, String searchQuery) {
         LocalDateTime startDateTime = startDate.map(date -> date.atStartOfDay()).orElse(null);
@@ -495,6 +497,7 @@ public class HoaDonService {
         if (hoaDonResponse.getIdPhieuGiamGia() != null){
             PhieuGiamGia pgg = phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElseThrow();
             hoaDon.setPhieuGiamGia(pgg);
+            phieuGiamGiaService.giamSoLuongPhieu(hoaDonResponse.getIdPhieuGiamGia());
         }
         hoaDon.setMaHoaDon(generateMaHoaDon());
         hoaDon.setTongTien(hoaDonResponse.getTongTien());
@@ -805,6 +808,7 @@ public class HoaDonService {
 
             if (hoaDonResponse.getIdPhieuGiamGia() != null) {
                 hoaDon.setPhieuGiamGia(phieuGiamGiaRepository.findById(hoaDonResponse.getIdPhieuGiamGia()).orElse(null));
+                phieuGiamGiaService.giamSoLuongPhieu(hoaDonResponse.getIdPhieuGiamGia());
             } else {
                 hoaDon.setPhieuGiamGia(null);
             }

@@ -652,13 +652,9 @@ export default function AddDiscounts() {
                 <th className="p-2">STT</th>
                 <th className="p-2">Mã sản phẩm</th>
                 <th className="p-2">Tên sản phẩm</th>
-                <th className="p-2">Danh mục</th>
-                <th className="p-2">Thương hiệu</th>
+                <th className="p-2">Màu sắc / kích cỡ</th>
+                <th className="p-2">Thông số</th>
                 <th className="p-2">Số lượng</th>
-                <th className="p-2">Chất liệu</th>
-                <th className="p-2">Kích cỡ</th>
-                <th className="p-2">Màu sắc</th>
-                <th className="p-2">Đế giày</th>
               </tr>
             </thead>
             <tbody>
@@ -688,13 +684,33 @@ export default function AddDiscounts() {
                   <td className="p-2">{index + skipCt + 1}</td>
                   <td className="p-2">{sanPhamChiTiet.sanPham.maSanPham}</td>
                   <td className="p-2">{sanPhamChiTiet.sanPham.ten}</td>
-                  <td className="p-2">{sanPhamChiTiet.danhMucSanPham.ten}</td>
+                  {/* <td className="p-2">{sanPhamChiTiet.danhMucSanPham.ten}</td>
                   <td className="p-2">{sanPhamChiTiet.thuongHieu.ten}</td>
-                  <td className="p-2">{sanPhamChiTiet.soLuong}</td>
                   <td className="p-2">{sanPhamChiTiet.chatLieu.ten}</td>
                   <td className="p-2">{sanPhamChiTiet.kichCo.ten}</td>
                   <td className="p-2">{sanPhamChiTiet.mauSac.ten}</td>
                   <td className="p-2">{sanPhamChiTiet.deGiay.ten}</td>
+                  <td className="p-2">{sanPhamChiTiet.deGiay.ten}</td> */}
+                  <td className="p-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          backgroundColor: sanPhamChiTiet.mauSac.ten,
+                          border: '1px solid #ddd'
+                        }}
+                      />
+                      <span className='text-gray-600 text-sm'>
+                        {sanPhamChiTiet.mauSac.ten} / {sanPhamChiTiet.kichCo.ten}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-2">{sanPhamChiTiet.coGiay.ten}, {sanPhamChiTiet.muiGiay.ten}, {sanPhamChiTiet.deGiay.ten}, {sanPhamChiTiet.thuongHieu.ten}, {sanPhamChiTiet.chatLieu.ten}, {sanPhamChiTiet.nhaCungCap.ten}, {sanPhamChiTiet.danhMucSanPham.ten}</td>
+                  <td className="p-2">{sanPhamChiTiet.soLuong}</td>
+
                 </tr>
               ))}
             </tbody>

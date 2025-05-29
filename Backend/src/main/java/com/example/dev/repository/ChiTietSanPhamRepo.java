@@ -60,7 +60,7 @@ public interface ChiTietSanPhamRepo extends JpaRepository<ChiTietSanPham, Intege
     Page<ChiTietSanPham> searchs(@Param("search") String search, Pageable pageable);
 
     //    Tìm các sản phẩm có id trong mảng và phân trang
-    Page<ChiTietSanPham> findBySanPhamIdSanPhamIn(List<Integer> idSanPham, Pageable pageable);
+    Page<ChiTietSanPham> findBySanPhamIdSanPhamInAndTaoBoiIsNull(List<Integer> idSanPham, Pageable pageable);
 
     DotGiamGia save(DotGiamGia dotGiamGia);
 
