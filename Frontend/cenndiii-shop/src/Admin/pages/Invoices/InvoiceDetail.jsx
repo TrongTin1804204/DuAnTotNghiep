@@ -102,7 +102,9 @@ export default function InvoiceDetail() {
     const [openDeleteProductDialog, setOpenDeleteProductDialog] = useState(false);
     const [openCancelDialog, setOpenCancelDialog] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+    const [openCancelReasonDialog, setOpenCancelReasonDialog] = useState(false);
     const [lyDoHuy, setLyDoHuy] = useState("");
+    const [lyDoHuyError, setLyDoHuyError] = useState("");
     useEffect(() => {
         if (!Array.isArray(orderItemsByTab) || orderItemsByTab.length === 0) {
             setTotal(0);
@@ -343,8 +345,9 @@ export default function InvoiceDetail() {
     const back = async () => {
         try {
             // Kiểm tra nếu là hủy đơn thì hiện dialog nhập lý do
-            if (statusBtn(invoice?.trangThai)?.includes("Hủy")) {
-                setOpenCancelDialog(true);
+            const btnText = statusBtn(invoice?.trangThai);
+            if (btnText && btnText.toLowerCase().includes("hủy")) {
+                setOpenCancelReasonDialog(true);
                 return;
             }
 
@@ -357,15 +360,22 @@ export default function InvoiceDetail() {
 
     const handleConfirmBack = async () => {
         try {
+            const btnText = statusBtn(invoice?.trangThai);
+            const isCancel = btnText && btnText.toLowerCase().includes("hủy");
+
             const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`,
                 {},
                 {
                     params: {
-                        ghiChu: ""
+                        ghiChu: isCancel ? lyDoHuy : ""
                     }
                 }
             )
             if (response.data != "") {
+                if (isCancel) {
+                    setOpenCancelReasonDialog(false);
+                    setLyDoHuy("");
+                }
                 reload();
             }
         } catch (error) {
@@ -373,30 +383,30 @@ export default function InvoiceDetail() {
         }
     }
 
-    const handleCancelOrder = async () => {
-        if (!lyDoHuy.trim()) {
-            Notification("Vui lòng nhập lý do hủy đơn!", "warning");
-            return;
-        }
+    // const handleCancelOrder = async () => {
+    //     if (!lyDoHuy.trim()) {
+    //         Notification("Vui lòng nhập lý do hủy đơn!", "warning");
+    //         return;
+    //     }
 
-        try {
-            const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`,
-                {},
-                {
-                    params: {
-                        ghiChu: lyDoHuy
-                    }
-                }
-            )
-            if (response.data != "") {
-                setOpenCancelDialog(false);
-                setLyDoHuy("");
-                reload();
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
+    //     try {
+    //         const response = await api.put(`/admin/hoa-don/${invoice.maHoaDon}/quay-lai`,
+    //             {},
+    //             {
+    //                 params: {
+    //                     ghiChu: lyDoHuy
+    //                 }
+    //             }
+    //         )
+    //         if (response.data != "") {
+    //             setOpenCancelDialog(false);
+    //             setLyDoHuy("");
+    //             reload();
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
 
     const isVisible = () => {
         const trangThai = invoice?.trangThai;
@@ -1424,6 +1434,54 @@ export default function InvoiceDetail() {
                     }
                 }}
             />
+
+            <Dialog
+                open={openCancelReasonDialog}
+                onClose={() => {
+                    setOpenCancelReasonDialog(false);
+                    setLyDoHuyError("");
+                }}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Nhập lý do hủy đơn</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Lý do hủy"
+                        type="text"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={lyDoHuy}
+                        onChange={(e) => {
+                            setLyDoHuy(e.target.value);
+                            setLyDoHuyError("");
+                        }}
+                        error={!!lyDoHuyError}
+                        helperText={lyDoHuyError}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => {
+                        setOpenCancelReasonDialog(false);
+                        setLyDoHuyError("");
+                    }}>Hủy</Button>
+                    <Button
+                        onClick={() => {
+                            if (!lyDoHuy.trim()) {
+                                setLyDoHuyError("Vui lòng nhập lý do hủy đơn!");
+                                return;
+                            }
+                            handleConfirmBack();
+                        }}
+                        variant="contained"
+                    >
+                        Xác nhận
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div >
     )
 }

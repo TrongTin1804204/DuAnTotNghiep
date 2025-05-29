@@ -258,18 +258,27 @@ public class HoaDonService {
             }
             if ("Chờ xác nhận".equals(trangThai)) {
                 hoaDon.setTrangThai("Hủy");
-//                if (hoaDon.getLoaiDon().equalsIgnoreCase("Online") && tt.getHinhThucThanhToan().equalsIgnoreCase("VNPay")) {
-//                    ThanhToanHoaDon thanhToanHoaDon = ThanhToanHoaDon.builder()
-//                            .ngayTao(LocalDateTime.now())
-//                            .soTienThanhToan(tt.getSoTienThanhToan())
-//                            .hinhThucThanhToan(tt.getHinhThucThanhToan())
-//                            .trangThai(2)
-//                            .hoaDon(hoaDon)
-//                            .ghiChu(ghiChu)
-//                            .nguoiTao(user.getUsername())
-//                            .build();
-//                    thanhToanHoaDonService.thanhToanHoaDon(Collections.singletonList(thanhToanHoaDon));
-//                }
+
+                boolean isCodInvoice = true;
+                ThanhToanHoaDon hoaDonVNPay = new ThanhToanHoaDon();
+                for(ThanhToanHoaDon tthd : listTt) {
+                    if (tthd.getHinhThucThanhToan().equalsIgnoreCase("VNpay") ){
+                        isCodInvoice = false;
+                        hoaDonVNPay = tthd;
+                    }
+                }
+                if (!isCodInvoice){
+                    ThanhToanHoaDon thanhToanHoaDon = ThanhToanHoaDon.builder()
+                            .ngayTao(LocalDateTime.now())
+                            .soTienThanhToan(hoaDonVNPay.getSoTienThanhToan())
+                            .hinhThucThanhToan(hoaDonVNPay.getHinhThucThanhToan())
+                            .trangThai(2)
+                            .hoaDon(hoaDon)
+                            .ghiChu(ghiChu)
+                            .nguoiTao(user.getUsername())
+                            .build();
+                    thanhToanHoaDonService.thanhToanHoaDon(Collections.singletonList(thanhToanHoaDon));
+                }
 //                if (!vnPayService.refundToVNPay("02",tt,auth))
 //                    throw new Exception("Hoàn tiền thất bại");
             }
