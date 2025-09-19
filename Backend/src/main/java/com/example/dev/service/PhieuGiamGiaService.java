@@ -307,7 +307,6 @@ public class PhieuGiamGiaService {
                 }
             }
         }
-
     }
 
     private void updateKhachHangCaNhan(PhieuGiamGia existingPhieu, PhieuGiamGia newPhieu, boolean hasImportantChanges,Authentication authentication) {

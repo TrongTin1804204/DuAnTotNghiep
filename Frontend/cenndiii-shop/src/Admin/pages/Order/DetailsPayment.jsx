@@ -136,7 +136,7 @@ const DeliveryForm = ({ totalItem, total, invoiceId, reloadTab, activeOrderId })
         setOpenPayAlert(false);
         if (confirm) {
             if (totalItem.length === 0) {
-                Notification("Chưa chọn sản phẩm abc", "error")
+                Notification("Chưa chọn sản phẩm", "error")
                 return;
             }
             if (paymentMethod === "cahai" && (Number(cashAmount) + Number(transferAmount) !== lastTotal)) {

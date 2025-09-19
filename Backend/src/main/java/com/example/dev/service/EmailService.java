@@ -259,7 +259,7 @@ public class EmailService {
 
             StringBuilder htmlBody = new StringBuilder();
             htmlBody.append("<html><body style='font-family: Arial, sans-serif; line-height: 1.6;'>").append(
-                    "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;'>")
+                            "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;'>")
                     .append("<h1 style='color: #4CAF50; text-align: center;'>Đơn hàng của bạn đã được đặt thành công!</h1>")
                     .append("<p style='font-size: 16px;'>Cảm ơn bạn đã mua hàng tại cửa hàng của chúng tôi. Dưới đây là chi tiết đơn hàng của bạn:</p>")
                     .append("<table style='width: 100%; margin-top: 20px; border-collapse: collapse;'>")
@@ -288,7 +288,7 @@ public class EmailService {
 
             for (SanPhamCartResponse sp : sanPhamList) {
                 htmlBody.append("<li style='display: flex; align-items: center; background-color: #ffffff; ").append(
-                        "margin: 10px 0; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);'>")
+                                "margin: 10px 0; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);'>")
                         .append("<img src='").append(sp.getAnhSanPham()).append("' alt='Ảnh sản phẩm' ")
                         .append("style='width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 12px;' />")
                         .append("<div style='flex-grow: 1;'>")
@@ -302,7 +302,7 @@ public class EmailService {
             }
 
             htmlBody.append("</ul>").append(
-                    "<p style='text-align: center; margin-top: 20px; font-size: 14px; color: #888;'>Cảm ơn bạn đã mua hàng tại cửa hàng của chúng tôi!</p>")
+                            "<p style='text-align: center; margin-top: 20px; font-size: 14px; color: #888;'>Cảm ơn bạn đã mua hàng tại cửa hàng của chúng tôi!</p>")
                     .append("</div>").append("</body></html>");
 
             sendHtmlMessage(to, subject, htmlBody.toString());

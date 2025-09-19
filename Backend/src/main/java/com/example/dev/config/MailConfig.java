@@ -17,12 +17,14 @@ public class MailConfig {
         mailSender.setPort(587);
 
         mailSender.setUsername("trongtin1804204@gmail.com");
-        mailSender.setPassword("esyn latd pguz pwek");
+        mailSender.setPassword("esyn latd pguz pwek"); // App password, không phải mật khẩu thật
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.starttls.required", "true");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
         props.put("mail.debug", "true");
 
         return mailSender;
